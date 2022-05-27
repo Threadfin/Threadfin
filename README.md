@@ -1,5 +1,5 @@
 <div align="center" style="background-color: #111; padding: 100;">
-    <a href="https://github.com/Threadfin/Threadfin"><img width="880" height="200" src="html/img/logo_b_880x200.jpg" alt="Threadfin" /></a>
+    <a href="https://github.com/Threadfin/Threadfin"><img width="880" height="200" src="html/img/logo_b_880x200.png" alt="Threadfin" /></a>
 </div>
 <br>
 
