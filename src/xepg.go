@@ -219,7 +219,7 @@ func createXEPGMapping() {
 		case 1:
 			displayName = dn[0].Value
 		default:
-			displayName = fmt.Sprintf("%s (%s)", dn[1].Value, dn[0].Value)
+			displayName = fmt.Sprintf("%s (%s)", dn[0].Value, dn[1].Value)
 		}
 
 		return

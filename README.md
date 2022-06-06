@@ -124,6 +124,21 @@ go mod tidy
 go build threadfin.go
 ```
 
+4. Update web files (optional)
+
+If TypeScript files were changed, run:
+
+```sh
+tsc -p ./ts/tsconfig.json
+```
+
+Then, to embed updated JavaScript files into the source code (src/webUI.go), run it in development mode at least once:
+
+```sh
+go build threadfin.go
+threadfin -dev
+```
+
 ---
 
 ## Fork without pull request :mega:
