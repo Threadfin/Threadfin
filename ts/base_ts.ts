@@ -408,6 +408,10 @@ function changeChannelNumbers(elements) {
     data[element]["x-channelID"] = starting_number.toString()
     starting_number++
   })
+  if (COLUMN_TO_SORT == 1) {
+    COLUMN_TO_SORT = -1
+    sortTable(1)
+  }
 }
 
 function changeChannelNumber(element) {
@@ -454,7 +458,7 @@ function changeChannelNumber(element) {
 
   if (COLUMN_TO_SORT == 1) {
     COLUMN_TO_SORT = -1
-    // sortTable(1)
+    sortTable(1)
   }
 
   return

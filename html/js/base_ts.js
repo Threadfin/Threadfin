@@ -295,6 +295,10 @@ function changeChannelNumbers(elements) {
         data[element]["x-channelID"] = starting_number.toString();
         starting_number++;
     });
+    if (COLUMN_TO_SORT == 1) {
+        COLUMN_TO_SORT = -1;
+        sortTable(1);
+    }
 }
 function changeChannelNumber(element) {
     var dbID = element.parentNode.parentNode.id;
@@ -327,7 +331,7 @@ function changeChannelNumber(element) {
     console.log(data[dbID]["x-channelID"]);
     if (COLUMN_TO_SORT == 1) {
         COLUMN_TO_SORT = -1;
-        // sortTable(1)
+        sortTable(1);
     }
     return;
 }
