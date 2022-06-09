@@ -1511,6 +1511,19 @@ function openPopUp(dataType, element) {
 
     case "mapping":
       content.createHeadline("{{.mainMenu.item.mapping}}")
+      if (BULK_EDIT == true) {
+        var dbKey: string = "x-channels-start"
+        var input = content.createInput("text", dbKey, data[dbKey])
+
+        // Set the value to the first selected channel
+        var channels = getAllSelectedChannels()
+        var channel = SERVER["xepg"]["epgMapping"][channels[0]]
+        input.setAttribute("value", channel["x-channelID"])
+
+        input.setAttribute("onchange", 'javascript: changeChannelNumbers("' + channels + '");')
+        content.appendRow("{{.mapping.channelGroupStart.title}}", input)
+      }
+
       // Aktiv 
       var dbKey: string = "x-active"
       var input = content.createCheckbox(dbKey)
@@ -2095,6 +2108,10 @@ function donePopupData(dataType: string, idsStr: string) {
 
         case "tvg-logo":
           //(document.getElementById(id).childNodes[2].firstChild as HTMLElement).setAttribute("src", value)
+          break
+
+        case "x-channel-start":
+          (document.getElementById(id).childNodes[3].firstChild as HTMLElement).innerHTML = value
           break
 
         case "x-name":

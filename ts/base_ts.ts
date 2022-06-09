@@ -396,6 +396,20 @@ function calculateWrapperHeight() {
   return
 }
 
+function changeChannelNumbers(elements) {
+  var starting_number_element = (document.getElementsByName("x-channels-start")[0] as HTMLInputElement)
+  var elems = elements.split(",")
+  var starting_number = parseFloat(starting_number_element.value)
+  var data = SERVER["xepg"]["epgMapping"]
+  elems.forEach(element => {
+    var elem = document.getElementById(element)
+    var input = (elem.childNodes[1].firstChild as HTMLInputElement)
+    input.value = starting_number.toString()
+    data[element]["x-channelID"] = starting_number.toString()
+    starting_number++
+  })
+}
+
 function changeChannelNumber(element) {
 
   var dbID = element.parentNode.parentNode.id
@@ -423,13 +437,13 @@ function changeChannelNumber(element) {
       break
     }
 
-    if (Math.floor(newNumber) == newNumber) {
-      newNumber = newNumber + 1
-    } else {
-      newNumber = newNumber + 0.1;
-      newNumber.toFixed(1)
-      newNumber = Math.round(newNumber * 10) / 10
-    }
+    // if (Math.floor(newNumber) == newNumber) {
+    //   newNumber = newNumber + 1
+    // } else {
+    //   newNumber = newNumber + 0.1;
+    //   newNumber.toFixed(1)
+    //   newNumber = Math.round(newNumber * 10) / 10
+    // }
 
   }
 
@@ -440,7 +454,7 @@ function changeChannelNumber(element) {
 
   if (COLUMN_TO_SORT == 1) {
     COLUMN_TO_SORT = -1
-    sortTable(1)
+    // sortTable(1)
   }
 
   return

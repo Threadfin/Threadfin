@@ -283,6 +283,19 @@ function calculateWrapperHeight() {
     }
     return;
 }
+function changeChannelNumbers(elements) {
+    var starting_number_element = document.getElementsByName("x-channels-start")[0];
+    var elems = elements.split(",");
+    var starting_number = parseFloat(starting_number_element.value);
+    var data = SERVER["xepg"]["epgMapping"];
+    elems.forEach(element => {
+        var elem = document.getElementById(element);
+        var input = elem.childNodes[1].firstChild;
+        input.value = starting_number.toString();
+        data[element]["x-channelID"] = starting_number.toString();
+        starting_number++;
+    });
+}
 function changeChannelNumber(element) {
     var dbID = element.parentNode.parentNode.id;
     var newNumber = parseFloat(element.value);
@@ -301,21 +314,20 @@ function changeChannelNumber(element) {
         if (channelNumbers.indexOf(newNumber) == -1) {
             break;
         }
-        if (Math.floor(newNumber) == newNumber) {
-            newNumber = newNumber + 1;
-        }
-        else {
-            newNumber = newNumber + 0.1;
-            newNumber.toFixed(1);
-            newNumber = Math.round(newNumber * 10) / 10;
-        }
+        // if (Math.floor(newNumber) == newNumber) {
+        //   newNumber = newNumber + 1
+        // } else {
+        //   newNumber = newNumber + 0.1;
+        //   newNumber.toFixed(1)
+        //   newNumber = Math.round(newNumber * 10) / 10
+        // }
     }
     data[dbID]["x-channelID"] = newNumber.toString();
     element.value = newNumber;
     console.log(data[dbID]["x-channelID"]);
     if (COLUMN_TO_SORT == 1) {
         COLUMN_TO_SORT = -1;
-        sortTable(1);
+        // sortTable(1)
     }
     return;
 }

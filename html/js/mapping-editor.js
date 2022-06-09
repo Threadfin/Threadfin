@@ -590,6 +590,13 @@ function mappingDetail(xepg) {
         newItem["placeholder"] = 'Channel Name';
         break;
 
+      case "x-channels-start":
+        newItem["_element"] = "INPUT";
+        newItem["type"] = "text";
+        newItem["value"] = thisChannel["x-channels-start"];
+        newItem["placeholder"] = 'Channel Group Start';
+        break;
+
       case "x-update-channel-name":
         if (thisChannel.hasOwnProperty("_uuid.key") == true) {
           newItem["_element"] = "INPUT";
