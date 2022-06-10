@@ -2,7 +2,9 @@ name: Threadfin Build
 on:
   push:
     tags:
-      - 2.*
+      - 1.*
+permissions:
+  contents: write
 jobs:
   build:
     name: Build
