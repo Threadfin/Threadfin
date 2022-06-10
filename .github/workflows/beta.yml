@@ -36,3 +36,5 @@ jobs:
         with:
           files: dist/*
           prerelease: true
+          permissions:
+            contents: write
