@@ -918,13 +918,11 @@ func getCategory(program *Program, xmltvProgram *Program, xepgChannel XEPGChanne
 	if len(xepgChannel.XCategory) > 0 {
 
 		category := &Category{}
-		category.Value = xepgChannel.XCategory
+		category.Value = strings.ToLower(xepgChannel.XCategory)
 		category.Lang = "en"
 		program.Category = append(program.Category, category)
 
 	}
-
-	return
 }
 
 // Programm Poster Cover aus der XMLTV Datei laden
@@ -937,7 +935,7 @@ func getPoster(program *Program, xmltvProgram *Program, xepgChannel XEPGChannelS
 		program.Poster = append(program.Poster, poster)
 	}
 
-	if Settings.XepgReplaceMissingImages == true {
+	if Settings.XepgReplaceMissingImages {
 
 		if len(xmltvProgram.Poster) == 0 {
 			var poster Poster
