@@ -258,6 +258,7 @@ nav p {
 }
 
 #content_table,
+#inactive_content_table,
 #mapping-detail-table,
 #content_table {
   display: table;
@@ -267,8 +268,13 @@ nav p {
   width: 100%;
 }
 
+#inactive_content_table {
+  margin-top: 2%;
+}
 
-#content_table .content_table_header {
+
+#content_table .content_table_header,
+#inactive_content_table .inactive_content_table_header {
   background-color: #333;
   height: 50px;
   border-bottom: solid 1px #111;
@@ -290,7 +296,8 @@ tbody {
   white-space: nowrap;
 }
 
-#content_table img {
+#content_table img,
+#inactive_content_table img {
   display: block;
   max-height: 28px;
   margin-left: auto;
@@ -298,22 +305,26 @@ tbody {
   max-width: 30px;
 }
 
-#content_table tr {
+#content_table tr,
+#inactive_content_table tr {
   border-left: solid 3px 444;
   border-bottom: solid 1px #333;
   cursor: pointer;
 }
 
-#content_table tr:hover {
+#content_table tr:hover,
+#inactive_content_table tr:hover {
   background-color: #333;
 }
 
-#content_table td {
+#content_table td,
+#inactive_content_table td {
 
   padding: 0px 2px;
 }
 
-#content_table input[type=text] {
+#content_table input[type=text],
+#inactive_content_table input[type=text] {
   width: 80%;
   min-width: 35px;
   max-width: 60px;
@@ -323,7 +334,8 @@ tbody {
   text-align: left;
 }
 
-#content_table input[type=checkbox] {
+#content_table input[type=checkbox],
+#inactive_content_table input[type=checkbox] {
   max-width: 25px;
   margin: auto;
 }
@@ -339,11 +351,13 @@ tbody {
 
 .noBulk {}
 
-#content_table tr.activeEPG {
+#content_table tr.activeEPG,
+#inactive_content_table tr.activeEPG {
   border-left: solid 3px lawngreen;
 }
 
-#content_table tr.notActiveEPG {
+#content_table tr.notActiveEPG,
+#inactive_content_table tr.notActiveEPG {
   border-left: solid 3px red;
 }
 

@@ -46,7 +46,9 @@
     "update": "Update",
     "craeteAccount": "Create Account",
     "resetLogs": "Reset Logs",
-    "uploadLogo": "Upload Logo"
+    "uploadLogo": "Upload Logo",
+    "sortChannelsAlpha": "Sort Channels Alphabetically",
+    "sortChannelNumbers": "Sort Channels"
   },
   "filter": {
     "table": {
@@ -191,6 +193,16 @@
     },
     "channelGroupStart": {
       "title": "Channel Group Start",
+      "placeholder": "",
+      "description": ""
+    },
+    "sortChannelsAlpha": {
+      "title": "Sort Alphabetically",
+      "placeholder": "",
+      "description": ""
+    },
+    "sortChannels": {
+      "title": "Sort Channels",
       "placeholder": "",
       "description": ""
     },

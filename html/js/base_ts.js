@@ -1,6 +1,7 @@
 var SERVER = new Object();
 var BULK_EDIT = false;
 var COLUMN_TO_SORT;
+var INACTIVE_COLUMN_TO_SORT;
 var SEARCH_MAPPING = new Object();
 var UNDO = new Object();
 var SERVER_CONNECTION = false;
@@ -114,9 +115,9 @@ function getAllSelectedChannels() {
     }
     return channels;
 }
-function selectAllChannels() {
+function selectAllChannels(table_name = "content_table") {
     var bulk = false;
-    var trs = document.getElementById("content_table").getElementsByTagName("TR");
+    var trs = document.getElementById(table_name).getElementsByTagName("TR");
     if (trs[0].firstChild.firstChild.checked == true) {
         bulk = true;
     }
@@ -152,23 +153,32 @@ function bulkEdit() {
     }
     return;
 }
-function sortTable(column) {
+function sortTable(column, table_name = "content_table") {
     //console.log(columm);
-    if (column == COLUMN_TO_SORT) {
+    if ((column == COLUMN_TO_SORT && table_name == "content_table") || (column == INACTIVE_COLUMN_TO_SORT && table_name == "inactive_content_table")) {
         return;
     }
-    var table = document.getElementById("content_table");
+    var table = document.getElementById(table_name);
     var tableHead = table.getElementsByTagName("TR")[0];
     var tableItems = tableHead.getElementsByTagName("TD");
     var sortObj = new Object();
     var x, xValue;
     var tableHeader;
     var sortByString = false;
-    if (column > 0 && COLUMN_TO_SORT > 0) {
+    if (column > 0 && COLUMN_TO_SORT > 0 && table_name == "content_table") {
         tableItems[COLUMN_TO_SORT].className = "pointer";
         tableItems[column].className = "sortThis";
     }
-    COLUMN_TO_SORT = column;
+    else if (column > 0 && INACTIVE_COLUMN_TO_SORT > 0 && table_name == "inactive_content_table") {
+        tableItems[INACTIVE_COLUMN_TO_SORT].className = "pointer";
+        tableItems[column].className = "sortThis";
+    }
+    if (table_name == "content_table") {
+        COLUMN_TO_SORT = column;
+    }
+    else if (table_name == "inactive_content_table") {
+        INACTIVE_COLUMN_TO_SORT = column;
+    }
     var rows = table.rows;
     if (rows[1] != undefined) {
         tableHeader = rows[0];
@@ -299,6 +309,10 @@ function changeChannelNumbers(elements) {
         COLUMN_TO_SORT = -1;
         sortTable(1);
     }
+    if (INACTIVE_COLUMN_TO_SORT == 1) {
+        INACTIVE_COLUMN_TO_SORT = -1;
+        sortTable(1, "inactive_content_page");
+    }
 }
 function changeChannelNumber(element) {
     var dbID = element.parentNode.parentNode.id;
@@ -332,6 +346,10 @@ function changeChannelNumber(element) {
     if (COLUMN_TO_SORT == 1) {
         COLUMN_TO_SORT = -1;
         sortTable(1);
+    }
+    if (INACTIVE_COLUMN_TO_SORT == 1) {
+        INACTIVE_COLUMN_TO_SORT = -1;
+        sortTable(1, "inactive_content_page");
     }
     return;
 }
