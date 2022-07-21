@@ -694,7 +694,7 @@ func createXMLTVFile() (err error) {
 		err := json.Unmarshal([]byte(mapToJSON(dxc)), &xepgChannel)
 		if err == nil {
 			if xepgChannel.XActive {
-				if (Settings.XepgReplaceChannelTitle && xepgChannel.XMapping == "PPV") && xepgChannel.TvgName != "" {
+				if (Settings.XepgReplaceChannelTitle && xepgChannel.XMapping == "PPV") || xepgChannel.TvgName != "" {
 					// Kanäle
 					var channel Channel
 					channel.ID = xepgChannel.XChannelID
