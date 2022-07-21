@@ -454,13 +454,13 @@ function changeChannelNumber(element) {
       break
     }
 
-    // if (Math.floor(newNumber) == newNumber) {
-    //   newNumber = newNumber + 1
-    // } else {
-    //   newNumber = newNumber + 0.1;
-    //   newNumber.toFixed(1)
-    //   newNumber = Math.round(newNumber * 10) / 10
-    // }
+    if (Math.floor(newNumber) == newNumber) {
+      newNumber = newNumber + 1
+    } else {
+      newNumber = newNumber + 0.1;
+      newNumber.toFixed(1)
+      newNumber = Math.round(newNumber * 10) / 10
+    }
 
   }
 

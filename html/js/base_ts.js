@@ -332,13 +332,14 @@ function changeChannelNumber(element) {
         if (channelNumbers.indexOf(newNumber) == -1) {
             break;
         }
-        // if (Math.floor(newNumber) == newNumber) {
-        //   newNumber = newNumber + 1
-        // } else {
-        //   newNumber = newNumber + 0.1;
-        //   newNumber.toFixed(1)
-        //   newNumber = Math.round(newNumber * 10) / 10
-        // }
+        if (Math.floor(newNumber) == newNumber) {
+            newNumber = newNumber + 1;
+        }
+        else {
+            newNumber = newNumber + 0.1;
+            newNumber.toFixed(1);
+            newNumber = Math.round(newNumber * 10) / 10;
+        }
     }
     data[dbID]["x-channelID"] = newNumber.toString();
     element.value = newNumber;
