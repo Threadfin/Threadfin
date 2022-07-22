@@ -1017,6 +1017,7 @@ class ShowContent extends Content {
         rows.forEach(tr => {
           inactivetable.appendChild(tr)
         });
+
       }
     }
 
@@ -1115,7 +1116,7 @@ function openThisMenu(element) {
   var content: ShowContent = new ShowContent(id)
   content.show()
   calculateWrapperHeight()
-
+  enableGroupSelection(".bulk")
   return
 }
 

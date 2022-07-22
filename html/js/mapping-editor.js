@@ -311,6 +311,7 @@ function createMappingTable() {
     newTD["type"] = "checkbox";
     newTD["class"] = "bulk hideBulk";
     newTD["onmouseout"] = "javascript: this.blur()"
+    newTD["onclick"] = "javascript: checkClick()"
 
     createNewTD(newTD, tr);
 

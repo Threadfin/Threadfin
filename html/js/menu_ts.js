@@ -874,6 +874,7 @@ function openThisMenu(element) {
     var content = new ShowContent(id);
     content.show();
     calculateWrapperHeight();
+    enableGroupSelection(".bulk");
     return;
 }
 class PopupWindow {

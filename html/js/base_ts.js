@@ -217,7 +217,6 @@ function sortTable(column, table_name = "content_table") {
         var sortValues = getObjKeys(sortObj);
         if (sortByString == true) {
             sortValues.sort();
-            console.log(sortValues);
         }
         else {
             function sortFloat(a, b) {
@@ -263,6 +262,27 @@ function createSearchObj() {
         });
     });
     return;
+}
+function enableGroupSelection(selector) {
+    var lastcheck = null; // no checkboxes clicked yet
+    // get desired checkboxes
+    var checkboxes = document.querySelectorAll(selector);
+    // loop over checkboxes to add event listener
+    Array.prototype.forEach.call(checkboxes, function (cbx, idx) {
+        cbx.addEventListener('click', function (evt) {
+            // test for shift key, not first checkbox, and not same checkbox
+            if (evt.shiftKey && null !== lastcheck && idx !== lastcheck) {
+                // get range of checks between last-checkbox and shift-checkbox
+                // Math.min/max does our sorting for us
+                Array.prototype.slice.call(checkboxes, Math.min(lastcheck, idx), Math.max(lastcheck, idx))
+                    // and loop over each
+                    .forEach(function (ccbx) {
+                    ccbx.checked = true;
+                });
+            }
+            lastcheck = idx; // set this checkbox as last-checked for later
+        });
+    });
 }
 function searchInMapping() {
     var searchValue = document.getElementById("searchMapping").value;
@@ -343,7 +363,6 @@ function changeChannelNumber(element) {
     }
     data[dbID]["x-channelID"] = newNumber.toString();
     element.value = newNumber;
-    console.log(data[dbID]["x-channelID"]);
     if (COLUMN_TO_SORT == 1) {
         COLUMN_TO_SORT = -1;
         sortTable(1);
