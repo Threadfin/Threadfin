@@ -1592,6 +1592,7 @@ function openPopUp(dataType, element) {
       }
       input.setAttribute("placeholder", "{{.filter.startingnumber.placeholder}}")
       content.appendRow("{{.filter.startingnumber.title}}", input)
+      content.description("{{.filter.startingnumber.description}}")
 
       // Interaktion
       content.createInteraction()

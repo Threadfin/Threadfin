@@ -66,7 +66,7 @@
     "startingnumber": {
       "title": "Filter Starting Number",
       "placeholder": "Filter Starting Number",
-      "description": "Number to start channels at in this Group"
+      "description": "Starting Channel Number to use for this Group Filter (Default is 1000)"
     },
     "description": {
       "title": "Description",
