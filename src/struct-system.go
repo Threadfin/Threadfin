@@ -225,15 +225,16 @@ type M3UChannelStructXEPG struct {
 
 // FilterStruct : Filter Struktur
 type FilterStruct struct {
-	Active        bool   `json:"active,required"`
-	CaseSensitive bool   `json:"caseSensitive,required"`
-	Description   string `json:"description,required"`
-	Exclude       string `json:"exclude,required"`
-	Filter        string `json:"filter,required"`
-	Include       string `json:"include,required"`
-	Name          string `json:"name,required"`
-	Rule          string `json:"rule,omitempty"`
-	Type          string `json:"type,required"`
+	Active         bool   `json:"active"`
+	CaseSensitive  bool   `json:"caseSensitive"`
+	Description    string `json:"description"`
+	Exclude        string `json:"exclude"`
+	Filter         string `json:"filter"`
+	Include        string `json:"include"`
+	Name           string `json:"name"`
+	Rule           string `json:"rule,omitempty"`
+	Type           string `json:"type"`
+	StartingNumber string `json:"startingNumber"`
 }
 
 // StreamingURLS : Informationen zu allen streaming URL's

@@ -1583,6 +1583,16 @@ function openPopUp(dataType, element) {
           break;
       }
 
+      // Name      
+      var dbKey: string = "startingNumber"
+      if (data[dbKey] !== undefined) {
+        var input = content.createInput("text", dbKey, data[dbKey])
+      } else {
+        var input = content.createInput("text", dbKey, "1000")
+      }
+      input.setAttribute("placeholder", "{{.filter.startingnumber.placeholder}}")
+      content.appendRow("{{.filter.startingnumber.title}}", input)
+
       // Interaktion
       content.createInteraction()
 

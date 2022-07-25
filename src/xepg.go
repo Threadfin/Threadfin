@@ -312,6 +312,7 @@ func createXEPGDatabase() (err error) {
 	var allChannelNumbers = make([]float64, 0, System.UnfilteredChannelLimit)
 	Data.Cache.Streams.Active = make([]string, 0, System.UnfilteredChannelLimit)
 	Data.XEPG.Channels = make(map[string]interface{}, System.UnfilteredChannelLimit)
+	Settings = SettingsStruct{}
 
 	Data.XEPG.Channels, err = loadJSONFileToMap(System.File.XEPG)
 	if err != nil {
@@ -319,6 +320,12 @@ func createXEPGDatabase() (err error) {
 		return err
 	}
 
+	settings, err := loadJSONFileToMap(System.File.Settings)
+	if err != nil || len(settings) == 0 {
+		return
+	}
+	settings_json, _ := json.Marshal(settings)
+	json.Unmarshal(settings_json, &Settings)
 	var createNewID = func() (xepg string) {
 
 		var firstID = 0 //len(Data.XEPG.Channels)
@@ -334,21 +341,19 @@ func createXEPGDatabase() (err error) {
 		return
 	}
 
-	var getFreeChannelNumber = func() (xChannelID string) {
+	var getFreeChannelNumber = func(startingNumber float64) (xChannelID string) {
 
 		sort.Float64s(allChannelNumbers)
 
-		var firstFreeNumber float64 = Settings.MappingFirstChannel
-
 		for {
 
-			if indexOfFloat64(firstFreeNumber, allChannelNumbers) == -1 {
-				xChannelID = fmt.Sprintf("%g", firstFreeNumber)
-				allChannelNumbers = append(allChannelNumbers, firstFreeNumber)
+			if indexOfFloat64(startingNumber, allChannelNumbers) == -1 {
+				xChannelID = fmt.Sprintf("%g", startingNumber)
+				allChannelNumbers = append(allChannelNumbers, startingNumber)
 				return
 			}
 
-			firstFreeNumber++
+			startingNumber++
 
 		}
 	}
@@ -483,8 +488,25 @@ func createXEPGDatabase() (err error) {
 
 		case false:
 			// Neuer Kanal
+			var firstFreeNumber float64 = Settings.MappingFirstChannel
+			// Check channel start number from Group Filter
+			filters := []FilterStruct{}
+			for _, filter := range Settings.Filter {
+				filter_json, _ := json.Marshal(filter)
+				f := FilterStruct{}
+				json.Unmarshal(filter_json, &f)
+				filters = append(filters, f)
+			}
+
+			for _, filter := range filters {
+				if m3uChannel.GroupTitle == filter.Filter {
+					start_num, _ := strconv.ParseFloat(filter.StartingNumber, 64)
+					firstFreeNumber = start_num
+				}
+			}
+
 			var xepg = createNewID()
-			var xChannelID = getFreeChannelNumber()
+			var xChannelID = getFreeChannelNumber(firstFreeNumber)
 
 			var newChannel XEPGChannelStruct
 			newChannel.FileM3UID = m3uChannel.FileM3UID

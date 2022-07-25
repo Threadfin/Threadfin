@@ -63,6 +63,11 @@
       "placeholder": "Filter name",
       "description": ""
     },
+    "startingnumber": {
+      "title": "Filter Starting Number",
+      "placeholder": "Filter Starting Number",
+      "description": "Number to start channels at in this Group"
+    },
     "description": {
       "title": "Description",
       "placeholder": "Description",
