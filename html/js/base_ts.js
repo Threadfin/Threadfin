@@ -216,7 +216,7 @@ function sortTable(column, table_name = "content_table") {
         }
         var sortValues = getObjKeys(sortObj);
         if (sortByString == true) {
-            sortValues.sort();
+            sortValues.sort(function (a, b) { return Number(a.match(/(\d+)/g)[0]) - Number((b.match(/(\d+)/g)[0])); });
         }
         else {
             function sortFloat(a, b) {
