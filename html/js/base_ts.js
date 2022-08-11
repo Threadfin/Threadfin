@@ -154,7 +154,7 @@ function bulkEdit() {
     return;
 }
 function sortTable(column, table_name = "content_table") {
-    //console.log(columm);
+    // console.log("COLUMN: " + column);
     if ((column == COLUMN_TO_SORT && table_name == "content_table") || (column == INACTIVE_COLUMN_TO_SORT && table_name == "inactive_content_table")) {
         return;
     }
@@ -216,7 +216,12 @@ function sortTable(column, table_name = "content_table") {
         }
         var sortValues = getObjKeys(sortObj);
         if (sortByString == true) {
-            sortValues.sort(function (a, b) { return Number(a.match(/(\d+)/g)[0]) - Number((b.match(/(\d+)/g)[0])); });
+            if (column == 3) {
+                sortValues.sort(function (a, b) { return Number(a.match(/(\d+)/g)[0]) - Number((b.match(/(\d+)/g)[0])); });
+            }
+            else {
+                sortValues.sort();
+            }
         }
         else {
             function sortFloat(a, b) {
