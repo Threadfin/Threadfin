@@ -379,31 +379,31 @@ input[type=button].center {
   color: magenta;
 }
 
-.News,
-.Movie,
-.Series,
-.Sports,
-.Kids {
+.news,
+.movie,
+.series,
+.sports,
+.kids {
   border-left: solid 2px
 }
 
-.News {
+.news {
   border-color: tomato
 }
 
-.Movie {
+.movie {
   border-color: royalblue;
 }
 
-.Series {
+.series {
   border-color: gold;
 }
 
-.Sports {
+.sports {
   border-color: yellowgreen;
 }
 
-.Kids {
+.kids {
   border-color: mediumpurple;
 }
 
