@@ -217,7 +217,8 @@ function sortTable(column, table_name = "content_table") {
         var sortValues = getObjKeys(sortObj);
         if (sortByString == true) {
             if (column == 3) {
-                sortValues.sort(function (a, b) { return Number(a.match(/(\d+)/g)[0]) - Number((b.match(/(\d+)/g)[0])); });
+                var collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
+                sortValues.sort(collator.compare);
             }
             else {
                 sortValues.sort();
