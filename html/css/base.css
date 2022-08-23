@@ -137,7 +137,7 @@ select:focus {
 
 input {
   -webkit-appearance: none;
-  margin: 5px 0px;
+  margin: 0px;
   padding: 2.5px 10px;
   outline: none;
   font-size: 14px;

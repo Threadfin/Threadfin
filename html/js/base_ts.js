@@ -6,6 +6,26 @@ var SEARCH_MAPPING = new Object();
 var UNDO = new Object();
 var SERVER_CONNECTION = false;
 var WS_AVAILABLE = false;
+const toggleBtn = document.querySelector('.sidebar-toggle');
+const closeBtn = document.querySelector('.close-btn');
+const sidebar = document.querySelector('.sidebar');
+toggleBtn.addEventListener('click', function () {
+    sidebar.classList.toggle('show-sidebar');
+});
+closeBtn.addEventListener('click', function () {
+    sidebar.classList.remove('show-sidebar');
+});
+const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+// new ClipboardJS('.copy-btn');
+var clipboard = new ClipboardJS('.copy-btn');
+clipboard.on('success', function (e) {
+    const tooltip = bootstrap.Tooltip.getInstance(e.trigger);
+    tooltip.setContent({ '.tooltip-inner': 'Copied!' });
+});
+clipboard.on('error', function (e) {
+    console.log(e);
+});
 // Menü
 var menuItems = new Array();
 menuItems.push(new MainMenuItem("playlist", "{{.mainMenu.item.playlist}}", "m3u.png", "{{.mainMenu.headline.playlist}}"));

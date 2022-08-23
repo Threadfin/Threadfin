@@ -1056,7 +1056,6 @@ function PageReady() {
     updateLog()
   }, 10000);
 
-
   return
 }
 
@@ -1066,9 +1065,8 @@ function createLayout() {
   var obj = SERVER["clientInfo"]
   var keys = getObjKeys(obj);
   for (var i = 0; i < keys.length; i++) {
-
     if (document.getElementById(keys[i])) {
-      document.getElementById(keys[i]).innerHTML = obj[keys[i]];
+      (<HTMLInputElement>document.getElementById(keys[i])).value = obj[keys[i]];
     }
 
   }
