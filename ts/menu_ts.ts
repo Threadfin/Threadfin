@@ -1120,19 +1120,18 @@ function createLayout() {
   }
 
   var pathArray = window.location.pathname.split('/');
-  console.log("PATH:" + JSON.stringify(pathArray));
   switch (pathArray[2]) {
     case "playlist":
       var log_element = document.querySelector('#main-menu li:nth-child(1)')
       openThisMenu(log_element);
     break
+    case "xmltv":
+      var log_element = document.querySelector('#main-menu li:nth-child(3)')
+      openThisMenu(log_element);
+    break
     case "filter":
       var log_element = document.querySelector('#main-menu li:nth-child(2)')
       console.log("ELEMENT: ", log_element)
-      openThisMenu(log_element);
-    break
-    case "xmltv":
-      var log_element = document.querySelector('#main-menu li:nth-child(3)')
       openThisMenu(log_element);
     break
     case "mapping":
