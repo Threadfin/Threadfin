@@ -6,15 +6,6 @@ var SEARCH_MAPPING = new Object();
 var UNDO = new Object();
 var SERVER_CONNECTION = false;
 var WS_AVAILABLE = false;
-const toggleBtn = document.querySelector('.sidebar-toggle');
-const closeBtn = document.querySelector('.close-btn');
-const sidebar = document.querySelector('.sidebar');
-toggleBtn.addEventListener('click', function () {
-    sidebar.classList.toggle('show-sidebar');
-});
-closeBtn.addEventListener('click', function () {
-    sidebar.classList.remove('show-sidebar');
-});
 const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
 const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
 // new ClipboardJS('.copy-btn');
@@ -28,15 +19,14 @@ clipboard.on('error', function (e) {
 });
 // Menü
 var menuItems = new Array();
-menuItems.push(new MainMenuItem("playlist", "{{.mainMenu.item.playlist}}", "m3u.png", "{{.mainMenu.headline.playlist}}"));
-//menuItems.push(new MainMenuItem("pmsID", "{{.mainMenu.item.pmsID}}", "number.png", "{{.mainMenu.headline.pmsID}}"))
-menuItems.push(new MainMenuItem("filter", "{{.mainMenu.item.filter}}", "filter.png", "{{.mainMenu.headline.filter}}"));
-menuItems.push(new MainMenuItem("xmltv", "{{.mainMenu.item.xmltv}}", "xmltv.png", "{{.mainMenu.headline.xmltv}}"));
-menuItems.push(new MainMenuItem("mapping", "{{.mainMenu.item.mapping}}", "mapping.png", "{{.mainMenu.headline.mapping}}"));
-menuItems.push(new MainMenuItem("users", "{{.mainMenu.item.users}}", "users.png", "{{.mainMenu.headline.users}}"));
-menuItems.push(new MainMenuItem("settings", "{{.mainMenu.item.settings}}", "settings.png", "{{.mainMenu.headline.settings}}"));
-menuItems.push(new MainMenuItem("log", "{{.mainMenu.item.log}}", "log.png", "{{.mainMenu.headline.log}}"));
-menuItems.push(new MainMenuItem("logout", "{{.mainMenu.item.logout}}", "logout.png", "{{.mainMenu.headline.logout}}"));
+menuItems.push(new MainMenuItem("playlist", "{{.mainMenu.item.playlist}}", "m3u.png", "{{.mainMenu.headline.playlist}}", "/web/playlist/"));
+menuItems.push(new MainMenuItem("filter", "{{.mainMenu.item.filter}}", "filter.png", "{{.mainMenu.headline.filter}}", "/web/filter/"));
+menuItems.push(new MainMenuItem("xmltv", "{{.mainMenu.item.xmltv}}", "xmltv.png", "{{.mainMenu.headline.xmltv}}", "/web/xmltv/"));
+menuItems.push(new MainMenuItem("mapping", "{{.mainMenu.item.mapping}}", "mapping.png", "{{.mainMenu.headline.mapping}}", "/web/mapping/"));
+menuItems.push(new MainMenuItem("users", "{{.mainMenu.item.users}}", "users.png", "{{.mainMenu.headline.users}}", "/web/users/"));
+menuItems.push(new MainMenuItem("settings", "{{.mainMenu.item.settings}}", "settings.png", "{{.mainMenu.headline.settings}}", "/web/settings/"));
+menuItems.push(new MainMenuItem("log", "{{.mainMenu.item.log}}", "log.png", "{{.mainMenu.headline.log}}", "/web/log/"));
+menuItems.push(new MainMenuItem("logout", "{{.mainMenu.item.logout}}", "logout.png", "{{.mainMenu.headline.logout}}", "/web/logout/"));
 // Kategorien für die Einstellungen
 var settingsCategory = new Array();
 settingsCategory.push(new SettingsCategoryItem("{{.settings.category.general}}", "ThreadfinAutoUpdate,tuner,epgSource,api"));
@@ -324,18 +314,6 @@ function searchInMapping() {
                 document.getElementById(id).style.display = "none";
                 break;
         }
-    }
-    return;
-}
-function calculateWrapperHeight() {
-    if (document.getElementById("box-wrapper")) {
-        var elm = document.getElementById("box-wrapper");
-        var divs = new Array("myStreamsBox", "clientInfo", "content");
-        var elementsHeight = 0 - elm.offsetHeight;
-        for (var i = 0; i < divs.length; i++) {
-            elementsHeight = elementsHeight + document.getElementById(divs[i]).offsetHeight;
-        }
-        elm.style.height = window.innerHeight - elementsHeight + "px";
     }
     return;
 }

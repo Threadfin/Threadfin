@@ -28,87 +28,90 @@
     <div id="popup-custom"></div>
   </div>
 
-  <div id="layout">
-
-    <!--
-        <div id="notification">
-          <div class="element">
-            <h5>XEPG</h5>
-            <pre>11.05.2019 - 20:21</pre>
-            <hr>
-            <p>Hallo das ist ein Test. Und noch mehr Text.</p>
-          </div>
+  <div class="modal fade" id="server_information">
+    <div class="modal-dialog modal-xl">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 class="modal-title">Server Information</h3>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-      -->
-
-    <div id="menu-wrapper" class="layout-left">
-      <div id="logo"></div>
-      <nav id="main-menu"></nav>
-    </div>
-
-    <div class="layout-right">
-
-      <div id="myStreamsBox" class="notVisible">
-
-        <div id="allStreams">
-          <table id="activeStreams"></table>
-          <table id="inactiveStreams"></table>
-        </div>
-
-      </div>
-
-      <div id="content" class=""></div>
-
-
-    </div>
-
-    <button class="sidebar-toggle">
-      <i class="fas fa-arrow-alt-circle-right" data-bs-title="Show Server Information" data-bs-toggle="tooltip" data-bs-placement="bottom"></i>
-    </button>
-    <aside class="sidebar">
-      <div class="container">
-        <div class="row justify-content-md-center">
-          <div class="card text-bg-light mb-3">
-            <div class="card-header">Server Information</div>
-            <div class="card-body text-dark">
-              <label for="version" class="form-label">Threadfin Version</label>
-              <input type="text" class="form-control" id="version" aria-describedby="basic-addon3" readonly disabled>
-              <label for="branch" class="form-label">Threadfin Branch</label>
-              <input type="text" class="form-control" id="branch" aria-describedby="basic-addon3" readonly disabled>
-              <label for="errors" class="form-label">Errors</label>
-              <input type="text" class="form-control" id="errors" aria-describedby="basic-addon3" readonly disabled>
-              <label for="warnings" class="form-label">Warnings</label>
-              <input type="text" class="form-control" id="warnings" aria-describedby="basic-addon3" readonly disabled>
-            </div>
-          </div>
-          <div class="card text-bg-light mb-3">
-            <div class="card-header">Stream Information</div>
-            <div class="card-body text-dark">
-              <label for="DVR" class="form-label">DVR IP</label>
-              <input type="text" class="form-control" id="DVR" aria-describedby="basic-addon3" readonly disabled>
-              <label for="m3u-url" class="form-label">M3U URL (Specific groups: [http://...?group-title=foo,bar])</label>
-              <div class="input-group">
-                <input type="text" class="form-control" id="m3u-url" aria-describedby="basic-addon3" readonly>
-                <button class="input-group-text copy-btn" data-clipboard-target="#m3u-url" data-bs-title="Copy to clipboard" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="far fa-clipboard"></i></button>
+        <div class="modal-body">
+          <div class="container-fluid">
+            <div class="row">
+              <div class="card text-bg-dark mb-3">
+                <div class="card-header">Server Information</div>
+                <div class="card-body">
+                  <label for="version" class="form-label">Threadfin Version</label>
+                  <input type="text" class="form-control" id="version" aria-describedby="basic-addon3" readonly disabled>
+                  <label for="branch" class="form-label">Threadfin Branch</label>
+                  <input type="text" class="form-control" id="branch" aria-describedby="basic-addon3" readonly disabled>
+                  <label for="errors" class="form-label">Errors</label>
+                  <input type="text" class="form-control" id="errors" aria-describedby="basic-addon3" readonly disabled>
+                  <label for="warnings" class="form-label">Warnings</label>
+                  <input type="text" class="form-control" id="warnings" aria-describedby="basic-addon3" readonly disabled>
+                </div>
               </div>
-              <label for="xepg-url" class="form-label">XMLTV URL</label>
-              <div class="input-group">
-                <input type="text" class="form-control" id="xepg-url" aria-describedby="basic-addon3" readonly>
-                <button class="input-group-text copy-btn" data-clipboard-target="#xepg-url" data-bs-title="Copy to clipboard" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="far fa-clipboard"></i></button>
+              <div class="card text-bg-dark mb-3">
+                <div class="card-header">Stream Information</div>
+                <div class="card-body">
+                  <label for="DVR" class="form-label">DVR IP</label>
+                  <input type="text" class="form-control" id="DVR" aria-describedby="basic-addon3" readonly disabled>
+                  <label for="m3u-url" class="form-label">M3U URL (Specific groups: [http://...?group-title=foo,bar])</label>
+                  <div class="input-group">
+                    <input type="text" class="form-control" id="m3u-url" aria-describedby="basic-addon3" readonly>
+                    <button class="input-group-text copy-btn" data-clipboard-target="#m3u-url" data-bs-title="Copy to clipboard" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="far fa-clipboard"></i></button>
+                  </div>
+                  <label for="xepg-url" class="form-label">XMLTV URL</label>
+                  <div class="input-group">
+                    <input type="text" class="form-control" id="xepg-url" aria-describedby="basic-addon3" readonly>
+                    <button class="input-group-text copy-btn" data-clipboard-target="#xepg-url" data-bs-title="Copy to clipboard" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="far fa-clipboard"></i></button>
+                  </div>
+                  <label for="streams" class="form-label">Filtered Channels</label>
+                  <input type="text" class="form-control" id="streams" aria-describedby="basic-addon3" readonly disabled>
+                  <label for="xepg" class="form-label">Mapped Channels</label>
+                  <input type="text" class="form-control" id="xepg" aria-describedby="basic-addon3" readonly disabled>
+                </div>
               </div>
-              <label for="streams" class="form-label">Filtered Channels</label>
-              <input type="text" class="form-control" id="streams" aria-describedby="basic-addon3" readonly disabled>
-              <label for="xepg" class="form-label">Mapped Channels</label>
-              <input type="text" class="form-control" id="xepg" aria-describedby="basic-addon3" readonly disabled>
             </div>
           </div>
         </div>
       </div>
-      <button class="close-btn">
-        <i class="fas fa-arrow-alt-circle-left" data-bs-title="Hide Server Information" data-bs-toggle="tooltip" data-bs-placement="bottom"></i>
+    </div>
+  </div>
+  <nav class="navbar navbar-expand-lg sticky-top navbar-dark bg-black">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="/web">
+        <span id="logo"></span>
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
       </button>
-    </aside>
-
+      <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <ul class="navbar-nav mx-auto mb-2 mb-lg-0" id="main-menu">
+        </ul>
+        <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
+          <li class="nav-link" data-bs-toggle="modal" data-bs-target="#server_information"><i class="fas fa-info-circle"></i> Server Information</li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+  <div class="container-flex">
+      <div class="row">
+        <div class="col-md-12 col-sm-12">
+          <div id="content" class="table-responsive"></div>
+        </div>
+      </div>
+      <div class="row" id="myStreamsBox">
+        <div class="col-md-5 col-sm-12 table-responsive float-start">
+          <table class="table table-dark table-bordered caption-top" id="activeStreams"></table>
+        </div>
+        <div class="col-md-5 col-sm-12 table-responsive float-end">
+          <table class="table table-dark table-bordered caption-top" id="inactiveStreams"></table>
+        </div>
+      </div>
+    </div>
+      </div>
+    </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-A3rJD856KowSb7dwlZdYEkO39Gagi7vIsF0jrRAoQmDKKtQBHUuLZ9AsSv4jD4Xa" crossorigin="anonymous"></script>

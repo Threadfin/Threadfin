@@ -14,23 +14,35 @@ class MainMenu {
         element.innerHTML = value;
         return element;
     }
+    createLink(url, value, src) {
+        var element = document.createElement("A");
+        element.setAttribute('href', url);
+        element.setAttribute('class', "nav-link");
+        var img = document.createElement("IMG");
+        img.setAttribute("src", this.ImagePath + src);
+        element.appendChild(img);
+        var p = document.createElement("P");
+        p.innerHTML = value;
+        element.appendChild(p);
+        return element;
+    }
 }
 class MainMenuItem extends MainMenu {
-    constructor(menuKey, value, image, headline) {
+    constructor(menuKey, value, image, headline, url) {
         super();
         this.menuKey = menuKey;
         this.value = value;
         this.imgSrc = image;
         this.headline = headline;
+        this.url = url;
     }
     createItem() {
         var item = document.createElement("LI");
-        item.setAttribute("onclick", "javascript: openThisMenu(this)");
+        // item.setAttribute("onclick", "javascript: openThisMenu(this)")
         item.setAttribute("id", this.id);
-        var img = this.createIMG(this.imgSrc);
-        var value = this.createValue(this.value);
-        item.appendChild(img);
-        item.appendChild(value);
+        item.setAttribute("class", "nav-item");
+        var url = this.createLink(this.url, this.value, this.imgSrc);
+        item.appendChild(url);
         var doc = document.getElementById(this.DocumentID);
         doc.appendChild(item);
         switch (this.menuKey) {
@@ -87,6 +99,7 @@ class Content {
     }
     createTABLE() {
         var element = document.createElement("TABLE");
+        element.setAttribute('class', 'table');
         element.id = this.TableID;
         return element;
     }
@@ -525,7 +538,6 @@ class Content {
                         rows.push(tr);
                     }
                 });
-                savePopupData("mapping", "", false, 0);
                 break;
             case "settings":
                 alert();
@@ -616,9 +628,11 @@ class ShowContent extends Content {
         COLUMN_TO_SORT = -1;
         // Alten Inhalt löschen
         var doc = document.getElementById(this.DocumentID);
+        console.log("DOC: " + doc);
         doc.innerHTML = "";
         showPreview(false);
         // Überschrift
+        console.log(this.menuID);
         var headline = menuItems[this.menuID].headline;
         var menuKey = menuItems[this.menuID].menuKey;
         var h = this.createHeadline(headline);
@@ -825,9 +839,6 @@ class ShowContent extends Content {
 function PageReady() {
     var server = new Server("getServerConfig");
     server.request(new Object());
-    window.addEventListener("resize", function () {
-        calculateWrapperHeight();
-    }, true);
     setInterval(function () {
         updateLog();
     }, 10000);
@@ -867,13 +878,41 @@ function createLayout() {
                 break;
         }
     }
+    var pathArray = window.location.pathname.split('/');
+    console.log("PATH:" + JSON.stringify(pathArray));
+    switch (pathArray[2]) {
+        case "playlist":
+            var log_element = document.querySelector('#main-menu li:nth-child(1)');
+            openThisMenu(log_element);
+            break;
+        case "filter":
+            var log_element = document.querySelector('#main-menu li:nth-child(2)');
+            console.log("ELEMENT: ", log_element);
+            openThisMenu(log_element);
+            break;
+        case "xmltv":
+            var log_element = document.querySelector('#main-menu li:nth-child(3)');
+            openThisMenu(log_element);
+            break;
+        case "mapping":
+            var log_element = document.querySelector('#main-menu li:nth-child(4)');
+            openThisMenu(log_element);
+            break;
+        case "settings":
+            var log_element = document.querySelector('#main-menu li:nth-child(5)');
+            openThisMenu(log_element);
+            break;
+        case "log":
+            var log_element = document.querySelector('#main-menu li:nth-child(6)');
+            openThisMenu(log_element);
+            break;
+    }
     return;
 }
 function openThisMenu(element) {
     var id = element.id;
     var content = new ShowContent(id);
     content.show();
-    calculateWrapperHeight();
     enableGroupSelection(".bulk");
     return;
 }
@@ -1903,6 +1942,13 @@ function showPreview(element) {
         var table = document.getElementById(preview);
         table.innerHTML = "";
         var obj = SERVER["data"]["StreamPreviewUI"][preview];
+        var caption = document.createElement("CAPTION");
+        var result = preview.replace(/([A-Z])/g, " $1");
+        var finalResult = result.charAt(0).toUpperCase() + result.slice(1);
+        caption.innerHTML = finalResult;
+        table.appendChild(caption);
+        var tbody = document.createElement("TBODY");
+        table.appendChild(tbody);
         obj.forEach(channel => {
             var tr = document.createElement("TR");
             var tdKey = document.createElement("TD");
@@ -1920,7 +1966,7 @@ function showPreview(element) {
             tdVal.innerText = channel;
             tr.appendChild(tdKey);
             tr.appendChild(tdVal);
-            table.appendChild(tr);
+            tbody.appendChild(tr);
         });
     });
     showElement("loading", false);

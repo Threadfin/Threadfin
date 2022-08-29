@@ -15,6 +15,9 @@ nav p {
   height: 100%;
 }
 
+.form-control:disabled {
+  background-color: transparent;
+}
 
 .layout-left {
   display: block;
@@ -171,33 +174,19 @@ nav p {
 #inactiveStreams {
   font-family: monospace;
   display: block;
-  font-size: 9px;
-  background-color: #111;
+  font-size: 12px;
   color: #00E6FF;
-  border-bottom: solid 0px;
-  ;
   padding: 0px;
-  letter-spacing: 1px;
-  overflow-x: hidden;
-  border-spacing: 20px 4px;
-  border-bottom: solid 1px #444;
 }
 
-#myStreamsBox {
-  position: relative;
-  padding: 0px;
-  /*height: 100px;*/
-  max-height: 150px;
-  background-color: #111;
-  color: white;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+#activeStreams thead,
+#inactiveStreams thead {
+  font-size: 2em;
 }
 
 #openStreams {
   width: 20px;
-  height: 20px;
+  height: 200px;
   cursor: pointer;
   float: right;
   position: absolute;
@@ -210,32 +199,40 @@ nav p {
 }
 
 #allStreams {
-  width: 100%;
-  height: 100%;
   padding: 2px;
 }
 
 #activeStreams,
 #inactiveStreams {
-  overflow-y: scroll;
-  width: 50%;
-  max-height: 100px;
-  float: left;
+  /* width: 50%; */
+  /* float: left; */
 }
 
 #activeStreams .tdKey,
 #inactiveStreams .tdKey {
-  width: 75px;
+  width: 115px;
+  letter-spacing: 0px;
+}
+
+caption {
+  color: #FFF;
+  font-size: 2em;
 }
 
 .tdKey {
-  text-align: right;
+  text-align: left;
 }
 
 .tdVal {
   text-align: left;
 }
 
+.modal-header {
+  background-color: #212529;
+}
+.modal-body {
+  background-color: #444;
+}
 
 #inactiveStreams .tdKey {
   color: red;
@@ -262,10 +259,9 @@ nav p {
 #mapping-detail-table,
 #content_table {
   display: table;
-
+  --bs-table-color: none;
   border-collapse: collapse;
   overflow-y: scroll;
-  width: 100%;
 }
 
 #inactive_content_table {
@@ -761,14 +757,14 @@ Sidebar
   margin: 3em;
 }
 .card {
-  color: var(--clr-black);
+  /* color: var(--clr-black); */
   border: 5px solid var(--clr-orange);
 }
-.card input[type=text] {
+/* .card input[type=text] {
   color: var(--clr-black);
   outline: var(--clr-black);
   border: solid 1px var(--clr-black);
-}
+} */
 .card label {
   margin-top: 2em;
 }

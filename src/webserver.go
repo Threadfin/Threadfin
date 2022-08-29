@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -596,7 +597,21 @@ func Web(w http.ResponseWriter, r *http.Request) {
 	var lang = make(map[string]interface{})
 	var err error
 
-	var requestFile = strings.Replace(r.URL.Path, "/web", "html", -1)
+	var requestFile string
+	var re = regexp.MustCompile(`^(/web/)+([A-Za-z0-9]*)`)
+	match := re.FindStringSubmatch(r.URL.Path)
+	if len(match) != 0 {
+		if match[2] == "" {
+			requestFile = strings.Replace(r.URL.Path, "/web", "html", -1)
+		} else {
+			if match[2] != "css" && match[2] != "js" && match[2] != "img" {
+				requestFile = strings.Replace(r.URL.Path, match[2], "", 1)
+				requestFile = strings.Replace(requestFile, match[1], "html", -1)
+			} else {
+				requestFile = strings.Replace(r.URL.Path, "/web", "html", -1)
+			}
+		}
+	}
 	var content, contentType, file string
 
 	var language LanguageUI

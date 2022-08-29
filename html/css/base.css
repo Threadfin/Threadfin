@@ -106,10 +106,7 @@ label {
 
 li {
   list-style-type: none;
-  background-color: #111;
-  padding: 10px 20px;
   cursor: pointer;
-  border-left: solid 2px #111;
   transition: all 0.3;
 }
 
