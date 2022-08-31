@@ -214,6 +214,16 @@ input[type="checkbox"]:checked:before {
   color: #000;
 }
 
+input[type="checkbox"].bulk:checked:before {
+  position: relative;
+  left: 0px;
+  top: -11px;
+  margin-left: -3px;
+  content: "✓";
+  font-size: 1.5em;
+  color: #000;
+}
+
 
 input[type=button].cancel {
 

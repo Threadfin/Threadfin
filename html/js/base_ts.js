@@ -17,6 +17,10 @@ clipboard.on('success', function (e) {
 clipboard.on('error', function (e) {
     console.log(e);
 });
+var popupModal = new bootstrap.Modal(document.getElementById("popup"), {
+    keyboard: true,
+    focus: true
+});
 // Menü
 var menuItems = new Array();
 menuItems.push(new MainMenuItem("playlist", "{{.mainMenu.item.playlist}}", "m3u.png", "{{.mainMenu.headline.playlist}}", "/web/playlist/"));
@@ -35,27 +39,20 @@ settingsCategory.push(new SettingsCategoryItem("{{.settings.category.streaming}}
 settingsCategory.push(new SettingsCategoryItem("{{.settings.category.backup}}", "backup.path,backup.keep"));
 settingsCategory.push(new SettingsCategoryItem("{{.settings.category.authentication}}", "authentication.web,authentication.pms,authentication.m3u,authentication.xml,authentication.api"));
 function showPopUpElement(elm) {
-    var allElements = new Array("popup-custom");
-    for (var i = 0; i < allElements.length; i++) {
-        showElement(allElements[i], false);
-    }
     showElement(elm, true);
-    setTimeout(function () {
-        showElement("popup", true);
-    }, 10);
     return;
 }
 function showElement(elmID, type) {
-    var cssClass;
-    switch (type) {
-        case true:
-            cssClass = "block";
-            break;
-        case false:
-            cssClass = "none";
-            break;
+    if (elmID == "popup-custom" || elmID == "popup") {
+        switch (type) {
+            case true:
+                popupModal.show();
+                break;
+            case false:
+                popupModal.hide();
+                break;
+        }
     }
-    document.getElementById(elmID).className = cssClass;
 }
 function changeButtonAction(element, buttonID, attribute) {
     var value = element.options[element.selectedIndex].value;
@@ -533,7 +530,6 @@ function sortSelect(elem) {
     return;
 }
 function updateLog() {
-    console.log("TOKEN");
     var server = new Server("updateLog");
     server.request(new Object());
 }

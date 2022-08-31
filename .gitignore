@@ -1,2 +1,4 @@
 
 threadfin
+vendor/*
+vendor/modules.txt

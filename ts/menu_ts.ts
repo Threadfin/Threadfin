@@ -93,6 +93,7 @@ class MainMenuItem extends MainMenu {
 class Content {
 
   DocumentID: string = "content"
+  HeaderID: string = "popup_header"
   TableID: string = "content_table"
   InactiveTableID: string = "inactive_content_table"
   DivID: string
@@ -792,17 +793,22 @@ class ShowContent extends Content {
     COLUMN_TO_SORT = -1
     // Alten Inhalt löschen
     var doc = document.getElementById(this.DocumentID)
-    console.log("DOC: " + doc)
     doc.innerHTML = ""
     showPreview(false)
 
     // Überschrift
-    console.log(this.menuID)
+    var popup_header = document.getElementById(this.HeaderID)
     var headline: string[] = menuItems[this.menuID].headline
 
     var menuKey = menuItems[this.menuID].menuKey
     var h = this.createHeadline(headline)
-    doc.appendChild(h)
+
+    var existingHeader = popup_header.querySelector('h3')
+    if(existingHeader) {
+      popup_header.replaceChild(h, existingHeader)
+    } else {
+      popup_header.appendChild(h)
+    }
 
     var hr = this.createHR()
     doc.appendChild(hr)
@@ -816,6 +822,8 @@ class ShowContent extends Content {
         var input = this.createInput("button", menuKey, "{{.button.new}}")
         input.setAttribute("id", "-")
         input.setAttribute("onclick", 'javascript: openPopUp("playlist")')
+        input.setAttribute('data-bs-toggle', 'modal')
+        input.setAttribute('data-bs-target', '#popup')
         interaction.appendChild(input)
         break;
 
@@ -823,6 +831,8 @@ class ShowContent extends Content {
         var input = this.createInput("button", menuKey, "{{.button.new}}")
         input.setAttribute("id", -1)
         input.setAttribute("onclick", 'javascript: openPopUp("filter", this)')
+        input.setAttribute('data-bs-toggle', 'modal')
+        input.setAttribute('data-bs-target', '#popup')
         interaction.appendChild(input)
         break;
 
@@ -831,6 +841,8 @@ class ShowContent extends Content {
         var input = this.createInput("button", menuKey, "{{.button.new}}")
         input.setAttribute("id", "xmltv")
         input.setAttribute("onclick", 'javascript: openPopUp("xmltv")')
+        input.setAttribute('data-bs-toggle', 'modal')
+        input.setAttribute('data-bs-target', '#popup')
         interaction.appendChild(input)
         break;
 
@@ -838,6 +850,8 @@ class ShowContent extends Content {
         var input = this.createInput("button", menuKey, "{{.button.new}}")
         input.setAttribute("id", "users")
         input.setAttribute("onclick", 'javascript: openPopUp("users")')
+        input.setAttribute('data-bs-toggle', 'modal')
+        input.setAttribute('data-bs-target', '#popup')
         interaction.appendChild(input)
         break;
 
@@ -1063,6 +1077,7 @@ class ShowContent extends Content {
 function PageReady() {
 
   var server: Server = new Server("getServerConfig")
+
   server.request(new Object())
 
   setInterval(function () {
@@ -1126,12 +1141,11 @@ function createLayout() {
       openThisMenu(log_element);
     break
     case "xmltv":
-      var log_element = document.querySelector('#main-menu li:nth-child(3)')
+      var log_element = document.querySelector('#main-menu li:nth-child(2)')
       openThisMenu(log_element);
     break
     case "filter":
-      var log_element = document.querySelector('#main-menu li:nth-child(2)')
-      console.log("ELEMENT: ", log_element)
+      var log_element = document.querySelector('#main-menu li:nth-child(3)')
       openThisMenu(log_element);
     break
     case "mapping":
@@ -1340,7 +1354,6 @@ function openPopUp(dataType, element) {
       content.createInteraction()
       // Abbrechen
       var input = content.createInput("button", "cancel", "{{.button.cancel}}")
-      input.setAttribute("onclick", 'javascript: showElement("popup", false);')
       content.addInteraction(input)
 
       // Weiter
@@ -1408,12 +1421,16 @@ function openPopUp(dataType, element) {
       } else {
         var input = content.createInput("button", "back", "{{.button.back}}")
         input.setAttribute("onclick", 'javascript: openPopUp("playlist")')
+        input.setAttribute('data-bs-toggle', 'modal')
+        input.setAttribute('data-bs-target', '#popup')
         content.addInteraction(input)
       }
 
       // Abbrechen
       var input = content.createInput("button", "cancel", "{{.button.cancel}}")
       input.setAttribute("onclick", 'javascript: showElement("popup", false);')
+      input.setAttribute('data-bs-toggle', 'modal')
+      input.setAttribute('data-bs-target', '#popup')
       content.addInteraction(input)
 
       // Aktualisieren

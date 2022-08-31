@@ -22,6 +22,11 @@ clipboard.on('error', function(e) {
   console.log(e);
 });
 
+var popupModal = new bootstrap.Modal(document.getElementById("popup"), {
+  keyboard: true,
+  focus: true
+})
+
 
 // Menü
 var menuItems = new Array()
@@ -43,30 +48,22 @@ settingsCategory.push(new SettingsCategoryItem("{{.settings.category.authenticat
 
 function showPopUpElement(elm) {
 
-  var allElements = new Array("popup-custom");
-
-  for (var i = 0; i < allElements.length; i++) {
-    showElement(allElements[i], false)
-  }
-
   showElement(elm, true)
-
-  setTimeout(function () {
-    showElement("popup", true);
-  }, 10);
 
   return
 }
 
 function showElement(elmID, type) {
-
-  var cssClass: string
-  switch (type) {
-    case true: cssClass = "block"; break;
-    case false: cssClass = "none"; break;
+  if (elmID == "popup-custom" || elmID == "popup") {
+    switch (type) {
+      case true: 
+        popupModal.show()
+        break;
+      case false: 
+        popupModal.hide()
+        break;
+    }
   }
-
-  document.getElementById(elmID).className = cssClass;
 }
 
 function changeButtonAction(element, buttonID, attribute) {
@@ -721,7 +718,6 @@ function sortSelect(elem) {
 
 function updateLog() {
 
-  console.log("TOKEN")
   var server: Server = new Server("updateLog")
   server.request(new Object())
 

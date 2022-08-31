@@ -270,7 +270,7 @@ func setDeviceID() {
 		System.DeviceID = id
 
 	default:
-		System.DeviceID = fmt.Sprintf("%s:%d", id, Settings.Tuner)
+		System.DeviceID = id
 	}
 
 	return

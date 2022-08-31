@@ -68,6 +68,7 @@ class MainMenuItem extends MainMenu {
 class Content {
     constructor() {
         this.DocumentID = "content";
+        this.HeaderID = "popup_header";
         this.TableID = "content_table";
         this.InactiveTableID = "inactive_content_table";
         this.headerClass = "content_table_header";
@@ -628,15 +629,20 @@ class ShowContent extends Content {
         COLUMN_TO_SORT = -1;
         // Alten Inhalt löschen
         var doc = document.getElementById(this.DocumentID);
-        console.log("DOC: " + doc);
         doc.innerHTML = "";
         showPreview(false);
         // Überschrift
-        console.log(this.menuID);
+        var popup_header = document.getElementById(this.HeaderID);
         var headline = menuItems[this.menuID].headline;
         var menuKey = menuItems[this.menuID].menuKey;
         var h = this.createHeadline(headline);
-        doc.appendChild(h);
+        var existingHeader = popup_header.querySelector('h3');
+        if (existingHeader) {
+            popup_header.replaceChild(h, existingHeader);
+        }
+        else {
+            popup_header.appendChild(h);
+        }
         var hr = this.createHR();
         doc.appendChild(hr);
         // Interaktion
@@ -648,24 +654,32 @@ class ShowContent extends Content {
                 var input = this.createInput("button", menuKey, "{{.button.new}}");
                 input.setAttribute("id", "-");
                 input.setAttribute("onclick", 'javascript: openPopUp("playlist")');
+                input.setAttribute('data-bs-toggle', 'modal');
+                input.setAttribute('data-bs-target', '#popup');
                 interaction.appendChild(input);
                 break;
             case "filter":
                 var input = this.createInput("button", menuKey, "{{.button.new}}");
                 input.setAttribute("id", -1);
                 input.setAttribute("onclick", 'javascript: openPopUp("filter", this)');
+                input.setAttribute('data-bs-toggle', 'modal');
+                input.setAttribute('data-bs-target', '#popup');
                 interaction.appendChild(input);
                 break;
             case "xmltv":
                 var input = this.createInput("button", menuKey, "{{.button.new}}");
                 input.setAttribute("id", "xmltv");
                 input.setAttribute("onclick", 'javascript: openPopUp("xmltv")');
+                input.setAttribute('data-bs-toggle', 'modal');
+                input.setAttribute('data-bs-target', '#popup');
                 interaction.appendChild(input);
                 break;
             case "users":
                 var input = this.createInput("button", menuKey, "{{.button.new}}");
                 input.setAttribute("id", "users");
                 input.setAttribute("onclick", 'javascript: openPopUp("users")');
+                input.setAttribute('data-bs-toggle', 'modal');
+                input.setAttribute('data-bs-target', '#popup');
                 interaction.appendChild(input);
                 break;
             case "mapping":
@@ -885,12 +899,11 @@ function createLayout() {
             openThisMenu(log_element);
             break;
         case "xmltv":
-            var log_element = document.querySelector('#main-menu li:nth-child(3)');
+            var log_element = document.querySelector('#main-menu li:nth-child(2)');
             openThisMenu(log_element);
             break;
         case "filter":
-            var log_element = document.querySelector('#main-menu li:nth-child(2)');
-            console.log("ELEMENT: ", log_element);
+            var log_element = document.querySelector('#main-menu li:nth-child(3)');
             openThisMenu(log_element);
             break;
         case "mapping":
@@ -1064,7 +1077,6 @@ function openPopUp(dataType, element) {
             content.createInteraction();
             // Abbrechen
             var input = content.createInput("button", "cancel", "{{.button.cancel}}");
-            input.setAttribute("onclick", 'javascript: showElement("popup", false);');
             content.addInteraction(input);
             // Weiter
             var input = content.createInput("button", "next", "{{.button.next}}");
@@ -1125,11 +1137,15 @@ function openPopUp(dataType, element) {
             else {
                 var input = content.createInput("button", "back", "{{.button.back}}");
                 input.setAttribute("onclick", 'javascript: openPopUp("playlist")');
+                input.setAttribute('data-bs-toggle', 'modal');
+                input.setAttribute('data-bs-target', '#popup');
                 content.addInteraction(input);
             }
             // Abbrechen
             var input = content.createInput("button", "cancel", "{{.button.cancel}}");
             input.setAttribute("onclick", 'javascript: showElement("popup", false);');
+            input.setAttribute('data-bs-toggle', 'modal');
+            input.setAttribute('data-bs-target', '#popup');
             content.addInteraction(input);
             // Aktualisieren
             if (data["id.provider"] != "-") {
