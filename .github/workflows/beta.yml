@@ -33,7 +33,7 @@ jobs:
             platforms: 'linux/amd64, linux/arm64, darwin/amd64, windows/amd64'
             package: ''
             name: 'threadfin'
-            compress: 'false'
+            compress: 'true'
             dest: 'dist'
 
       - name: Pre-Release
