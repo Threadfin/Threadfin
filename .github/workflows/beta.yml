@@ -10,10 +10,10 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     steps:
-      - name: Set up Go 1.15
+      - name: Set up Go 1.18
         uses: actions/setup-go@v3
         with:
-          go-version: 1.15
+          go-version: 1.18
         id: go
 
       - name: Check out code into the Go module directory
@@ -30,7 +30,7 @@ jobs:
       - name: Build
         uses: thatisuday/go-cross-build@v1
         with:
-            platforms: 'linux/amd64, darwin/amd64, darwin/arm64, windows/amd64'
+            platforms: 'linux/amd64, darwin/amd64, windows/amd64'
 
       - name: Pre-Release
         uses: softprops/action-gh-release@v0.1.13
