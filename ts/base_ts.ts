@@ -34,9 +34,9 @@ menuItems.push(new MainMenuItem("playlist", "{{.mainMenu.item.playlist}}", "m3u.
 menuItems.push(new MainMenuItem("xmltv", "{{.mainMenu.item.xmltv}}", "xmltv.png", "{{.mainMenu.headline.xmltv}}", "/web/xmltv/"))
 menuItems.push(new MainMenuItem("filter", "{{.mainMenu.item.filter}}", "filter.png", "{{.mainMenu.headline.filter}}", "/web/filter/"))
 menuItems.push(new MainMenuItem("mapping", "{{.mainMenu.item.mapping}}", "mapping.png", "{{.mainMenu.headline.mapping}}", "/web/mapping/"))
-menuItems.push(new MainMenuItem("users", "{{.mainMenu.item.users}}", "users.png", "{{.mainMenu.headline.users}}", "/web/users/"))
 menuItems.push(new MainMenuItem("settings", "{{.mainMenu.item.settings}}", "settings.png", "{{.mainMenu.headline.settings}}", "/web/settings/"))
 menuItems.push(new MainMenuItem("log", "{{.mainMenu.item.log}}", "log.png", "{{.mainMenu.headline.log}}", "/web/log/"))
+menuItems.push(new MainMenuItem("users", "{{.mainMenu.item.users}}", "users.png", "{{.mainMenu.headline.users}}", "/web/users/"))
 menuItems.push(new MainMenuItem("logout", "{{.mainMenu.item.logout}}", "logout.png", "{{.mainMenu.headline.logout}}", "/web/logout/"))
 
 // Kategorien für die Einstellungen
@@ -47,9 +47,7 @@ settingsCategory.push(new SettingsCategoryItem("{{.settings.category.backup}}", 
 settingsCategory.push(new SettingsCategoryItem("{{.settings.category.authentication}}", "authentication.web,authentication.pms,authentication.m3u,authentication.xml,authentication.api"))
 
 function showPopUpElement(elm) {
-
   showElement(elm, true)
-
   return
 }
 

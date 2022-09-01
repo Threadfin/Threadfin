@@ -19,9 +19,6 @@ class Server {
                 this.protocol = "wss://";
                 break;
         }
-        var tokens = getCookie("Token");
-        // console.log("CHECK: " + tokens)
-        // console.log("TOKENS: " + tokens.split(";"))
         var url = this.protocol + window.location.hostname + ":" + window.location.port + "/data/" + "?Token=" + getCookie("Token");
         data["cmd"] = this.cmd;
         var ws = new WebSocket(url);

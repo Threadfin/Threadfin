@@ -1,3 +1,7 @@
+# github.com/alexedwards/scs/v2 v2.5.0
+## explicit; go 1.12
+github.com/alexedwards/scs/v2
+github.com/alexedwards/scs/v2/memstore
 # github.com/gorilla/websocket v1.5.0
 ## explicit; go 1.12
 github.com/gorilla/websocket

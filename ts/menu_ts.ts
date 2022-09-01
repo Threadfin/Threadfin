@@ -94,6 +94,7 @@ class Content {
 
   DocumentID: string = "content"
   HeaderID: string = "popup_header"
+  FooterID: string = "popup_footer"
   TableID: string = "content_table"
   InactiveTableID: string = "inactive_content_table"
   DivID: string
@@ -1158,6 +1159,10 @@ function createLayout() {
     break
     case "log":
       var log_element = document.querySelector('#main-menu li:nth-child(6)')
+      openThisMenu(log_element);
+    break
+    case "users":
+      var log_element = document.querySelector('#main-menu li:nth-child(7)')
       openThisMenu(log_element);
     break
   }

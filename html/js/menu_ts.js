@@ -69,6 +69,7 @@ class Content {
     constructor() {
         this.DocumentID = "content";
         this.HeaderID = "popup_header";
+        this.FooterID = "popup_footer";
         this.TableID = "content_table";
         this.InactiveTableID = "inactive_content_table";
         this.headerClass = "content_table_header";
@@ -916,6 +917,10 @@ function createLayout() {
             break;
         case "log":
             var log_element = document.querySelector('#main-menu li:nth-child(6)');
+            openThisMenu(log_element);
+            break;
+        case "users":
+            var log_element = document.querySelector('#main-menu li:nth-child(7)');
             openThisMenu(log_element);
             break;
     }
