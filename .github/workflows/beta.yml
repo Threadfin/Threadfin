@@ -28,7 +28,9 @@ jobs:
           fi
 
       - name: Build
-        uses: izumin5210/action-go-crossbuild@v1
+        uses: thatisuday/go-cross-build@v1
+        with:
+            platforms: 'linux/amd64, darwin/amd64, darwin/arm64, windows/amd64'
 
       - name: Pre-Release
         uses: softprops/action-gh-release@v0.1.13
