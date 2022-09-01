@@ -28,7 +28,7 @@ jobs:
           fi
 
       - name: Build
-        uses: izumin5210/action-go-crossbuild@v1.0.0
+        uses: izumin5210/action-go-crossbuild@v1
 
       - name: Pre-Release
         uses: softprops/action-gh-release@v0.1.13
