@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	github.com/alexedwards/scs/v2 v2.5.0
+	github.com/avfs/avfs v0.30.0
 	github.com/gorilla/websocket v1.5.0
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0
 	github.com/koron/go-ssdp v0.0.3

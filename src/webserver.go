@@ -400,13 +400,18 @@ func WS(w http.ResponseWriter, r *http.Request) {
 		// Daten schreiben
 		case "saveSettings":
 			var authenticationUpdate = Settings.AuthenticationWEB
+			var previousStoreBufferInRAM = Settings.StoreBufferInRAM
+
 			response.Settings, err = updateServerSettings(request)
 			if err == nil {
 
 				response.OpenMenu = strconv.Itoa(indexOfString("settings", System.WEB.Menu))
 
-				if Settings.AuthenticationWEB == true && authenticationUpdate == false {
+				if Settings.AuthenticationWEB && !authenticationUpdate {
 					response.Reload = true
+				}
+				if Settings.StoreBufferInRAM != previousStoreBufferInRAM {
+					initBufferVFS(Settings.StoreBufferInRAM)
 				}
 
 			}
