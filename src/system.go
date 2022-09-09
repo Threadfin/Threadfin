@@ -234,9 +234,9 @@ func setGlobalDomain(domain string) {
 
 	switch Settings.AuthenticationM3U {
 	case true:
-		System.Addresses.M3U = System.ServerProtocol.M3U + "://" + System.Domain + "/m3u/threadfin.m3u?username=xxx&password=yyy<br>(Specific groups: [http://...&group-title=foo,bar])"
+		System.Addresses.M3U = System.ServerProtocol.M3U + "://" + System.Domain + "/m3u/threadfin.m3u?username=xxx&password=yyy"
 	case false:
-		System.Addresses.M3U = System.ServerProtocol.M3U + "://" + System.Domain + "/m3u/threadfin.m3u     (Specific groups: [http://...?group-title=foo,bar])"
+		System.Addresses.M3U = System.ServerProtocol.M3U + "://" + System.Domain + "/m3u/threadfin.m3u"
 	}
 
 	switch Settings.AuthenticationXML {

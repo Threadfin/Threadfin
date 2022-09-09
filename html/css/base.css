@@ -106,10 +106,7 @@ label {
 
 li {
   list-style-type: none;
-  background-color: #111;
-  padding: 10px 20px;
   cursor: pointer;
-  border-left: solid 2px #111;
   transition: all 0.3;
 }
 
@@ -137,7 +134,7 @@ select:focus {
 
 input {
   -webkit-appearance: none;
-  margin: 5px 0px;
+  margin: 0px;
   padding: 2.5px 10px;
   outline: none;
   font-size: 14px;
@@ -214,6 +211,16 @@ input[type="checkbox"]:checked:before {
   left: 0px;
   margin-left: -3px;
   content: "✓";
+  color: #000;
+}
+
+input[type="checkbox"].bulk:checked:before {
+  position: relative;
+  left: 0px;
+  top: -11px;
+  margin-left: -3px;
+  content: "✓";
+  font-size: 1.5em;
   color: #000;
 }
 
