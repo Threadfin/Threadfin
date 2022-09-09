@@ -132,6 +132,7 @@ func loadSettings() (settings SettingsStruct, err error) {
 	defaults["m3u8.adaptive.bandwidth.mbps"] = 10
 	defaults["port"] = "34400"
 	defaults["ssdp"] = true
+	defaults["storeBufferInRAM"] = false
 	defaults["tuner"] = 1
 	defaults["update"] = []string{"0000"}
 	defaults["user.agent"] = System.Name
@@ -170,6 +171,9 @@ func loadSettings() (settings SettingsStruct, err error) {
 	if len(settings.VLCPath) == 0 {
 		settings.VLCPath = searchFileInOS("cvlc")
 	}
+
+	// Initialze virutal filesystem for the Buffer
+	initBufferVFS(settings.StoreBufferInRAM)
 
 	settings.Version = System.DBVersion
 

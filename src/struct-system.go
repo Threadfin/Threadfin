@@ -309,6 +309,7 @@ type SettingsStruct struct {
 	XepgReplaceMissingImages  bool                  `json:"xepg.replace.missing.images"`
 	XepgReplaceChannelTitle   bool                  `json:"xepg.replace.channel.title"`
 	ThreadfinAutoUpdate       bool                  `json:"ThreadfinAutoUpdate"`
+	StoreBufferInRAM          bool                  `json:"storeBufferInRAM"`
 }
 
 // LanguageUI : Sprache für das WebUI
