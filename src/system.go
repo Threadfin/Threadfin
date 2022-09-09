@@ -130,7 +130,6 @@ func loadSettings() (settings SettingsStruct, err error) {
 	defaults["xepg.replace.missing.images"] = true
 	defaults["xepg.replace.channel.title"] = false
 	defaults["m3u8.adaptive.bandwidth.mbps"] = 10
-	defaults["storeBufferInRAM"] = false
 	defaults["port"] = "34400"
 	defaults["ssdp"] = true
 	defaults["tuner"] = 1
@@ -171,9 +170,6 @@ func loadSettings() (settings SettingsStruct, err error) {
 	if len(settings.VLCPath) == 0 {
 		settings.VLCPath = searchFileInOS("cvlc")
 	}
-
-	// Initialze virutal filesystem for the Buffer
-	initBufferVFS(settings.StoreBufferInRAM)
 
 	settings.Version = System.DBVersion
 
@@ -216,7 +212,7 @@ func saveSettings(settings SettingsStruct) (err error) {
 	Settings = settings
 
 	if System.Dev == true {
-		Settings.UUID = "2019-01-DEV-Threadfin"
+		Settings.UUID = "2019-01-DEV-Threadfin!"
 	}
 
 	setDeviceID()
@@ -274,7 +270,7 @@ func setDeviceID() {
 		System.DeviceID = id
 
 	default:
-		System.DeviceID = id
+		System.DeviceID = fmt.Sprintf("%s:%d", id, Settings.Tuner)
 	}
 
 	return

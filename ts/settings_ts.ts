@@ -272,20 +272,6 @@ class SettingsCategory {
         setting.appendChild(tdRight)
         break
 
-      case "storeBufferInRAM":
-        var tdLeft = document.createElement("TD")
-        tdLeft.innerHTML = "{{.settings.storeBufferInRAM.title}}" + ":"
-
-        var tdRight = document.createElement("TD")
-        var input = content.createCheckbox(settingsKey)
-        input.checked = data
-        input.setAttribute("onchange", "javascript: this.className = 'changed'")
-        tdRight.appendChild(input)
-
-        setting.appendChild(tdLeft)
-        setting.appendChild(tdRight)
-        break
-
       case "ThreadfinAutoUpdate":
         var tdLeft = document.createElement("TD")
         tdLeft.innerHTML = "{{.settings.ThreadfinAutoUpdate.title}}" + ":"
@@ -472,10 +458,6 @@ class SettingsCategory {
 
       case "buffer.size.kb":
         text = "{{.settings.bufferSize.description}}"
-        break
-
-      case "storeBufferInRAM":
-        text = "{{.settings.storeBufferInRAM.description}}"
         break
 
       case "buffer.timeout":

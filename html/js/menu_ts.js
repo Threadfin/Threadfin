@@ -14,31 +14,18 @@ class MainMenu {
         element.innerHTML = value;
         return element;
     }
-    createLink(url, value, src) {
-        var element = document.createElement("A");
-        element.setAttribute('href', url);
-        element.setAttribute('class', "nav-link");
-        var img = document.createElement("IMG");
-        img.setAttribute("src", this.ImagePath + src);
-        element.appendChild(img);
-        var p = document.createElement("P");
-        p.innerHTML = value;
-        element.appendChild(p);
-        return element;
-    }
 }
 class MainMenuItem extends MainMenu {
-    constructor(menuKey, value, image, headline, url) {
+    constructor(menuKey, value, image, headline) {
         super();
         this.menuKey = menuKey;
         this.value = value;
         this.imgSrc = image;
         this.headline = headline;
-        this.url = url;
     }
     createItem() {
         var item = document.createElement("LI");
-        // item.setAttribute("onclick", "javascript: openThisMenu(this)")
+        item.setAttribute("onclick", "javascript: openThisMenu(this)");
         item.setAttribute("id", this.id);
         item.setAttribute("class", "nav-item");
         var img = this.createIMG(this.imgSrc);
@@ -542,6 +529,7 @@ class Content {
                         rows.push(tr);
                     }
                 });
+                savePopupData("mapping", "", false, 0);
                 break;
             case "settings":
                 alert();
@@ -856,6 +844,9 @@ class ShowContent extends Content {
 function PageReady() {
     var server = new Server("getServerConfig");
     server.request(new Object());
+    window.addEventListener("resize", function () {
+        calculateWrapperHeight();
+    }, true);
     setInterval(function () {
         updateLog();
     }, 10000);
@@ -895,43 +886,13 @@ function createLayout() {
                 break;
         }
     }
-    var pathArray = window.location.pathname.split('/');
-    switch (pathArray[2]) {
-        case "playlist":
-            var log_element = document.querySelector('#main-menu li:nth-child(1)');
-            openThisMenu(log_element);
-            break;
-        case "xmltv":
-            var log_element = document.querySelector('#main-menu li:nth-child(2)');
-            openThisMenu(log_element);
-            break;
-        case "filter":
-            var log_element = document.querySelector('#main-menu li:nth-child(3)');
-            openThisMenu(log_element);
-            break;
-        case "mapping":
-            var log_element = document.querySelector('#main-menu li:nth-child(4)');
-            openThisMenu(log_element);
-            break;
-        case "settings":
-            var log_element = document.querySelector('#main-menu li:nth-child(5)');
-            openThisMenu(log_element);
-            break;
-        case "log":
-            var log_element = document.querySelector('#main-menu li:nth-child(6)');
-            openThisMenu(log_element);
-            break;
-        case "users":
-            var log_element = document.querySelector('#main-menu li:nth-child(7)');
-            openThisMenu(log_element);
-            break;
-    }
     return;
 }
 function openThisMenu(element) {
     var id = element.id;
     var content = new ShowContent(id);
     content.show();
+    calculateWrapperHeight();
     enableGroupSelection(".bulk");
     return;
 }
@@ -1084,6 +1045,7 @@ function openPopUp(dataType, element) {
             content.createInteraction();
             // Abbrechen
             var input = content.createInput("button", "cancel", "{{.button.cancel}}");
+            input.setAttribute("onclick", 'javascript: showElement("popup", false);');
             content.addInteraction(input);
             // Weiter
             var input = content.createInput("button", "next", "{{.button.next}}");
@@ -1144,15 +1106,11 @@ function openPopUp(dataType, element) {
             else {
                 var input = content.createInput("button", "back", "{{.button.back}}");
                 input.setAttribute("onclick", 'javascript: openPopUp("playlist")');
-                input.setAttribute('data-bs-toggle', 'modal');
-                input.setAttribute('data-bs-target', '#popup');
                 content.addInteraction(input);
             }
             // Abbrechen
             var input = content.createInput("button", "cancel", "{{.button.cancel}}");
             input.setAttribute("onclick", 'javascript: showElement("popup", false);');
-            input.setAttribute('data-bs-toggle', 'modal');
-            input.setAttribute('data-bs-target', '#popup');
             content.addInteraction(input);
             // Aktualisieren
             if (data["id.provider"] != "-") {

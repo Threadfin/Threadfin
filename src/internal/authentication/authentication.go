@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -212,7 +211,7 @@ func CreateNewUser(username, password string) (userID string, err error) {
 }
 
 // UserAuthentication : user authentication
-func UserAuthentication(username, password string) (token string, userId string, err error) {
+func UserAuthentication(username, password string) (token string, err error) {
 
 	err = checkInit()
 	if err != nil {
@@ -240,7 +239,6 @@ func UserAuthentication(username, password string) (token string, userId string,
 		err = login(username, password, loginData.(map[string]interface{}))
 		if err == nil {
 			token = setToken(id, "-")
-			userId = id
 			return
 		}
 	}
@@ -250,15 +248,18 @@ func UserAuthentication(username, password string) (token string, userId string,
 
 // CheckTheValidityOfTheToken : check token
 func CheckTheValidityOfTheToken(token string) (newToken string, err error) {
+
 	err = checkInit()
 	if err != nil {
 		return
 	}
 
 	err = createError(011)
+
 	if v, ok := tokens[token]; ok {
 		var expires = v.(map[string]interface{})["expires"].(time.Time)
 		var userID = v.(map[string]interface{})["id"].(string)
+
 		if expires.Sub(time.Now().Local()) < 0 {
 			return
 		}
@@ -286,9 +287,7 @@ func GetUserID(token string) (userID string, err error) {
 
 	if v, ok := tokens[token]; ok {
 		var expires = v.(map[string]interface{})["expires"].(time.Time)
-		log.Println("EXPIRES: ", expires)
 		userID = v.(map[string]interface{})["id"].(string)
-		log.Println("USER ID: ", userID)
 
 		if expires.Sub(time.Now().Local()) < 0 {
 			return
@@ -586,10 +585,8 @@ func mapToJSON(tmpMap interface{}) string {
 
 // SetCookieToken : set cookie
 func SetCookieToken(w http.ResponseWriter, token string) http.ResponseWriter {
-	if token != "" {
-		expiration := time.Now().Add(time.Minute * time.Duration(tokenValidity))
-		cookie := http.Cookie{Name: "Token", Value: token, Expires: expiration}
-		http.SetCookie(w, &cookie)
-	}
+	expiration := time.Now().Add(time.Minute * time.Duration(tokenValidity))
+	cookie := http.Cookie{Name: "Token", Value: token, Expires: expiration}
+	http.SetCookie(w, &cookie)
 	return w
 }

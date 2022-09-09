@@ -7,40 +7,31 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	"regexp"
 	"strconv"
 	"strings"
-	"time"
 
 	"threadfin/src/internal/authentication"
 
-	"github.com/alexedwards/scs/v2"
 	"github.com/gorilla/websocket"
 )
-
-var sessionManager *scs.SessionManager
 
 // StartWebserver : Startet den Webserver
 func StartWebserver() (err error) {
 
 	var port = Settings.Port
 
-	sessionManager = scs.New()
-	sessionManager.Lifetime = 24 * time.Hour
-
-	mux := http.NewServeMux()
-	mux.HandleFunc("/", Index)
-	mux.HandleFunc("/stream/", Stream)
-	mux.HandleFunc("/xmltv/", Threadfin)
-	mux.HandleFunc("/m3u/", Threadfin)
-	mux.HandleFunc("/data/", WS)
-	mux.HandleFunc("/web/", Web)
-	mux.HandleFunc("/download/", Download)
-	mux.HandleFunc("/api/", API)
-	mux.HandleFunc("/images/", Images)
-	mux.HandleFunc("/data_images/", DataImages)
-	mux.HandleFunc("/ppv/enable", enablePPV)
-	mux.HandleFunc("/ppv/disable", disablePPV)
+	http.HandleFunc("/", Index)
+	http.HandleFunc("/stream/", Stream)
+	http.HandleFunc("/xmltv/", Threadfin)
+	http.HandleFunc("/m3u/", Threadfin)
+	http.HandleFunc("/data/", WS)
+	http.HandleFunc("/web/", Web)
+	http.HandleFunc("/download/", Download)
+	http.HandleFunc("/api/", API)
+	http.HandleFunc("/images/", Images)
+	http.HandleFunc("/data_images/", DataImages)
+	http.HandleFunc("/ppv/enable", enablePPV)
+	http.HandleFunc("/ppv/disable", disablePPV)
 
 	//http.HandleFunc("/auto/", Auto)
 
@@ -60,7 +51,7 @@ func StartWebserver() (err error) {
 
 	}
 
-	if err = http.ListenAndServe(":"+port, sessionManager.LoadAndSave(mux)); err != nil {
+	if err = http.ListenAndServe(":"+port, nil); err != nil {
 		ShowError(err, 1001)
 		return
 	}
@@ -338,7 +329,7 @@ func WS(w http.ResponseWriter, r *http.Request) {
 	var response ResponseStruct
 	response.Status = true
 
-	// var newToken string
+	var newToken string
 
 	/*
 		if r.Header.Get("Origin") != "http://"+r.Host {
@@ -371,9 +362,32 @@ func WS(w http.ResponseWriter, r *http.Request) {
 			// Token Authentication
 			case true:
 
-				// token := sessionManager.GetString(r.Context(), "session_token")
-				// userID := sessionManager.GetString(r.Context(), "userID")
-				// response.Users = userID
+				var token string
+				tokens, ok := r.URL.Query()["Token"]
+
+				if !ok || len(tokens[0]) < 1 {
+					token = "-"
+				} else {
+					token = tokens[0]
+				}
+
+				newToken, err = tokenAuthentication(token)
+				if err != nil {
+
+					response.Status = false
+					response.Reload = true
+					response.Error = err.Error()
+					request.Cmd = "-"
+
+					if err = conn.WriteJSON(response); err != nil {
+						ShowError(err, 1102)
+					}
+
+					return
+				}
+
+				response.Token = newToken
+				response.Users, _ = authentication.GetAllUserData()
 
 			}
 
@@ -400,18 +414,13 @@ func WS(w http.ResponseWriter, r *http.Request) {
 		// Daten schreiben
 		case "saveSettings":
 			var authenticationUpdate = Settings.AuthenticationWEB
-			var previousStoreBufferInRAM = Settings.StoreBufferInRAM
-
 			response.Settings, err = updateServerSettings(request)
 			if err == nil {
 
 				response.OpenMenu = strconv.Itoa(indexOfString("settings", System.WEB.Menu))
 
-				if Settings.AuthenticationWEB && !authenticationUpdate {
+				if Settings.AuthenticationWEB == true && authenticationUpdate == false {
 					response.Reload = true
-				}
-				if Settings.StoreBufferInRAM != previousStoreBufferInRAM {
-					initBufferVFS(Settings.StoreBufferInRAM)
 				}
 
 			}
@@ -587,26 +596,7 @@ func Web(w http.ResponseWriter, r *http.Request) {
 	var lang = make(map[string]interface{})
 	var err error
 
-	var requestFile string
-	var re = regexp.MustCompile(`^(/web/)+([A-Za-z0-9]*)`)
-	match := re.FindStringSubmatch(r.URL.Path)
-	if len(match) != 0 {
-		if match[2] == "" {
-			requestFile = strings.Replace(r.URL.Path, "/web", "html", -1)
-		} else {
-			if match[2] != "css" && match[2] != "js" && match[2] != "img" {
-				requestFile = strings.Replace(r.URL.Path, match[2], "", 1)
-				requestFile = strings.Replace(requestFile, match[1], "html", -1)
-			} else {
-				requestFile = strings.Replace(r.URL.Path, "/web", "html", -1)
-			}
-		}
-	}
-
-	if match[2] == "logout" {
-		sessionManager.Destroy(r.Context())
-	}
-
+	var requestFile = strings.Replace(r.URL.Path, "/web", "html", -1)
 	var content, contentType, file string
 
 	var language LanguageUI
@@ -664,6 +654,7 @@ func Web(w http.ResponseWriter, r *http.Request) {
 
 		switch Settings.AuthenticationWEB {
 		case true:
+
 			var username, password, confirm string
 			switch r.Method {
 			case "POST":
@@ -686,9 +677,7 @@ func Web(w http.ResponseWriter, r *http.Request) {
 					}
 					// Redirect, damit die Daten aus dem Browser gelöscht werden.
 					w = authentication.SetCookieToken(w, token)
-					sessionManager.Put(r.Context(), "session_token", token)
-
-					http.Redirect(w, r, "/web", http.StatusFound)
+					http.Redirect(w, r, "/web", 301)
 					return
 
 				}
@@ -696,51 +685,50 @@ func Web(w http.ResponseWriter, r *http.Request) {
 				// Benutzername und Passwort vorhanden, wird jetzt überprüft
 				if len(username) > 0 && len(password) > 0 {
 
-					var token, userID, err = authentication.UserAuthentication(username, password)
+					var token, err = authentication.UserAuthentication(username, password)
 					if err != nil {
 						file = requestFile + "login.html"
 						lang["authenticationErr"] = language.Login.Failed
 						break
 					}
 
-					sessionManager.Put(r.Context(), "session_token", token)
-					sessionManager.Put(r.Context(), "userID", userID)
 					w = authentication.SetCookieToken(w, token)
-					http.Redirect(w, r, "/web", 301)
+					http.Redirect(w, r, "/web", 301) // Redirect, damit die Daten aus dem Browser gelöscht werden.
 
 				} else {
 					w = authentication.SetCookieToken(w, "-")
-					http.Redirect(w, r, "/web", 301)
+					http.Redirect(w, r, "/web", 301) // Redirect, damit die Daten aus dem Browser gelöscht werden.
 				}
 
 				return
 
 			case "GET":
 				lang["authenticationErr"] = ""
-				// _, token, err := authentication.CheckTheValidityOfTheTokenFromHTTPHeader(w, r)
-				token := sessionManager.GetString(r.Context(), "session_token")
-				if token == "" {
+				_, token, err := authentication.CheckTheValidityOfTheTokenFromHTTPHeader(w, r)
+
+				if err != nil {
 					file = requestFile + "login.html"
 					break
 				}
-				userID := sessionManager.GetString(r.Context(), "userID")
-				if userID == "" {
+
+				err = checkAuthorizationLevel(token, "authentication.web")
+				if err != nil {
 					file = requestFile + "login.html"
 					break
 				}
 
 			}
 
-			// allUserData, err := authentication.GetAllUserData()
-			// if err != nil {
-			// 	ShowError(err, 000)
-			// 	httpStatusError(w, r, 403)
-			// 	return
-			// }
+			allUserData, err := authentication.GetAllUserData()
+			if err != nil {
+				ShowError(err, 000)
+				httpStatusError(w, r, 403)
+				return
+			}
 
-			// if len(allUserData) == 0 && Settings.AuthenticationWEB == true {
-			// 	file = requestFile + "create-first-user.html"
-			// }
+			if len(allUserData) == 0 && Settings.AuthenticationWEB == true {
+				file = requestFile + "create-first-user.html"
+			}
 
 		}
 
@@ -891,7 +879,7 @@ func API(w http.ResponseWriter, r *http.Request) {
 		switch len(request.Token) {
 		case 0:
 			if request.Cmd == "login" {
-				token, _, err = authentication.UserAuthentication(request.Username, request.Password)
+				token, err = authentication.UserAuthentication(request.Username, request.Password)
 				if err != nil {
 					responseAPIError(err)
 					return

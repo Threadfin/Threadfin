@@ -1,13 +1,3 @@
-# github.com/alexedwards/scs/v2 v2.5.0
-## explicit; go 1.12
-github.com/alexedwards/scs/v2
-github.com/alexedwards/scs/v2/memstore
-# github.com/avfs/avfs v0.30.0
-## explicit; go 1.17
-github.com/avfs/avfs
-github.com/avfs/avfs/idm/osidm
-github.com/avfs/avfs/vfs/memfs
-github.com/avfs/avfs/vfs/osfs
 # github.com/gorilla/websocket v1.5.0
 ## explicit; go 1.12
 github.com/gorilla/websocket

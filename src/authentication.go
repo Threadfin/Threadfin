@@ -3,7 +3,6 @@ package src
 import (
 	"encoding/base64"
 	"errors"
-	"log"
 	"net/http"
 	"strings"
 
@@ -38,7 +37,7 @@ func createFirstUserForAuthentication(username, password string) (token string, 
 	err = authentication.CreateDefaultUser(username, password)
 	authenticationErr(err)
 
-	token, _, err = authentication.UserAuthentication(username, password)
+	token, err = authentication.UserAuthentication(username, password)
 	authenticationErr(err)
 
 	token, err = authentication.CheckTheValidityOfTheToken(token)
@@ -89,7 +88,7 @@ func basicAuth(r *http.Request, level string) (username string, err error) {
 	username = pair[0]
 	var password = pair[1]
 
-	token, _, err := authentication.UserAuthentication(username, password)
+	token, err := authentication.UserAuthentication(username, password)
 
 	if err != nil {
 		return
@@ -111,7 +110,7 @@ func urlAuth(r *http.Request, requestType string) (err error) {
 	case "m3u":
 		level = "authentication.m3u"
 		if Settings.AuthenticationM3U == true {
-			token, _, err = authentication.UserAuthentication(username, password)
+			token, err = authentication.UserAuthentication(username, password)
 			if err != nil {
 				return
 			}
@@ -121,7 +120,7 @@ func urlAuth(r *http.Request, requestType string) (err error) {
 	case "xml":
 		level = "authentication.xml"
 		if Settings.AuthenticationXML == true {
-			token, _, err = authentication.UserAuthentication(username, password)
+			token, err = authentication.UserAuthentication(username, password)
 			if err != nil {
 				return
 			}
@@ -142,8 +141,6 @@ func checkAuthorizationLevel(token, level string) (err error) {
 	}
 
 	userID, err := authentication.GetUserID(token)
-	log.Println("USER: ", userID)
-	log.Println("ERR: ", err)
 	authenticationErr(err)
 
 	userData, err := authentication.ReadUserData(userID)

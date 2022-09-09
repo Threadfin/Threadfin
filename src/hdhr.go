@@ -50,8 +50,8 @@ func getCapability() (xmlContent []byte, err error) {
 	capability.Device.DeviceType = "urn:schemas-upnp-org:device:MediaServer:1"
 	capability.Device.FriendlyName = System.Name
 	capability.Device.Manufacturer = "Silicondust"
-	capability.Device.ModelName = "HDHR5-4K"
-	capability.Device.ModelNumber = "HDHR5-4K"
+	capability.Device.ModelName = "HDTC-2US"
+	capability.Device.ModelNumber = "HDTC-2US"
 	capability.Device.SerialNumber = ""
 	capability.Device.UDN = "uuid:" + System.DeviceID
 

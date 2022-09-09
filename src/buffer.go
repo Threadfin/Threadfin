@@ -12,7 +12,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -22,9 +21,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/avfs/avfs/vfs/memfs"
-	"github.com/avfs/avfs/vfs/osfs"
 )
 
 func createStreamID(stream map[int]ThisStream) (streamID int) {
@@ -63,16 +59,17 @@ func bufferingStream(playlistID, streamingURL, channelName string, w http.Respon
 	//w.Header().Set("Connection", "keep-alive")
 	w.Header().Set("Connection", "close")
 
-	// Check if the playlist is already in use
+	// Überprüfen ob die Playlist schon verwendet wird
 	if p, ok := BufferInformation.Load(playlistID); !ok {
 
 		var playlistType string
-		//Playlist is not used yet, create default values ​​for the playlist
+		// Playlist wird noch nicht verwendet, Default-Werte für die Playlist erstellen
 		playlist.Folder = System.Folder.Temp + playlistID + string(os.PathSeparator)
 		playlist.PlaylistID = playlistID
 		playlist.Streams = make(map[int]ThisStream)
 		playlist.Clients = make(map[int]ThisClient)
-		err := checkVFSFolder(playlist.Folder, bufferVFS)
+
+		err := checkFolder(playlist.Folder)
 		if err != nil {
 			ShowError(err, 000)
 			httpStatusError(w, r, 404)
@@ -93,7 +90,7 @@ func bufferingStream(playlistID, streamingURL, channelName string, w http.Respon
 
 		playlist.PlaylistName = getProviderParameter(playlist.PlaylistID, playlistType, "name")
 
-		//Create default values ​​for the stream
+		// Default-Werte für den Stream erstellen
 		streamID = createStreamID(playlist.Streams)
 
 		client.Connection = 1
@@ -108,8 +105,8 @@ func bufferingStream(playlistID, streamingURL, channelName string, w http.Respon
 
 	} else {
 
-		//Playlist is already in use for streaming
-		//Check if the URL is already streaming from another client.
+		// Playlist wird bereits zum streamen verwendet
+		// Überprüfen ob die URL bereit von einem anderen Client gestreamt wird.
 
 		playlist = p.(Playlist)
 
@@ -148,10 +145,10 @@ func bufferingStream(playlistID, streamingURL, channelName string, w http.Respon
 
 		}
 
-		// New stream for an already active playlist
+		// Neuer Stream bei einer bereits aktiven Playlist
 		if newStream == true {
 
-			// Check whether the playlist allows another stream (tuner)
+			// Prüfen ob die Playlist noch einen weiteren Stream erlaubt (Tuner)
 			if len(playlist.Streams) >= playlist.Tuner {
 
 				showInfo(fmt.Sprintf("Streaming Status:Playlist: %s - No new connections available. Tuner = %d", playlist.PlaylistName, playlist.Tuner))
@@ -177,8 +174,8 @@ func bufferingStream(playlistID, streamingURL, channelName string, w http.Respon
 				return
 			}
 
-			//Playlist allows another stream (tuner limit not reached yet)
-			//Create default values ​​for the stream
+			// Playlist erlaubt einen weiterern Stream (Das Limit des Tuners ist noch nicht erreicht)
+			// Default-Werte für den Stream erstellen
 			stream = ThisStream{}
 			client = ThisClient{}
 
@@ -198,10 +195,10 @@ func bufferingStream(playlistID, streamingURL, channelName string, w http.Respon
 
 	}
 
-	//Check if the stream is already being played by another client
+	// Überprüfen ob der Stream breits von einem anderen Client abgespielt wird
 	if playlist.Streams[streamID].Status == false && newStream == true {
 
-		//New buffer is required
+		// Neuer Buffer wird benötigt
 		stream = playlist.Streams[streamID]
 		stream.MD5 = getMD5(streamingURL)
 		stream.Folder = playlist.Folder + stream.MD5 + string(os.PathSeparator)
@@ -233,7 +230,7 @@ func bufferingStream(playlistID, streamingURL, channelName string, w http.Respon
 
 	w.WriteHeader(200)
 
-	for { //Loop 1: Waiting until the first segment has been downloaded through the buffer
+	for { // Loop 1: Warten bis das erste Segment durch den Buffer heruntergeladen wurde
 
 		if p, ok := BufferInformation.Load(playlistID); ok {
 
@@ -263,8 +260,9 @@ func bufferingStream(playlistID, streamingURL, channelName string, w http.Respon
 
 				var oldSegments []string
 
-				for { //Loop 2: Temporary files are present, data can be sent to the client
-					//Monitor HTTP client connection
+				for { // Loop 2: Temporäre Datein sind vorhanden, Daten können zum Client gesendet werden
+
+					// HTTP Clientverbindung überwachen
 
 					cn, ok := w.(http.CloseNotifier)
 					if ok {
@@ -295,17 +293,17 @@ func bufferingStream(playlistID, streamingURL, channelName string, w http.Respon
 
 					}
 
-					if _, err := bufferVFS.Stat(stream.Folder); fsIsNotExistErr(err) {
+					if _, err := os.Stat(stream.Folder); os.IsNotExist(err) {
 						killClientConnection(streamID, playlistID, false)
 						return
 					}
 
-					var tmpFiles = getBufTmpFiles(&stream)
+					var tmpFiles = getTmpFiles(&stream)
 					//fmt.Println("Buffer Loop:", stream.Connection)
 
 					for _, f := range tmpFiles {
 
-						if _, err := bufferVFS.Stat(stream.Folder); fsIsNotExistErr(err) {
+						if _, err := os.Stat(stream.Folder); os.IsNotExist(err) {
 							killClientConnection(streamID, playlistID, false)
 							return
 						}
@@ -314,7 +312,7 @@ func bufferingStream(playlistID, streamingURL, channelName string, w http.Respon
 
 						var fileName = stream.Folder + f
 
-						file, err := bufferVFS.Open(fileName)
+						file, err := os.Open(fileName)
 						defer file.Close()
 
 						if err == nil {
@@ -355,17 +353,12 @@ func bufferingStream(playlistID, streamingURL, channelName string, w http.Respon
 									if err != nil {
 										file.Close()
 										killClientConnection(streamID, playlistID, false)
-										debug = fmt.Sprintf("Buffer Error: (%s)", err)
-										showDebug(debug, 2)
 										return
 									}
 
 									file.Close()
 									streaming = true
 
-								} else {
-									debug = fmt.Sprintf("Stream Error: (%s)", err)
-									showDebug(debug, 2)
 								}
 
 								file.Close()
@@ -377,9 +370,7 @@ func bufferingStream(playlistID, streamingURL, channelName string, w http.Respon
 							if n > 20 {
 
 								var fileToRemove = stream.Folder + oldSegments[0]
-								if err = bufferVFS.RemoveAll(getPlatformFile(fileToRemove)); err != nil {
-									ShowError(err, 4007)
-								}
+								os.RemoveAll(getPlatformFile(fileToRemove))
 								oldSegments = append(oldSegments[:0], oldSegments[0+1:]...)
 
 							}
@@ -394,31 +385,31 @@ func bufferingStream(playlistID, streamingURL, channelName string, w http.Respon
 						time.Sleep(time.Duration(100) * time.Millisecond)
 					}
 
-				} //End Loop 2
+				} // Ende Loop 2
 
 			} else {
 
-				//Stream not available
+				// Stream nicht vorhanden
 				killClientConnection(streamID, stream.PlaylistID, false)
 				showInfo(fmt.Sprintf("Streaming Status:Playlist: %s - Tuner: %d / %d", playlist.PlaylistName, len(playlist.Streams), playlist.Tuner))
 				return
 
 			}
 
-		} //End BufferInformation
+		} // Ende BufferInformation
 
-	} //End Loop 1
+	} // Ende Loop 1
 
 }
 
-func getBufTmpFiles(stream *ThisStream) (tmpFiles []string) {
+func getTmpFiles(stream *ThisStream) (tmpFiles []string) {
 
 	var tmpFolder = stream.Folder
 	var fileIDs []float64
 
-	if _, err := bufferVFS.Stat(tmpFolder); !fsIsNotExistErr(err) {
+	if _, err := os.Stat(tmpFolder); !os.IsNotExist(err) {
 
-		files, err := bufferVFS.ReadDir(getPlatformPath(tmpFolder))
+		files, err := ioutil.ReadDir(getPlatformPath(tmpFolder))
 		if err != nil {
 			ShowError(err, 000)
 			return
@@ -520,9 +511,7 @@ func clientConnection(stream ThisStream) (status bool) {
 		debug = fmt.Sprintf("Remove tmp folder:%s", stream.Folder)
 		showDebug(debug, 1)
 
-		if err := bufferVFS.RemoveAll(stream.Folder); err != nil {
-			ShowError(err, 4005)
-		}
+		os.RemoveAll(stream.Folder)
 
 		if p, ok := BufferInformation.Load(stream.PlaylistID); ok {
 
@@ -558,7 +547,7 @@ func connectToStreamingServer(streamID int, playlistID string) {
 		var m3u8Segments []string
 		var bandwidth BandwidthCalculation
 		var networkBandwidth = Settings.M3U8AdaptiveBandwidthMBPS * 1e+6
-		//Buffer size
+		// Größe des Buffers
 		var bufferSize = Settings.BufferSize
 		var buffer = make([]byte, 1024*bufferSize*2)
 
@@ -603,18 +592,16 @@ func connectToStreamingServer(streamID int, playlistID string) {
 
 		}
 
-		if err := bufferVFS.RemoveAll(getPlatformPath(tmpFolder)); err != nil {
-			ShowError(err, 4005)
-		}
+		os.RemoveAll(getPlatformPath(tmpFolder))
 
-		err := checkVFSFolder(tmpFolder, bufferVFS)
+		err := checkFolder(tmpFolder)
 		if err != nil {
 			ShowError(err, 0)
 			addErrorToStream(err)
 			return
 		}
 
-		//M3U8 segments
+		// M3U8 Segmente
 	InitBuffer:
 		defaultSegment()
 
@@ -666,7 +653,7 @@ func connectToStreamingServer(streamID int, playlistID string) {
 			debug = fmt.Sprintf("Connection to:%s", currentURL)
 			showDebug(debug, 2)
 
-			//Jump for redirect (301 <---> 308)
+			// Sprung für Redirect (301 <---> 308)
 		Redirect:
 
 			req, err := http.NewRequest("GET", currentURL, nil)
@@ -749,7 +736,7 @@ func connectToStreamingServer(streamID int, playlistID string) {
 
 			defer resp.Body.Close()
 
-			//Check HTTP status, in case of errors the stream is terminated
+			// HTTP Status überprüfen, bei Fehlern wird der Stream beendet
 			var contentType = resp.Header.Get("Content-Type")
 			var httpStatusCode = resp.StatusCode
 			var httpStatusInfo = fmt.Sprintf("HTTP Response Status [%d] %s", httpStatusCode, http.StatusText(resp.StatusCode))
@@ -776,7 +763,7 @@ func connectToStreamingServer(streamID int, playlistID string) {
 				return
 			}
 
-			//Read out information about the streaming server
+			// Informationen über den Streamingserver auslesen
 			if stream.Status == false {
 
 				if len(stream.URLStreamingServer) == 0 {
@@ -810,7 +797,7 @@ func connectToStreamingServer(streamID int, playlistID string) {
 
 			}
 
-			//Clean up content types
+			// Content Type bereinigen
 			if len(contentType) > 0 {
 				var ct = strings.SplitN(contentType, ";", 2)
 				contentType = strings.ToLower(ct[0])
@@ -818,7 +805,7 @@ func connectToStreamingServer(streamID int, playlistID string) {
 
 			switch contentType {
 
-			//M3U8 Playlist
+			// M3U8 Playlist
 			case "application/x-mpegurl", "application/vnd.apple.mpegurl", "audio/mpegurl", "audio/x-mpegurl":
 				body, err := ioutil.ReadAll(resp.Body)
 				if err != nil {
@@ -841,7 +828,7 @@ func connectToStreamingServer(streamID int, playlistID string) {
 
 				var fileSize int
 
-				//Buffer size
+				// Größe des Buffers
 				buffer = make([]byte, 1024*bufferSize*2)
 				var tmpFileSize = 1024 * bufferSize * 1
 
@@ -853,14 +840,14 @@ func connectToStreamingServer(streamID int, playlistID string) {
 
 				var tmpFile = fmt.Sprintf("%s%d.ts", tmpFolder, tmpSegment)
 
-				if !clientConnection(stream) {
+				if clientConnection(stream) == false {
 					resp.Body.Close()
 					return
 				}
 
-				bufferFile, err := bufferVFS.Create(tmpFile)
+				bufferFile, err := os.Create(tmpFile)
 				if err != nil {
-					log.Println("ERR: ", err)
+
 					addErrorToStream(err)
 					bufferFile.Close()
 					resp.Body.Close()
@@ -878,7 +865,7 @@ func connectToStreamingServer(streamID int, playlistID string) {
 					}
 
 					timeOut = 0
-					//Fill the buffer with data from the server
+					// Buffer mit Daten vom Server füllen
 					n, err := resp.Body.Read(buffer)
 
 					if err != nil && err != io.EOF {
@@ -910,14 +897,15 @@ func connectToStreamingServer(streamID int, playlistID string) {
 						resp.Body.Close()
 						bufferFile.Close()
 
-						if err = bufferVFS.RemoveAll(stream.Folder); err != nil {
+						err = os.RemoveAll(stream.Folder)
+						if err != nil {
 							ShowError(err, 4005)
 						}
 						return
 
 					}
 
-					//Save buffers to disk
+					// Buffer auf die Festplatte speichern
 					if fileSize >= tmpFileSize/2 || n == 0 {
 
 						Lock.Lock()
@@ -951,14 +939,15 @@ func connectToStreamingServer(streamID int, playlistID string) {
 							bufferFile.Close()
 							resp.Body.Close()
 
-							if err = bufferVFS.RemoveAll(stream.Folder); err != nil {
+							err = os.RemoveAll(stream.Folder)
+							if err != nil {
 								ShowError(err, 4005)
 							}
 
 							return
 						}
 
-						bufferFile, err = bufferVFS.Create(tmpFile)
+						bufferFile, err = os.Create(tmpFile)
 						if err != nil {
 							addErrorToStream(err)
 							resp.Body.Close()
@@ -978,7 +967,9 @@ func connectToStreamingServer(streamID int, playlistID string) {
 
 				}
 
-			//Umbekanntes Format
+				//--
+
+			// Umbekanntes Format
 			default:
 				showInfo("Content Type:" + resp.Header.Get("Content-Type"))
 				err = errors.New("Streaming error")
@@ -991,7 +982,7 @@ func connectToStreamingServer(streamID int, playlistID string) {
 
 			s++
 
-			//Calculate the waiting time for the download of the next segment
+			// Wartezeit für den Download das nächste Segments berechnen
 			if stream.HLS == true {
 
 				var sleep float64
@@ -1017,7 +1008,7 @@ func connectToStreamingServer(streamID int, playlistID string) {
 							_ = i
 							time.Sleep(time.Duration(100) * time.Millisecond)
 
-							if _, err := bufferVFS.Stat(stream.Folder); fsIsNotExistErr(err) {
+							if _, err := os.Stat(stream.Folder); os.IsNotExist(err) {
 								break
 							}
 
@@ -1033,9 +1024,9 @@ func connectToStreamingServer(streamID int, playlistID string) {
 
 			resp.Body.Close()
 
-		} //Ende for loop
+		} // Ende for loop
 
-	} //End BufferInformation
+	} // Ende BufferInformation
 
 }
 
@@ -1134,24 +1125,24 @@ func parseM3U8(stream *ThisStream) (err error) {
 
 	var parseURL = func(line string, segment *Segment) {
 
-		//Check if the address is a valid URL (http://... or /path/to/stream)
+		// Prüfen ob die Adresse eine gültige URL ist (http://... oder /path/to/stream)
 		_, err := url.ParseRequestURI(line)
 		if err == nil {
 
-			//Check whether the domain is included in the address
+			// Prüfen ob die Domain in der Adresse enhalten ist
 			u, _ := url.Parse(line)
 
 			if len(u.Host) == 0 {
-				//Address does not contain the domain, redirect is added to the address
+				// Adresse enthällt nicht die Domain, Redirect wird der Adresse hinzugefügt
 				segment.URL = stream.URLStreamingServer + line
 			} else {
-				//Domain included in the address
+				// Domain in der Adresse enthalten
 				segment.URL = line
 			}
 
 		} else {
 
-			//not a URL, but a file path (media/file-01.ts)
+			// keine URL, sondern ein Dateipfad (media/file-01.ts)
 			var serverURLPath = strings.Replace(stream.M3U8URL, path.Base(stream.M3U8URL), line, -1)
 			segment.URL = serverURLPath
 
@@ -1168,7 +1159,7 @@ func parseM3U8(stream *ThisStream) (err error) {
 			stream.DynamicStream = make(map[int]DynamicStream)
 		}
 
-		//Parameter Person
+		// Parameter parsen
 		for i, line := range lines {
 
 			_ = i
@@ -1186,7 +1177,7 @@ func parseM3U8(stream *ThisStream) (err error) {
 
 				}
 
-				//M3U8 contains multiple links to more M3U8 playlists (bandwidth option)
+				// M3U8 enthällt mehrere Links zu weiteren M3U8 Wiedergabelisten (Bandbreitenoption)
 				if segment.Info == true && len(line) > 0 && line[0:1] != "#" {
 
 					var dynamicStream DynamicStream
@@ -1204,7 +1195,7 @@ func parseM3U8(stream *ThisStream) (err error) {
 
 				}
 
-				//Segment with TS Stream
+				// Segment mit TS Stream
 				if segment.Duration > 0 && line[0:1] != "#" {
 
 					parseURL(line, &segment)
@@ -1288,7 +1279,7 @@ func parseM3U8(stream *ThisStream) (err error) {
 			_ = i
 			time.Sleep(time.Duration(100) * time.Millisecond)
 
-			if _, err := bufferVFS.Stat(stream.Folder); fsIsNotExistErr(err) {
+			if _, err := os.Stat(stream.Folder); os.IsNotExist(err) {
 				break
 			}
 
@@ -1350,7 +1341,7 @@ func switchBandwidth(stream *ThisStream) (err error) {
 	return
 }
 
-// Buffer with FFMPEG
+// Buffer mit FFMPEG
 func thirdPartyBuffer(streamID int, playlistID string) {
 
 	if p, ok := BufferInformation.Load(playlistID); ok {
@@ -1399,11 +1390,9 @@ func thirdPartyBuffer(streamID int, playlistID string) {
 
 		}
 
-		if err := bufferVFS.RemoveAll(getPlatformPath(tmpFolder)); err != nil {
-			ShowError(err, 4005)
-		}
+		os.RemoveAll(getPlatformPath(tmpFolder))
 
-		err := checkVFSFolder(tmpFolder, bufferVFS)
+		err := checkFolder(tmpFolder)
 		if err != nil {
 			ShowError(err, 0)
 			addErrorToStream(err)
@@ -1422,14 +1411,16 @@ func thirdPartyBuffer(streamID int, playlistID string) {
 
 		var tmpFile = fmt.Sprintf("%s%d.ts", tmpFolder, tmpSegment)
 
-		f, err := bufferVFS.Create(tmpFile)
+		f, err := os.Create(tmpFile)
 		f.Close()
 		if err != nil {
 			addErrorToStream(err)
 			return
 		}
 
-		//Set user agent
+		//args = strings.Replace(args, "[USER-AGENT]", Settings.UserAgent, -1)
+
+		// User-Agent setzen
 		var args []string
 
 		for i, a := range strings.Split(options, " ") {
@@ -1467,7 +1458,7 @@ func thirdPartyBuffer(streamID int, playlistID string) {
 		debug = fmt.Sprintf("%s:%s %s", bufferType, path, args)
 		showDebug(debug, 1)
 
-		//Byte data from the process
+		// Byte-Daten vom Prozess
 		stdOut, err := cmd.StdoutPipe()
 		if err != nil {
 			ShowError(err, 0)
@@ -1477,7 +1468,7 @@ func thirdPartyBuffer(streamID int, playlistID string) {
 			return
 		}
 
-		//Log data from the process
+		// Log-Daten vom Prozess
 		logOut, err := cmd.StderrPipe()
 		if err != nil {
 			ShowError(err, 0)
@@ -1496,7 +1487,7 @@ func thirdPartyBuffer(streamID int, playlistID string) {
 
 		go func() {
 
-			//Display log data from the process in debug mode 1.
+			// Log Daten vom Prozess im Dubug Mode 1 anzeigen.
 			scanner := bufio.NewScanner(logOut)
 			scanner.Split(bufio.ScanLines)
 
@@ -1517,7 +1508,7 @@ func thirdPartyBuffer(streamID int, playlistID string) {
 
 		}()
 
-		f, err = bufferVFS.OpenFile(tmpFile, os.O_APPEND|os.O_WRONLY, 0600)
+		f, err = os.OpenFile(tmpFile, os.O_APPEND|os.O_WRONLY, 0600)
 		if err != nil {
 			panic(err)
 		}
@@ -1616,8 +1607,8 @@ func thirdPartyBuffer(streamID int, playlistID string) {
 				fileSize = 0
 
 				var errCreate, errOpen error
-				f, errCreate = bufferVFS.Create(tmpFile)
-				f, errOpen = bufferVFS.OpenFile(tmpFile, os.O_APPEND|os.O_WRONLY, 0600)
+				f, errCreate = os.Create(tmpFile)
+				f, errOpen = os.OpenFile(tmpFile, os.O_APPEND|os.O_WRONLY, 0600)
 				if errCreate != nil || errOpen != nil {
 					cmd.Process.Kill()
 					ShowError(err, 0)
@@ -1643,16 +1634,6 @@ func thirdPartyBuffer(streamID int, playlistID string) {
 
 		return
 
-	}
-
-}
-
-func initBufferVFS(virtual bool) {
-
-	if virtual {
-		bufferVFS = memfs.New(memfs.WithMainDirs())
-	} else {
-		bufferVFS = osfs.New()
 	}
 
 }
