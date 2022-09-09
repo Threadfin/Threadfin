@@ -322,18 +322,6 @@ function searchInMapping() {
     }
     return;
 }
-function calculateWrapperHeight() {
-    if (document.getElementById("box-wrapper")) {
-        var elm = document.getElementById("box-wrapper");
-        var divs = new Array("myStreamsBox", "clientInfo", "content");
-        var elementsHeight = 0 - elm.offsetHeight;
-        for (var i = 0; i < divs.length; i++) {
-            elementsHeight = elementsHeight + document.getElementById(divs[i]).offsetHeight;
-        }
-        elm.style.height = window.innerHeight - elementsHeight + "px";
-    }
-    return;
-}
 function changeChannelNumbers(elements) {
     var starting_number_element = document.getElementsByName("x-channels-start")[0];
     var elems = elements.split(",");

@@ -1066,10 +1066,6 @@ function PageReady() {
   var server: Server = new Server("getServerConfig")
   server.request(new Object())
 
-  window.addEventListener("resize", function () {
-    calculateWrapperHeight();
-  }, true);
-
   setInterval(function () {
     updateLog()
   }, 10000);
@@ -1133,7 +1129,6 @@ function openThisMenu(element) {
   var id = element.id
   var content: ShowContent = new ShowContent(id)
   content.show()
-  calculateWrapperHeight()
   enableGroupSelection(".bulk")
   return
 }
