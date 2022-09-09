@@ -18,8 +18,6 @@ jobs:
         with:
           go-version: 1.18
         id: go
-
-      - name: Get dependencies
         run: |
           go mod download
 
