@@ -7,6 +7,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/avfs/avfs"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
@@ -28,6 +29,9 @@ var SystemFiles = []string{"authentication.json", "pms.json", "settings.json", "
 
 // BufferInformation : Informationen über den Buffer (aktive Streams, maximale Streams)
 var BufferInformation sync.Map
+
+// bufferVFS : Filesystem to use for the Buffer
+var bufferVFS avfs.VFS
 
 // BufferClients : Anzahl der Clients die einen Stream über den Buffer abspielen
 var BufferClients sync.Map
