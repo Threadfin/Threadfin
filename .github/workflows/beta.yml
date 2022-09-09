@@ -10,14 +10,14 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     steps:
-      - name: Set up Go 1.15
-        uses: actions/setup-go@v2
+      - name: Set up Go 1.18
+        uses: actions/setup-go@v3
         with:
-          go-version: 1.15
+          go-version: 1.18
         id: go
 
       - name: Check out code into the Go module directory
-        uses: actions/checkout@v1
+        uses: actions/checkout@v3
 
       - name: Get dependencies
         run: |
@@ -28,7 +28,13 @@ jobs:
           fi
 
       - name: Build
-        uses: izumin5210/action-go-crossbuild@v1.0.0
+        uses: thatisuday/go-cross-build@v1
+        with:
+            platforms: 'linux/amd64, linux/arm64, darwin/amd64, windows/amd64'
+            package: ''
+            name: 'Threadfin'
+            compress: 'true'
+            dest: 'dist'
 
       - name: Pre-Release
         uses: softprops/action-gh-release@v0.1.13

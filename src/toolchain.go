@@ -6,8 +6,10 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net"
 	"os"
 	"os/exec"
@@ -16,6 +18,8 @@ import (
 	"runtime"
 	"strings"
 	"text/template"
+
+	"github.com/avfs/avfs"
 )
 
 // --- System Tools ---
@@ -25,7 +29,7 @@ func checkFolder(path string) (err error) {
 
 	var debug string
 	_, err = os.Stat(filepath.Dir(path))
-
+	log.Println("HEREEEEEEEEE ", err)
 	if os.IsNotExist(err) {
 		// Ordner existiert nicht, wird jetzt erstellt
 
@@ -36,6 +40,7 @@ func checkFolder(path string) (err error) {
 			showDebug(debug, 1)
 
 		} else {
+			log.Println("FOLDER ERROR: ", err)
 			return err
 		}
 
@@ -43,6 +48,41 @@ func checkFolder(path string) (err error) {
 	}
 
 	return nil
+}
+
+// checkVFSFolder : Checks whether the Folder exists in provided virtual filesystem, if not, the Folder is created
+func checkVFSFolder(path string, vfs avfs.VFS) (err error) {
+
+	var debug string
+	_, err = vfs.Stat(filepath.Dir(path))
+	if fsIsNotExistErr(err) {
+		// Folder does not exist, will now be created
+		err = vfs.MkdirAll(getPlatformPath(path), 0755)
+		if err == nil {
+
+			debug = fmt.Sprintf("Create virtual filesystem Folder:%s", path)
+			showDebug(debug, 1)
+
+		} else {
+			return err
+		}
+
+		return nil
+	}
+
+	return nil
+}
+
+// fsIsNotExistErr : Returns true whether the <err> is known to report that a file or directory does not exist,
+// including virtual file system errors
+func fsIsNotExistErr(err error) bool {
+	if errors.Is(err, avfs.ErrNoSuchFileOrDir) ||
+		errors.Is(err, avfs.ErrWinPathNotFound) ||
+		errors.Is(err, avfs.ErrWinFileNotFound) {
+		return true
+	}
+
+	return false
 }
 
 // Prüft ob die Datei im Dateisystem existiert
@@ -159,7 +199,6 @@ func searchFileInOS(file string) (path string) {
 	return
 }
 
-//
 func removeChildItems(dir string) error {
 
 	files, err := filepath.Glob(filepath.Join(dir, "*"))

@@ -14,7 +14,6 @@ class Server {
 
     SERVER_CONNECTION = true
 
-    console.log(data)
     if (this.cmd != "updateLog") {
       showElement("loading", true)
       UNDO = new Object()
@@ -64,12 +63,10 @@ class Server {
       SERVER_CONNECTION = false
       showElement("loading", false)
 
-      console.log("RESPONSE:");
       var response = JSON.parse(e.data);
 
-      console.log(response);
-
       if (response.hasOwnProperty("token")) {
+        var cookie_exists = getCookie("Token")
         document.cookie = "Token=" + response["token"]
       }
 
@@ -143,5 +140,9 @@ class Server {
 function getCookie(name) {
   var value = "; " + document.cookie;
   var parts = value.split("; " + name + "=");
-  if (parts.length == 2) return parts.pop().split(";").shift();
+  if (parts.length == 2) {
+    return parts.pop().split(";").shift();
+  } else if (parts.length == 3) {
+    return parts[1]
+  }
 }

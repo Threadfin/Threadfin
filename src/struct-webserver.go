@@ -45,6 +45,7 @@ type RequestStruct struct {
 		ThreadfinAutoUpdate      *bool     `json:"ThreadfinAutoUpdate,omitempty"`
 		SchemeM3U                *string   `json:"scheme.m3u,omitempty"`
 		SchemeXML                *string   `json:"scheme.xml,omitempty"`
+		StoreBufferInRAM         *bool     `json:"storeBufferInRAM,omitempty"`
 	} `json:"settings,omitempty"`
 
 	// Upload Logo

@@ -15,6 +15,22 @@ class MainMenu {
     element.innerHTML = value
     return element
   }
+
+  createLink(url, value, src): any {
+    var element = document.createElement("A")
+    element.setAttribute('href', url)
+    element.setAttribute('class', "nav-link")
+
+    var img = document.createElement("IMG")
+    img.setAttribute("src", this.ImagePath + src)
+    element.appendChild(img)
+
+    var p = document.createElement("P")
+    p.innerHTML = value
+    element.appendChild(p)
+
+    return element
+  }
 }
 
 class MainMenuItem extends MainMenu {
@@ -22,20 +38,22 @@ class MainMenuItem extends MainMenu {
   value: string
   imgSrc: string
   headline: string
+  url: string
   id: string
   tableHeader: string[]
 
-  constructor(menuKey: string, value: string, image: string, headline: string) {
+  constructor(menuKey: string, value: string, image: string, headline: string, url: string) {
     super()
     this.menuKey = menuKey
     this.value = value
     this.imgSrc = image
     this.headline = headline
+    this.url = url
   }
 
   createItem(): void {
     var item = document.createElement("LI")
-    item.setAttribute("onclick", "javascript: openThisMenu(this)")
+    // item.setAttribute("onclick", "javascript: openThisMenu(this)")
     item.setAttribute("id", this.id)
     item.setAttribute("class", "nav-item")
     var img = this.createIMG(this.imgSrc)
@@ -651,8 +669,6 @@ class Content {
           }
         });
 
-        savePopupData("mapping", "", false, 0)
-
         break
 
       case "settings":
@@ -1064,16 +1080,12 @@ class ShowContent extends Content {
 function PageReady() {
 
   var server: Server = new Server("getServerConfig")
-  server.request(new Object())
 
-  window.addEventListener("resize", function () {
-    calculateWrapperHeight();
-  }, true);
+  server.request(new Object())
 
   setInterval(function () {
     updateLog()
   }, 10000);
-
 
   return
 }
@@ -1084,7 +1096,6 @@ function createLayout() {
   var obj = SERVER["clientInfo"]
   var keys = getObjKeys(obj);
   for (var i = 0; i < keys.length; i++) {
-
     if (document.getElementById(keys[i])) {
       (<HTMLInputElement>document.getElementById(keys[i])).value = obj[keys[i]];
     }
@@ -1126,6 +1137,38 @@ function createLayout() {
 
   }
 
+  var pathArray = window.location.pathname.split('/');
+  switch (pathArray[2]) {
+    case "playlist":
+      var log_element = document.querySelector('#main-menu li:nth-child(1)')
+      openThisMenu(log_element);
+    break
+    case "xmltv":
+      var log_element = document.querySelector('#main-menu li:nth-child(2)')
+      openThisMenu(log_element);
+    break
+    case "filter":
+      var log_element = document.querySelector('#main-menu li:nth-child(3)')
+      openThisMenu(log_element);
+    break
+    case "mapping":
+      var log_element = document.querySelector('#main-menu li:nth-child(4)')
+      openThisMenu(log_element);
+    break
+    case "settings":
+      var log_element = document.querySelector('#main-menu li:nth-child(5)')
+      openThisMenu(log_element);
+    break
+    case "log":
+      var log_element = document.querySelector('#main-menu li:nth-child(6)')
+      openThisMenu(log_element);
+    break
+    case "users":
+      var log_element = document.querySelector('#main-menu li:nth-child(7)')
+      openThisMenu(log_element);
+    break
+  }
+
   return
 }
 
@@ -1133,7 +1176,6 @@ function openThisMenu(element) {
   var id = element.id
   var content: ShowContent = new ShowContent(id)
   content.show()
-  calculateWrapperHeight()
   enableGroupSelection(".bulk")
   return
 }
@@ -1319,7 +1361,6 @@ function openPopUp(dataType, element) {
       content.createInteraction()
       // Abbrechen
       var input = content.createInput("button", "cancel", "{{.button.cancel}}")
-      input.setAttribute("onclick", 'javascript: showElement("popup", false);')
       content.addInteraction(input)
 
       // Weiter
@@ -1387,12 +1428,16 @@ function openPopUp(dataType, element) {
       } else {
         var input = content.createInput("button", "back", "{{.button.back}}")
         input.setAttribute("onclick", 'javascript: openPopUp("playlist")')
+        input.setAttribute('data-bs-toggle', 'modal')
+        input.setAttribute('data-bs-target', '#popup')
         content.addInteraction(input)
       }
 
       // Abbrechen
       var input = content.createInput("button", "cancel", "{{.button.cancel}}")
       input.setAttribute("onclick", 'javascript: showElement("popup", false);')
+      input.setAttribute('data-bs-toggle', 'modal')
+      input.setAttribute('data-bs-target', '#popup')
       content.addInteraction(input)
 
       // Aktualisieren
@@ -2473,7 +2518,7 @@ function showPreview(element: boolean) {
       tr.appendChild(tdVal)
 
       tbody.appendChild(tr)
-
+      
       table.appendChild(tr)
 
     });

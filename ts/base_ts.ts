@@ -29,37 +29,24 @@ var popupModal = new bootstrap.Modal(document.getElementById("popup"), {
 
 // Menü
 var menuItems = new Array()
-menuItems.push(new MainMenuItem("playlist", "{{.mainMenu.item.playlist}}", "m3u.png", "{{.mainMenu.headline.playlist}}"))
-//menuItems.push(new MainMenuItem("pmsID", "{{.mainMenu.item.pmsID}}", "number.png", "{{.mainMenu.headline.pmsID}}"))
-menuItems.push(new MainMenuItem("filter", "{{.mainMenu.item.filter}}", "filter.png", "{{.mainMenu.headline.filter}}"))
-menuItems.push(new MainMenuItem("xmltv", "{{.mainMenu.item.xmltv}}", "xmltv.png", "{{.mainMenu.headline.xmltv}}"))
-menuItems.push(new MainMenuItem("mapping", "{{.mainMenu.item.mapping}}", "mapping.png", "{{.mainMenu.headline.mapping}}"))
-menuItems.push(new MainMenuItem("users", "{{.mainMenu.item.users}}", "users.png", "{{.mainMenu.headline.users}}"))
-menuItems.push(new MainMenuItem("settings", "{{.mainMenu.item.settings}}", "settings.png", "{{.mainMenu.headline.settings}}"))
-menuItems.push(new MainMenuItem("log", "{{.mainMenu.item.log}}", "log.png", "{{.mainMenu.headline.log}}"))
-menuItems.push(new MainMenuItem("logout", "{{.mainMenu.item.logout}}", "logout.png", "{{.mainMenu.headline.logout}}"))
+menuItems.push(new MainMenuItem("playlist", "{{.mainMenu.item.playlist}}", "m3u.png", "{{.mainMenu.headline.playlist}}", "/web/playlist/"))
+menuItems.push(new MainMenuItem("xmltv", "{{.mainMenu.item.xmltv}}", "xmltv.png", "{{.mainMenu.headline.xmltv}}", "/web/xmltv/"))
+menuItems.push(new MainMenuItem("filter", "{{.mainMenu.item.filter}}", "filter.png", "{{.mainMenu.headline.filter}}", "/web/filter/"))
+menuItems.push(new MainMenuItem("mapping", "{{.mainMenu.item.mapping}}", "mapping.png", "{{.mainMenu.headline.mapping}}", "/web/mapping/"))
+menuItems.push(new MainMenuItem("settings", "{{.mainMenu.item.settings}}", "settings.png", "{{.mainMenu.headline.settings}}", "/web/settings/"))
+menuItems.push(new MainMenuItem("log", "{{.mainMenu.item.log}}", "log.png", "{{.mainMenu.headline.log}}", "/web/log/"))
+menuItems.push(new MainMenuItem("users", "{{.mainMenu.item.users}}", "users.png", "{{.mainMenu.headline.users}}", "/web/users/"))
+menuItems.push(new MainMenuItem("logout", "{{.mainMenu.item.logout}}", "logout.png", "{{.mainMenu.headline.logout}}", "/web/logout/"))
 
 // Kategorien für die Einstellungen
 var settingsCategory = new Array()
 settingsCategory.push(new SettingsCategoryItem("{{.settings.category.general}}", "ThreadfinAutoUpdate,tuner,epgSource,api")); settingsCategory.push(new SettingsCategoryItem("{{.settings.category.files}}", "update,files.update,temp.path,cache.images,xepg.replace.missing.images,xepg.replace.channel.title"))
-settingsCategory.push(new SettingsCategoryItem("{{.settings.category.streaming}}", "buffer,udpxy,buffer.size.kb,buffer.timeout,user.agent,ffmpeg.path,ffmpeg.options,vlc.path,vlc.options"))
+settingsCategory.push(new SettingsCategoryItem("{{.settings.category.streaming}}", "buffer,udpxy,buffer.size.kb,storeBufferInRAM,buffer.timeout,user.agent,ffmpeg.path,ffmpeg.options,vlc.path,vlc.options"))
 settingsCategory.push(new SettingsCategoryItem("{{.settings.category.backup}}", "backup.path,backup.keep"))
 settingsCategory.push(new SettingsCategoryItem("{{.settings.category.authentication}}", "authentication.web,authentication.pms,authentication.m3u,authentication.xml,authentication.api"))
 
 function showPopUpElement(elm) {
-
-  var allElements = new Array("popup-custom");
-
-  for (var i = 0; i < allElements.length; i++) {
-    showElement(allElements[i], false)
-  }
-
   showElement(elm, true)
-
-  setTimeout(function () {
-    showElement("popup", true);
-  }, 10);
-
   return
 }
 
@@ -434,25 +421,6 @@ function searchInMapping() {
   return
 }
 
-function calculateWrapperHeight() {
-
-  if (document.getElementById("box-wrapper")) {
-
-    var elm = document.getElementById("box-wrapper");
-
-    var divs = new Array("myStreamsBox", "clientInfo", "content");
-    var elementsHeight = 0 - elm.offsetHeight;
-    for (var i = 0; i < divs.length; i++) {
-      elementsHeight = elementsHeight + document.getElementById(divs[i]).offsetHeight;
-    }
-
-    elm.style.height = window.innerHeight - elementsHeight + "px";
-
-  }
-
-  return
-}
-
 function changeChannelNumbers(elements) {
   var starting_number_element = (document.getElementsByName("x-channels-start")[0] as HTMLInputElement)
   var elems = elements.split(",")
@@ -747,7 +715,6 @@ function sortSelect(elem) {
 
 function updateLog() {
 
-  console.log("TOKEN")
   var server: Server = new Server("updateLog")
   server.request(new Object())
 

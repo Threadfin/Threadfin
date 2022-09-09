@@ -298,6 +298,7 @@ type SettingsStruct struct {
 	MappingFirstChannel       float64               `json:"mapping.first.channel"`
 	Port                      string                `json:"port"`
 	SSDP                      bool                  `json:"ssdp"`
+	StoreBufferInRAM          bool                  `json:"storeBufferInRAM"`
 	TempPath                  string                `json:"temp.path"`
 	Tuner                     int                   `json:"tuner"`
 	Update                    []string              `json:"update"`
