@@ -7,6 +7,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/avfs/avfs"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
@@ -31,6 +32,9 @@ var BufferInformation sync.Map
 
 // BufferClients : Anzahl der Clients die einen Stream über den Buffer abspielen
 var BufferClients sync.Map
+
+// bufferVFS : Filesystem to use for the Buffer
+var bufferVFS avfs.VFS
 
 // Lock : Lock Map
 var Lock = sync.RWMutex{}
@@ -116,7 +120,7 @@ func Init() (err error) {
 	}
 
 	// Menü für das Webinterface
-	System.WEB.Menu = []string{"playlist", "filter", "xmltv", "mapping", "users", "settings", "log", "logout"}
+	System.WEB.Menu = []string{"playlist", "filter", "xmltv", "mapping", "settings", "log", "users", "logout"}
 
 	fmt.Println("For help run: " + getPlatformFile(os.Args[0]) + " -h")
 	fmt.Println()
