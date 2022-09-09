@@ -27,6 +27,7 @@ class MainMenuItem extends MainMenu {
         var item = document.createElement("LI");
         item.setAttribute("onclick", "javascript: openThisMenu(this)");
         item.setAttribute("id", this.id);
+        item.setAttribute("class", "nav-item");
         var img = this.createIMG(this.imgSrc);
         var value = this.createValue(this.value);
         item.appendChild(img);
@@ -56,6 +57,8 @@ class MainMenuItem extends MainMenu {
 class Content {
     constructor() {
         this.DocumentID = "content";
+        this.HeaderID = "popup_header";
+        this.FooterID = "popup_footer";
         this.TableID = "content_table";
         this.InactiveTableID = "inactive_content_table";
         this.headerClass = "content_table_header";
@@ -87,6 +90,7 @@ class Content {
     }
     createTABLE() {
         var element = document.createElement("TABLE");
+        element.setAttribute('class', 'table');
         element.id = this.TableID;
         return element;
     }
@@ -619,10 +623,17 @@ class ShowContent extends Content {
         doc.innerHTML = "";
         showPreview(false);
         // Überschrift
+        var popup_header = document.getElementById(this.HeaderID);
         var headline = menuItems[this.menuID].headline;
         var menuKey = menuItems[this.menuID].menuKey;
         var h = this.createHeadline(headline);
-        doc.appendChild(h);
+        var existingHeader = popup_header.querySelector('h3');
+        if (existingHeader) {
+            popup_header.replaceChild(h, existingHeader);
+        }
+        else {
+            popup_header.appendChild(h);
+        }
         var hr = this.createHR();
         doc.appendChild(hr);
         // Interaktion
@@ -634,24 +645,32 @@ class ShowContent extends Content {
                 var input = this.createInput("button", menuKey, "{{.button.new}}");
                 input.setAttribute("id", "-");
                 input.setAttribute("onclick", 'javascript: openPopUp("playlist")');
+                input.setAttribute('data-bs-toggle', 'modal');
+                input.setAttribute('data-bs-target', '#popup');
                 interaction.appendChild(input);
                 break;
             case "filter":
                 var input = this.createInput("button", menuKey, "{{.button.new}}");
                 input.setAttribute("id", -1);
                 input.setAttribute("onclick", 'javascript: openPopUp("filter", this)');
+                input.setAttribute('data-bs-toggle', 'modal');
+                input.setAttribute('data-bs-target', '#popup');
                 interaction.appendChild(input);
                 break;
             case "xmltv":
                 var input = this.createInput("button", menuKey, "{{.button.new}}");
                 input.setAttribute("id", "xmltv");
                 input.setAttribute("onclick", 'javascript: openPopUp("xmltv")');
+                input.setAttribute('data-bs-toggle', 'modal');
+                input.setAttribute('data-bs-target', '#popup');
                 interaction.appendChild(input);
                 break;
             case "users":
                 var input = this.createInput("button", menuKey, "{{.button.new}}");
                 input.setAttribute("id", "users");
                 input.setAttribute("onclick", 'javascript: openPopUp("users")');
+                input.setAttribute('data-bs-toggle', 'modal');
+                input.setAttribute('data-bs-target', '#popup');
                 interaction.appendChild(input);
                 break;
             case "mapping":
@@ -839,7 +858,7 @@ function createLayout() {
     var keys = getObjKeys(obj);
     for (var i = 0; i < keys.length; i++) {
         if (document.getElementById(keys[i])) {
-            document.getElementById(keys[i]).innerHTML = obj[keys[i]];
+            document.getElementById(keys[i]).value = obj[keys[i]];
         }
     }
     if (!document.getElementById("main-menu")) {
@@ -1903,6 +1922,13 @@ function showPreview(element) {
         var table = document.getElementById(preview);
         table.innerHTML = "";
         var obj = SERVER["data"]["StreamPreviewUI"][preview];
+        var caption = document.createElement("CAPTION");
+        var result = preview.replace(/([A-Z])/g, " $1");
+        var finalResult = result.charAt(0).toUpperCase() + result.slice(1);
+        caption.innerHTML = finalResult;
+        table.appendChild(caption);
+        var tbody = document.createElement("TBODY");
+        table.appendChild(tbody);
         obj.forEach(channel => {
             var tr = document.createElement("TR");
             var tdKey = document.createElement("TD");
@@ -1920,6 +1946,7 @@ function showPreview(element) {
             tdVal.innerText = channel;
             tr.appendChild(tdKey);
             tr.appendChild(tdVal);
+            tbody.appendChild(tr);
             table.appendChild(tr);
         });
     });

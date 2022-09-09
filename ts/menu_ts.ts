@@ -37,6 +37,7 @@ class MainMenuItem extends MainMenu {
     var item = document.createElement("LI")
     item.setAttribute("onclick", "javascript: openThisMenu(this)")
     item.setAttribute("id", this.id)
+    item.setAttribute("class", "nav-item")
     var img = this.createIMG(this.imgSrc)
     var value = this.createValue(this.value)
 
@@ -77,6 +78,8 @@ class MainMenuItem extends MainMenu {
 class Content {
 
   DocumentID: string = "content"
+  HeaderID: string = "popup_header"
+  FooterID: string = "popup_footer"
   TableID: string = "content_table"
   InactiveTableID: string = "inactive_content_table"
   DivID: string
@@ -114,6 +117,7 @@ class Content {
 
   createTABLE(): any {
     var element = document.createElement("TABLE")
+    element.setAttribute('class', 'table')
     element.id = this.TableID
     return element
   }
@@ -781,11 +785,17 @@ class ShowContent extends Content {
     showPreview(false)
 
     // Überschrift
+    var popup_header = document.getElementById(this.HeaderID)
     var headline: string[] = menuItems[this.menuID].headline
 
     var menuKey = menuItems[this.menuID].menuKey
     var h = this.createHeadline(headline)
-    doc.appendChild(h)
+    var existingHeader = popup_header.querySelector('h3')
+    if(existingHeader) {
+      popup_header.replaceChild(h, existingHeader)
+    } else {
+      popup_header.appendChild(h)
+    }
 
     var hr = this.createHR()
     doc.appendChild(hr)
@@ -799,6 +809,8 @@ class ShowContent extends Content {
         var input = this.createInput("button", menuKey, "{{.button.new}}")
         input.setAttribute("id", "-")
         input.setAttribute("onclick", 'javascript: openPopUp("playlist")')
+        input.setAttribute('data-bs-toggle', 'modal')
+        input.setAttribute('data-bs-target', '#popup')
         interaction.appendChild(input)
         break;
 
@@ -806,6 +818,8 @@ class ShowContent extends Content {
         var input = this.createInput("button", menuKey, "{{.button.new}}")
         input.setAttribute("id", -1)
         input.setAttribute("onclick", 'javascript: openPopUp("filter", this)')
+        input.setAttribute('data-bs-toggle', 'modal')
+        input.setAttribute('data-bs-target', '#popup')
         interaction.appendChild(input)
         break;
 
@@ -814,6 +828,8 @@ class ShowContent extends Content {
         var input = this.createInput("button", menuKey, "{{.button.new}}")
         input.setAttribute("id", "xmltv")
         input.setAttribute("onclick", 'javascript: openPopUp("xmltv")')
+        input.setAttribute('data-bs-toggle', 'modal')
+        input.setAttribute('data-bs-target', '#popup')
         interaction.appendChild(input)
         break;
 
@@ -821,6 +837,8 @@ class ShowContent extends Content {
         var input = this.createInput("button", menuKey, "{{.button.new}}")
         input.setAttribute("id", "users")
         input.setAttribute("onclick", 'javascript: openPopUp("users")')
+        input.setAttribute('data-bs-toggle', 'modal')
+        input.setAttribute('data-bs-target', '#popup')
         interaction.appendChild(input)
         break;
 
@@ -1068,7 +1086,7 @@ function createLayout() {
   for (var i = 0; i < keys.length; i++) {
 
     if (document.getElementById(keys[i])) {
-      document.getElementById(keys[i]).innerHTML = obj[keys[i]];
+      (<HTMLInputElement>document.getElementById(keys[i])).value = obj[keys[i]];
     }
 
   }
@@ -2422,6 +2440,15 @@ function showPreview(element: boolean) {
     table.innerHTML = ""
     var obj: string[] = SERVER["data"]["StreamPreviewUI"][preview]
 
+    var caption = document.createElement("CAPTION")
+    var result = preview.replace( /([A-Z])/g, " $1" );
+    var finalResult = result.charAt(0).toUpperCase() + result.slice(1);
+    caption.innerHTML = finalResult
+    table.appendChild(caption)
+
+    var tbody = document.createElement("TBODY")
+    table.appendChild(tbody)
+
     obj.forEach(channel => {
 
       var tr = document.createElement("TR")
@@ -2444,6 +2471,8 @@ function showPreview(element: boolean) {
       tdVal.innerText = channel
       tr.appendChild(tdKey)
       tr.appendChild(tdVal)
+
+      tbody.appendChild(tr)
 
       table.appendChild(tr)
 

@@ -6,7 +6,26 @@ var SEARCH_MAPPING = new Object()
 var UNDO = new Object()
 var SERVER_CONNECTION = false
 var WS_AVAILABLE = false
+declare var bootstrap: any;
+declare var ClipboardJS: any;
 
+const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
+// new ClipboardJS('.copy-btn');
+var clipboard = new ClipboardJS('.copy-btn');
+clipboard.on('success', function(e) {
+  const tooltip = bootstrap.Tooltip.getInstance(e.trigger);
+  tooltip.setContent({ '.tooltip-inner': 'Copied!' });
+
+});
+clipboard.on('error', function(e) {
+  console.log(e);
+});
+
+var popupModal = new bootstrap.Modal(document.getElementById("popup"), {
+  keyboard: true,
+  focus: true
+})
 
 // Menü
 var menuItems = new Array()
@@ -45,14 +64,16 @@ function showPopUpElement(elm) {
 }
 
 function showElement(elmID, type) {
-
-  var cssClass: string
-  switch (type) {
-    case true: cssClass = "block"; break;
-    case false: cssClass = "none"; break;
+  if (elmID == "popup-custom" || elmID == "popup") {
+    switch (type) {
+      case true: 
+        popupModal.show()
+        break;
+      case false: 
+        popupModal.hide()
+        break;
+    }
   }
-
-  document.getElementById(elmID).className = cssClass;
 }
 
 function changeButtonAction(element, buttonID, attribute) {
