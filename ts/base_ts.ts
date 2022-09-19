@@ -27,6 +27,11 @@ var popupModal = new bootstrap.Modal(document.getElementById("popup"), {
   focus: true
 })
 
+var loadingModal = new bootstrap.Modal(document.getElementById("loading"), {
+  keyboard: true,
+  focus: true
+})
+
 // Menü
 var menuItems = new Array()
 menuItems.push(new MainMenuItem("playlist", "{{.mainMenu.item.playlist}}", "m3u.png", "{{.mainMenu.headline.playlist}}"))
@@ -65,6 +70,17 @@ function showElement(elmID, type) {
         break;
       case false: 
         popupModal.hide()
+        break;
+    }
+  }
+
+  if (elmID == "loading") {
+    switch (type) {
+      case true: 
+      loadingModal.show()
+        break;
+      case false: 
+      loadingModal.hide()
         break;
     }
   }

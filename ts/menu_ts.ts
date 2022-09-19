@@ -1761,7 +1761,9 @@ function openPopUp(dataType, element) {
         // Set the value to the first selected channel
         var channels = getAllSelectedChannels()
         var channel = SERVER["xepg"]["epgMapping"][channels[0]]
-        input.setAttribute("value", channel["x-channelID"])
+        if (typeof channel !== "undefined") {
+          input.setAttribute("value", channel["x-channelID"])
+        }
 
         input.setAttribute("onchange", 'javascript: changeChannelNumbers("' + channels + '");')
         content.appendRow("{{.mapping.channelGroupStart.title}}", input)
