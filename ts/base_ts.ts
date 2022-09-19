@@ -48,12 +48,6 @@ settingsCategory.push(new SettingsCategoryItem("{{.settings.category.authenticat
 
 function showPopUpElement(elm) {
 
-  var allElements = new Array("popup-custom");
-
-  for (var i = 0; i < allElements.length; i++) {
-    showElement(allElements[i], false)
-  }
-
   showElement(elm, true)
 
   setTimeout(function () {

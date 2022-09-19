@@ -40,10 +40,6 @@ settingsCategory.push(new SettingsCategoryItem("{{.settings.category.streaming}}
 settingsCategory.push(new SettingsCategoryItem("{{.settings.category.backup}}", "backup.path,backup.keep"));
 settingsCategory.push(new SettingsCategoryItem("{{.settings.category.authentication}}", "authentication.web,authentication.pms,authentication.m3u,authentication.xml,authentication.api"));
 function showPopUpElement(elm) {
-    var allElements = new Array("popup-custom");
-    for (var i = 0; i < allElements.length; i++) {
-        showElement(allElements[i], false);
-    }
     showElement(elm, true);
     setTimeout(function () {
         showElement("popup", true);
