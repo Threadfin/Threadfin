@@ -1505,6 +1505,21 @@ function openPopUp(dataType, element) {
             select.setAttribute("onchange", "javascript: this.className = 'changed'; checkXmltvChannel('" + id + "',this,'" + xmlFile + "');");
             sortSelect(select);
             content.appendRow("{{.mapping.xmltvChannel.title}}", select);
+            var dbKey = "x-backup-channel";
+            var xmltv = new XMLTVFile();
+            var select = xmltv.getPrograms(file, data[dbKey]);
+            select.setAttribute("name", dbKey);
+            select.setAttribute("id", "backup-channel");
+            select.setAttribute("onchange", "javascript: this.className = 'changed'; checkXmltvChannel('" + id + "',this,'" + xmlFile + "');");
+            content.appendRow("{{.mapping.backupChannel.title}}", select);
+            if (data["is_backup_channel"] == true) {
+                var dbKey = "x-hide-channel";
+                var input = content.createCheckbox(dbKey);
+                input.checked = data[dbKey];
+                input.setAttribute("id", "hide-channel");
+                input.setAttribute("onchange", "javascript: this.className = 'changed'");
+                content.appendRow("{{.mapping.hideChannel.title}}", input);
+            }
             // Interaktion
             content.createInteraction();
             // Logo hochladen
@@ -1834,7 +1849,6 @@ function donePopupData(dataType, idsStr) {
     ids.forEach(id => {
         var input = new Object();
         input = SERVER["xepg"]["epgMapping"][id];
-        console.log(input);
         for (let i = 0; i < inputs.length; i++) {
             var name;
             var value;
@@ -1888,6 +1902,12 @@ function donePopupData(dataType, idsStr) {
                     if (value == "-") {
                         input["x-active"] = false;
                     }
+                    document.getElementById(id).childNodes[7].firstChild.innerHTML = value;
+                    break;
+                case "x-backup-channel":
+                    document.getElementById(id).childNodes[7].firstChild.innerHTML = value;
+                    break;
+                case "x-hide-channel":
                     document.getElementById(id).childNodes[7].firstChild.innerHTML = value;
                     break;
                 default:

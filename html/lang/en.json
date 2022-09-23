@@ -250,6 +250,16 @@
       "title": "XMLTV Channel",
       "placeholder": "",
       "description": ""
+    },
+    "backupChannel": {
+      "title": "Backup Channel",
+      "placeholder": "",
+      "description": ""
+    },
+    "hideChannel": {
+      "title": "Hide Backup Channel",
+      "placeholder": "",
+      "description": ""
     }
   },
   "users": {

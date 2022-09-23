@@ -559,8 +559,30 @@ func mapping() (err error) {
 			return
 		}
 
+		if xepgChannel.XBackupChannel != "" {
+			for _, xmltvChannels := range Data.XMLTV.Mapping {
+				if _, ok := xmltvChannels.(map[string]interface{})[xepgChannel.XBackupChannel]; ok {
+					for xepg_backup, xchannel := range Data.XEPG.Channels {
+
+						var xepgChannelBackup XEPGChannelStruct
+						err = json.Unmarshal([]byte(mapToJSON(xchannel)), &xepgChannelBackup)
+						if err != nil {
+							return
+						}
+
+						if xepgChannelBackup.XMapping == xepgChannel.XBackupChannel {
+							xepgChannelBackup.IsBackupChannel = true
+							xepgChannel.BackupChannelURL = xepgChannelBackup.URL
+							Data.XEPG.Channels[xepg_backup] = xepgChannelBackup
+							Data.XEPG.Channels[xepg] = xepgChannel
+						}
+					}
+				}
+			}
+		}
+
 		// Automatische Mapping für neue Kanäle. Wird nur ausgeführt, wenn der Kanal deaktiviert ist und keine XMLTV Datei und kein XMLTV Kanal zugeordnet ist.
-		if xepgChannel.XActive == false {
+		if !xepgChannel.XActive {
 
 			// Werte kann "-" sein, deswegen len < 1
 			if len(xepgChannel.XmltvFile) < 1 && len(xepgChannel.XmltvFile) < 1 {
@@ -604,7 +626,7 @@ func mapping() (err error) {
 		}
 
 		// Überprüfen, ob die zugeordneten XMLTV Dateien und Kanäle noch existieren.
-		if xepgChannel.XActive == true {
+		if xepgChannel.XActive && !xepgChannel.XHideChannel {
 
 			var mapping = xepgChannel.XMapping
 			var file = xepgChannel.XmltvFile
@@ -618,7 +640,7 @@ func mapping() (err error) {
 						// Kanallogo aktualisieren
 						if logo, ok := channel["icon"].(string); ok {
 
-							if xepgChannel.XUpdateChannelIcon == true && len(logo) > 0 {
+							if xepgChannel.XUpdateChannelIcon && len(logo) > 0 {
 								xepgChannel.TvgLogo = logo
 							}
 
@@ -716,7 +738,7 @@ func createXMLTVFile() (err error) {
 		var xepgChannel XEPGChannelStruct
 		err := json.Unmarshal([]byte(mapToJSON(dxc)), &xepgChannel)
 		if err == nil {
-			if xepgChannel.XActive {
+			if xepgChannel.XActive && !xepgChannel.XHideChannel {
 				if (Settings.XepgReplaceChannelTitle && xepgChannel.XMapping == "PPV") || xepgChannel.TvgName != "" {
 					// Kanäle
 					var channel Channel
@@ -1103,7 +1125,7 @@ func cleanupXEPG() {
 			if indexOfString(xepgChannel.Name+xepgChannel.FileM3UID, Data.Cache.Streams.Active) == -1 {
 				delete(Data.XEPG.Channels, id)
 			} else {
-				if xepgChannel.XActive == true {
+				if xepgChannel.XActive == true && !xepgChannel.XHideChannel {
 					Data.XEPG.XEPGCount++
 				}
 			}

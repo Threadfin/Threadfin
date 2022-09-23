@@ -29,6 +29,7 @@ type ThisStream struct {
 	PlaylistName     string
 	Status           bool
 	URL              string
+	BackupChannelURL string
 
 	Segment []Segment
 

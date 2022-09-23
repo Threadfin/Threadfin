@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -46,7 +47,7 @@ func createStreamID(stream map[int]ThisStream) (streamID int) {
 	return
 }
 
-func bufferingStream(playlistID, streamingURL, channelName string, w http.ResponseWriter, r *http.Request) {
+func bufferingStream(playlistID, streamingURL, backupStreamingURL, channelName string, w http.ResponseWriter, r *http.Request) {
 
 	time.Sleep(time.Duration(Settings.BufferTimeout) * time.Millisecond)
 
@@ -98,6 +99,7 @@ func bufferingStream(playlistID, streamingURL, channelName string, w http.Respon
 
 		client.Connection = 1
 		stream.URL = streamingURL
+		stream.BackupChannelURL = backupStreamingURL
 		stream.ChannelName = channelName
 		stream.Status = false
 
@@ -562,6 +564,7 @@ func connectToStreamingServer(streamID int, playlistID string) {
 		// Größe des Buffers
 		var bufferSize = Settings.BufferSize
 		var buffer = make([]byte, 1024*bufferSize*2)
+		var useBackup = false
 
 		var defaultSegment = func() {
 
@@ -583,6 +586,30 @@ func connectToStreamingServer(streamID int, playlistID string) {
 			stream.Sequence = 0
 			stream.Wait = 0
 			stream.NetworkBandwidth = networkBandwidth
+
+			playlist.Streams[streamID] = stream
+
+			timeOut++
+
+		}
+
+		var backupSegment = func() {
+
+			var segment Segment
+
+			segment.URL = playlist.Streams[streamID].BackupChannelURL
+
+			segment.Duration = 0
+
+			var stream = playlist.Streams[streamID]
+			stream.Segment = []Segment{}
+			stream.Segment = append(stream.Segment, segment)
+
+			stream.HLS = false
+			stream.Sequence = 0
+			stream.Wait = 0
+			stream.NetworkBandwidth = networkBandwidth
+			stream.URL = segment.URL
 
 			playlist.Streams[streamID] = stream
 
@@ -617,7 +644,11 @@ func connectToStreamingServer(streamID int, playlistID string) {
 
 		// M3U8 Segmente
 	InitBuffer:
-		defaultSegment()
+		if useBackup {
+			backupSegment()
+		} else {
+			defaultSegment()
+		}
 
 		if len(m3u8Segments) > 30 {
 			m3u8Segments = m3u8Segments[15:]
@@ -625,10 +656,9 @@ func connectToStreamingServer(streamID int, playlistID string) {
 		if timeOut >= 10 {
 			return
 		}
-
 		var stream ThisStream = playlist.Streams[streamID]
 
-		if stream.Status == false {
+		if !stream.Status {
 
 			if strings.Contains(stream.URL, ".m3u8") {
 				showInfo("Streaming Type:" + "[HLS / M3U8]")
@@ -653,16 +683,13 @@ func connectToStreamingServer(streamID int, playlistID string) {
 			}
 
 			if len(stream.Segment) == 0 || len(stream.URL) == 0 {
+				showDebug("EMPTY SEGMENT TRIGGERING BUFFER INIT", 2)
 				goto InitBuffer
 			}
 
 			var segment = stream.Segment[0]
 
 			var currentURL = strings.Trim(segment.URL, "\r\n")
-
-			if len(currentURL) == 0 {
-				goto InitBuffer
-			}
 
 			debug = fmt.Sprintf("Connection to:%s", currentURL)
 			showDebug(debug, 2)
@@ -754,8 +781,13 @@ func connectToStreamingServer(streamID int, playlistID string) {
 			var contentType = resp.Header.Get("Content-Type")
 			var httpStatusCode = resp.StatusCode
 			var httpStatusInfo = fmt.Sprintf("HTTP Response Status [%d] %s", httpStatusCode, http.StatusText(resp.StatusCode))
-
+			log.Println("STATUS CODE: ", resp.StatusCode)
 			if resp.StatusCode != http.StatusOK {
+
+				if !useBackup {
+					useBackup = true
+					goto InitBuffer
+				}
 
 				showInfo("Content Type:" + contentType)
 				showInfo("Streaming Status:" + httpStatusInfo)

@@ -1863,6 +1863,23 @@ function openPopUp(dataType, element) {
       sortSelect(select)
       content.appendRow("{{.mapping.xmltvChannel.title}}", select)
 
+      var dbKey: string = "x-backup-channel"
+      var xmltv: XMLTVFile = new XMLTVFile()
+      var select = xmltv.getPrograms(file, data[dbKey])
+      select.setAttribute("name", dbKey)
+      select.setAttribute("id", "backup-channel")
+      select.setAttribute("onchange", "javascript: this.className = 'changed'; checkXmltvChannel('" + id + "',this,'" + xmlFile + "');")
+      content.appendRow("{{.mapping.backupChannel.title}}", select)
+
+      if (data["is_backup_channel"] == true) {
+        var dbKey: string = "x-hide-channel"
+        var input = content.createCheckbox(dbKey)
+        input.checked = data[dbKey]
+        input.setAttribute("id", "hide-channel")
+        input.setAttribute("onchange", "javascript: this.className = 'changed'")
+        content.appendRow("{{.mapping.hideChannel.title}}", input)
+      }
+
       // Interaktion
       content.createInteraction()
 
@@ -2313,8 +2330,6 @@ function donePopupData(dataType: string, idsStr: string) {
     var input = new Object();
     input = SERVER["xepg"]["epgMapping"][id]
 
-    console.log(input);
-
     for (let i = 0; i < inputs.length; i++) {
 
       var name: string
@@ -2388,6 +2403,16 @@ function donePopupData(dataType: string, idsStr: string) {
             input["x-active"] = false
           }
 
+          (document.getElementById(id).childNodes[7].firstChild as HTMLElement).innerHTML = value
+
+          break
+
+        case "x-backup-channel":
+          (document.getElementById(id).childNodes[7].firstChild as HTMLElement).innerHTML = value
+
+          break
+
+        case "x-hide-channel":
           (document.getElementById(id).childNodes[7].firstChild as HTMLElement).innerHTML = value
 
           break
