@@ -9,9 +9,10 @@ FROM golang:1.18.1-bullseye AS builder
 # Download the source code
 RUN git clone https://github.com/Threadfin/Threadfin.git /src
 WORKDIR /src
+RUN git checkout beta
 
 # Install dependencies
-RUN go mod download
+RUN go mod tidy && go mod vendor
 
 # Compile
 RUN go build threadfin.go
