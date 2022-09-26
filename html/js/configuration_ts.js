@@ -74,7 +74,7 @@ class WizardItem extends WizardCategory {
 function readyForConfiguration(wizard) {
     var server = new Server("getServerConfig");
     server.request(new Object());
-    // showElement("loading", false)
+    showElement("loading", false);
     configurationWizard[wizard].createWizard();
 }
 function saveWizard() {

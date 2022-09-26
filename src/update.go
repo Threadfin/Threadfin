@@ -116,7 +116,6 @@ func BinaryUpdate() (err error) {
 	}
 
 	var currentVersion = System.Version + "." + System.Build
-	log.Println("CURRENT VERSION: ", currentVersion)
 
 	// Versionsnummer überprüfen
 	if updater.Response.Version > currentVersion && updater.Response.Status {
