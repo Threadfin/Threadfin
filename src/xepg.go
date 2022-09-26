@@ -259,6 +259,7 @@ func createXEPGMapping() {
 					channel["id"] = c.ID
 					channel["display-name"] = friendlyDisplayName(*c)
 					channel["icon"] = c.Icon.Src
+					channel["active"] = c.Active
 
 					xmltvMap[c.ID] = channel
 
@@ -745,6 +746,7 @@ func createXMLTVFile() (err error) {
 					channel.ID = xepgChannel.XChannelID
 					channel.Icon = Icon{Src: imgc.Image.GetURL(xepgChannel.TvgLogo)}
 					channel.DisplayName = append(channel.DisplayName, DisplayName{Value: xepgChannel.TvgName})
+					channel.Active = xepgChannel.XActive
 					xepgXML.Channel = append(xepgXML.Channel, &channel)
 				}
 

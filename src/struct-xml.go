@@ -18,6 +18,7 @@ type Channel struct {
 	DisplayName []DisplayName `xml:"display-name"`
 	Icon        Icon          `xml:"icon"`
 	Live        bool          `xml:"live"`
+	Active      bool          `xml:"active"`
 }
 
 // DisplayName : Kanalname
@@ -67,7 +68,7 @@ type SubTitle struct {
 	Value string `xml:",chardata"`
 }
 
-//Desc : Programmbeschreibung
+// Desc : Programmbeschreibung
 type Desc struct {
 	Lang  string `xml:"lang,attr"`
 	Value string `xml:",chardata"`

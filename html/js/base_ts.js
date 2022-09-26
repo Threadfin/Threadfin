@@ -45,9 +45,9 @@ settingsCategory.push(new SettingsCategoryItem("{{.settings.category.backup}}", 
 settingsCategory.push(new SettingsCategoryItem("{{.settings.category.authentication}}", "authentication.web,authentication.pms,authentication.m3u,authentication.xml,authentication.api"));
 function showPopUpElement(elm) {
     showElement(elm, true);
-    setTimeout(function () {
-        showElement("popup", true);
-    }, 10);
+    // setTimeout(function () {
+    //   showElement("popup", true);
+    // }, 10);
     return;
 }
 function showElement(elmID, type) {

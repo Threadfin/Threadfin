@@ -721,6 +721,12 @@ func connectToStreamingServer(streamID int, playlistID string) {
 
 					err = errors.New("No response from streaming server")
 					fmt.Println("Current URL:", currentURL)
+					if currentURL == "" {
+						if !useBackup {
+							useBackup = true
+						}
+						goto InitBuffer
+					}
 					ShowError(err, 0)
 
 					addErrorToStream(err)

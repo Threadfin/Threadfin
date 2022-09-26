@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "module": "commonjs",
+    "lib": ["es6", "dom", "dom.iterable", "es2017"],
     "target": "es6",
     "sourceMap": false,
     "outDir": "../html/js"

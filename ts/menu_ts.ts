@@ -843,7 +843,7 @@ class ShowContent extends Content {
         break;
 
       case "mapping":
-        showElement("loading", true)
+        // showElement("loading", true)
         var input = this.createInput("button", menuKey, "{{.button.save}}")
         input.setAttribute("onclick", 'javascript: savePopupData("mapping", "", "")')
         interaction.appendChild(input)
@@ -1855,7 +1855,7 @@ function openPopUp(dataType, element) {
       // XMLTV Mapping
       var dbKey: string = "x-mapping"
       var xmltv: XMLTVFile = new XMLTVFile()
-      var select = xmltv.getPrograms(file, data[dbKey])
+      var select = xmltv.getPrograms(file, data[dbKey], false)
       select.setAttribute("name", dbKey)
       select.setAttribute("id", "popup-mapping")
       select.setAttribute("onchange", "javascript: this.className = 'changed'; checkXmltvChannel('" + id + "',this,'" + xmlFile + "');")
@@ -1865,7 +1865,7 @@ function openPopUp(dataType, element) {
 
       var dbKey: string = "x-backup-channel"
       var xmltv: XMLTVFile = new XMLTVFile()
-      var select = xmltv.getPrograms(file, data[dbKey])
+      var select = xmltv.getPrograms(file, data[dbKey], true)
       select.setAttribute("name", dbKey)
       select.setAttribute("id", "backup-channel")
       select.setAttribute("onchange", "javascript: this.className = 'changed'; checkXmltvChannel('" + id + "',this,'" + xmlFile + "');")
@@ -1946,30 +1946,55 @@ class XMLTVFile {
     return select
   }
 
-  getPrograms(file: string, set: string): any {
+  getPrograms(file: string, set: string, active: boolean): any {
     //var fileIDs:string[] = getObjKeys(SERVER["xepg"]["xmltvMap"])
     var values = getObjKeys(SERVER["xepg"]["xmltvMap"][file]);
     var text = new Array()
     var displayName: string
+    var actives = getObjKeys(SERVER["xepg"]["epgMapping"])
+    var active_list = new Array()
 
-    for (let i = 0; i < values.length; i++) {
-      if (SERVER["xepg"]["xmltvMap"][file][values[i]].hasOwnProperty('display-name') == true) {
-        displayName = SERVER["xepg"]["xmltvMap"][file][values[i]]["display-name"];
-      } else {
-        displayName = "-"
+    if (active == true) {
+      for (let i = 0; i < actives.length; i++) {
+        displayName = ""
+        if (SERVER["xepg"]["epgMapping"][actives[i]].hasOwnProperty('name') == true && SERVER["xepg"]["epgMapping"][actives[i]]["x-active"] == true) {
+          displayName = SERVER["xepg"]["epgMapping"][actives[i]]["name"];
+        }
+        if (displayName != "") { 
+          var id = SERVER["xepg"]["epgMapping"][actives[i]]["x-name"] + " (" + SERVER["xepg"]["epgMapping"][actives[i]]["tvg-id"] + ")"
+          var object = {"value": id, "display": displayName}
+          active_list.push(object)
+        }
       }
-
-      text[i] = displayName + " (" + values[i] + ")";
+    } else {
+      for (let i = 0; i < values.length; i++) {
+          if (SERVER["xepg"]["xmltvMap"][file][values[i]].hasOwnProperty('display-name') == true) {
+            displayName = SERVER["xepg"]["xmltvMap"][file][values[i]]["display-name"];
+          } else {
+            displayName = "-"
+          }
+  
+        text[i] = displayName + " (" + values[i] + ")";
+      }
     }
 
     text.unshift("-");
     values.unshift("-");
 
     var select = document.createElement("SELECT")
+    if (active == true) {
+      console.log("ACTIVES: " + JSON.stringify(active_list))
+    }
     for (let i = 0; i < text.length; i++) {
       var option = document.createElement("OPTION")
       option.setAttribute("value", values[i])
       option.innerText = text[i]
+      select.appendChild(option)
+    }
+    for (let i = 0; i < active_list.length; i++) {
+      var option = document.createElement("OPTION")
+      option.setAttribute("value", active_list[i]["value"])
+      option.innerText = active_list[i]["display"]
       select.appendChild(option)
     }
 
@@ -2032,7 +2057,7 @@ function setXmltvChannel(id, element) {
   var td = document.getElementById("popup-mapping").parentElement
   td.innerHTML = ""
 
-  var select = xmltv.getPrograms(element.value, tvgId)
+  var select = xmltv.getPrograms(element.value, tvgId, false)
   select.setAttribute("name", "x-mapping")
   select.setAttribute("id", "popup-mapping")
   select.setAttribute("onchange", "javascript: this.className = 'changed'; checkXmltvChannel('" + id + "',this,'" + xmlFile + "');")
@@ -2121,7 +2146,10 @@ function changeChannelLogo(id: string) {
 
 function savePopupData(dataType: string, id: string, remove: Boolean, option: number) {
 
+  showElement("loading", true)
+
   if (dataType == "mapping") {
+
 
     var data = new Object()
     console.log("Save mapping data")
@@ -2135,6 +2163,8 @@ function savePopupData(dataType: string, id: string, remove: Boolean, option: nu
     server.request(data)
 
     delete UNDO["epgMapping"]
+
+    showElement("loading", false)
 
     return
   }
@@ -2317,6 +2347,8 @@ function savePopupData(dataType: string, id: string, remove: Boolean, option: nu
 
   var server: Server = new Server(cmd)
   server.request(data)
+
+  showElement("loading", false)
 
 }
 
@@ -2502,7 +2534,7 @@ function showPreview(element: boolean) {
 
   });
 
-  showElement("loading", false)
+  // showElement("loading", false)
   div.className = "visible"
 
   return

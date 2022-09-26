@@ -103,7 +103,7 @@ function readyForConfiguration(wizard:number) {
   var server:Server = new Server("getServerConfig")
   server.request(new Object())
 
-  showElement("loading", false)
+  // showElement("loading", false)
 
   configurationWizard[wizard].createWizard()
 

@@ -9,7 +9,7 @@ class Server {
         SERVER_CONNECTION = true;
         console.log(data);
         if (this.cmd != "updateLog") {
-            showElement("loading", true);
+            // showElement("loading", true)
             UNDO = new Object();
         }
         switch (window.location.protocol) {

@@ -16,7 +16,7 @@ class Server {
 
     console.log(data)
     if (this.cmd != "updateLog") {
-      showElement("loading", true)
+      // showElement("loading", true)
       UNDO = new Object()
     }
 

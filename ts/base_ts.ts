@@ -55,9 +55,9 @@ function showPopUpElement(elm) {
 
   showElement(elm, true)
 
-  setTimeout(function () {
-    showElement("popup", true);
-  }, 10);
+  // setTimeout(function () {
+  //   showElement("popup", true);
+  // }, 10);
 
   return
 }
