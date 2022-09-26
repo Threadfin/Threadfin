@@ -20,21 +20,22 @@ jobs:
         id: go
       - run: go mod tidy && go mod vendor
 
-      # - name: Build
-      # - run: |
-      #   env GOOS=linux GOARCH=arm64 go build -o dist/Threadfin
-      #   env GOOS=linux GOARCH=amd64 go build -o dist/Threadfin
-      #   env GOOS=darwin GOARCH=arm64 go build -o dist/Threadfin
-      #   env GOOS=darwin GOARCH=amd64 go build -o dist/Threadfin
-
       - name: Build
-        uses: thatisuday/go-cross-build@master
-        with:
-            platforms: 'linux/amd64,linux/arm64,darwin/amd64,windows/amd64'
-            name: Threadfin
-            package: threadfin.go
-            compress: 'true'
-            dest: dist
+      - run: |
+        env GOOS=linux GOARCH=arm64 go build -o dist/Threadfin_linux_arm64
+        env GOOS=linux GOARCH=amd64 go build -o dist/Threadfin_linux_amd64
+        env GOOS=darwin GOARCH=arm64 go build -o dist/Threadfin_darwin_arm64
+        env GOOS=darwin GOARCH=amd64 go build -o dist/Threadfin_darwin_amd64
+        env GOOS=windows GOARCH=amd64 go build -o dist/Threadfin.exe
+
+      # - name: Build
+      #   uses: thatisuday/go-cross-build@master
+      #   with:
+      #       platforms: 'linux/amd64,linux/arm64,darwin/amd64,windows/amd64'
+      #       name: Threadfin
+      #       package: threadfin.go
+      #       compress: 'true'
+      #       dest: dist
 
       - name: Pre-Release
         uses: softprops/action-gh-release@v0.1.13
