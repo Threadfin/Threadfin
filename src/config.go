@@ -68,7 +68,7 @@ func Init() (err error) {
 	//System.Update.Git = "https://github.com/Threadfin/Threadfin/blob"
 	System.Update.Git = fmt.Sprintf("https://github.com/%s/%s", System.GitHub.User, System.GitHub.Repo)
 	System.Update.Github = fmt.Sprintf("https://api.github.com/repos/%s/%s", System.GitHub.User, System.GitHub.Repo)
-	System.Update.Name = "threadfin"
+	System.Update.Name = "Threadfin"
 
 	// Ordnerpfade festlegen
 	var tempFolder = os.TempDir() + string(os.PathSeparator) + System.AppName + string(os.PathSeparator)

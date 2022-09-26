@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 
 	up2date "threadfin/src/internal/up2date/client"
@@ -28,10 +29,11 @@ func BinaryUpdate() (err error) {
 
 	up2date.Init()
 
+	log.Println("BRANCH: ", System.Branch)
 	switch System.Branch {
 
 	// Update von GitHub
-	case "master", "beta":
+	case "Main", "Beta":
 		var releaseInfo = fmt.Sprintf("%s/releases", System.Update.Github)
 		var latest string
 		var body []byte
@@ -52,29 +54,33 @@ func BinaryUpdate() (err error) {
 		}
 
 		// Get latest prerelease tag name
-		if System.Branch == "beta" {
+		if System.Branch == "Beta" {
 			for _, release := range git {
 				if release.Prerelease {
 					latest = release.TagName
 					updater.Response.Version = release.TagName
+					break
 				}
 			}
 		}
 
-		// Latest master tag name
-		if System.Branch == "master" {
+		// Latest main tag name
+		if System.Branch == "Main" {
 			latest = "latest"
 			for _, release := range git {
 				if !release.Prerelease {
 					updater.Response.Version = release.TagName
+					break
 				}
 			}
 		}
 
-		var zipFile = fmt.Sprintf("%s/releases/download/%s/%s_%s_%s.zip?raw=true", System.Update.Git, latest, "Threadfin", System.OS, System.ARCH)
+		var File = fmt.Sprintf("%s/releases/download/%s/%s_%s_%s?raw=true", System.Update.Git, latest, "Threadfin", System.OS, System.ARCH)
 
 		updater.Response.Status = true
-		updater.Response.UpdateZIP = zipFile
+		updater.Response.UpdateBIN = File
+
+		log.Println("FILE: ", updater.Response.UpdateBIN)
 
 	// Update vom eigenen Server
 	default:
@@ -110,6 +116,7 @@ func BinaryUpdate() (err error) {
 	}
 
 	var currentVersion = System.Version + "." + System.Build
+	log.Println("CURRENT VERSION: ", currentVersion)
 
 	// Versionsnummer überprüfen
 	if updater.Response.Version > currentVersion && updater.Response.Status {
