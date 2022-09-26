@@ -22,11 +22,11 @@ jobs:
 
       - name: Build
       - run: |
-        env GOOS=linux GOARCH=arm64 go build -o dist/Threadfin_linux_arm64
-        env GOOS=linux GOARCH=amd64 go build -o dist/Threadfin_linux_amd64
-        env GOOS=darwin GOARCH=arm64 go build -o dist/Threadfin_darwin_arm64
-        env GOOS=darwin GOARCH=amd64 go build -o dist/Threadfin_darwin_amd64
-        env GOOS=windows GOARCH=amd64 go build -o dist/Threadfin.exe
+          env GOOS=linux GOARCH=arm64 go build -o dist/Threadfin_linux_arm64
+          env GOOS=linux GOARCH=amd64 go build -o dist/Threadfin_linux_amd64
+          env GOOS=darwin GOARCH=arm64 go build -o dist/Threadfin_darwin_arm64
+          env GOOS=darwin GOARCH=amd64 go build -o dist/Threadfin_darwin_amd64
+          env GOOS=windows GOARCH=amd64 go build -o dist/Threadfin.exe
 
       # - name: Build
       #   uses: thatisuday/go-cross-build@master
