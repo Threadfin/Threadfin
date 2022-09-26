@@ -23,9 +23,10 @@ jobs:
       - name: Build
         uses: thatisuday/go-cross-build@master
         with:
-            platforms: 'linux/amd64, linux/arm64, darwin/amd64, windows/amd64'
+            platforms: 'linux/amd64,linux/arm64,darwin/amd64,windows/amd64'
+            package: ./
             compress: 'true'
-            dest: 'dist'
+            dest: dist
 
       - name: Pre-Release
         uses: softprops/action-gh-release@v0.1.13
