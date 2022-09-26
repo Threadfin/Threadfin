@@ -4,7 +4,10 @@ on:
     tags:
       - BETA-*
 permissions:
+  actions: write
   contents: write
+  deployments: write
+  packages: write
 jobs:
   build:
     name: Build
@@ -37,11 +40,11 @@ jobs:
           project_path: '.'
           binary_name: "Threadfin"
 
-      - name: Pre-Release
-        uses: softprops/action-gh-release@v0.1.13
-        if: startsWith(github.ref, 'refs/tags/')
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          files: dist/*
-          prerelease: true
+      # - name: Pre-Release
+      #   uses: softprops/action-gh-release@v0.1.13
+      #   if: startsWith(github.ref, 'refs/tags/')
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   with:
+      #     files: dist/*
+      #     prerelease: true
