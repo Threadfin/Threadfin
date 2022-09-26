@@ -24,6 +24,7 @@ jobs:
         uses: thatisuday/go-cross-build@master
         with:
             platforms: 'linux/amd64,linux/arm64,darwin/amd64,windows/amd64'
+            name: Threadfin
             package: ./
             compress: 'true'
             dest: dist
