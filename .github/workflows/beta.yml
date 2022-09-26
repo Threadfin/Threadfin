@@ -9,6 +9,14 @@ jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # build and publish in parallel: linux/386, linux/amd64, linux/arm64, windows/386, windows/amd64, darwin/amd64, darwin/arm64
+        goos: [linux, windows, darwin]
+        goarch: [amd64, arm64]
+        exclude:
+          - goarch: arm64
+            goos: windows
     steps:
       - name: Check out code into the Go module directory
         uses: actions/checkout@v3
@@ -21,13 +29,13 @@ jobs:
       - run: go mod tidy && go mod vendor
 
       - name: Build
-        uses: thatisuday/go-cross-build@master
+        uses: wangyoucao577/go-release-action@v1.32
         with:
-            platforms: 'linux/amd64, linux/arm64, darwin/amd64, windows/amd64'
-            package: ''
-            name: 'Threadfin'
-            compress: 'true'
-            dest: 'dist'
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          goos: ${{ matrix.goos }}
+          goarch: ${{ matrix.goarch }}
+          project_path: '.'
+          binary_name: "Threadfin"
 
       - name: Pre-Release
         uses: softprops/action-gh-release@v0.1.13
