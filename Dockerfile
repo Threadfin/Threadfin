@@ -2,9 +2,19 @@
 
 # First stage. Building a binary
 # -----------------------------------------------------------------------------
-
-# Base image for builder is debian 11 with golang 1.18+ pre-installed
 FROM golang:1.18.1-bullseye AS builder
+
+# Download the source code
+RUN apt-get install -y git
+RUN git clone https://github.com/Threadfin/Threadfin.git /src
+WORKDIR /src
+RUN git checkout beta
+
+# Install dependencies
+RUN go mod tidy && go mod vendor
+
+# Compile
+RUN go build threadfin.go
 
 # Second stage. Creating an image
 # -----------------------------------------------------------------------------
