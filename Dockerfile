@@ -6,17 +6,6 @@
 # Base image for builder is debian 11 with golang 1.18+ pre-installed
 FROM golang:1.18.1-bullseye AS builder
 
-# Download the source code
-RUN git clone https://github.com/Threadfin/Threadfin.git /src
-WORKDIR /src
-RUN git checkout beta
-
-# Install dependencies
-RUN go mod tidy && go mod vendor
-
-# Compile
-RUN go build threadfin.go
-
 # Second stage. Creating an image
 # -----------------------------------------------------------------------------
 
@@ -36,7 +25,8 @@ LABEL org.label-schema.build-date="{$BUILD_DATE}" \
       org.label-schema.vcs-url="https://github.com/Threadfin/Threadfin" \
       org.label-schema.vendor="Threadfin" \
       org.label-schema.version="{$THREADFIN_VERSION}" \
-      org.label-schema.schema-version="1.0"
+      org.label-schema.schema-version="1.0" \
+      DISCORD_URL="https://discord.gg/bEPPNP2VG8"
 
 ENV THREADFIN_BIN=/home/threadfin/bin
 ENV THREADFIN_CONF=/home/threadfin/conf
@@ -44,6 +34,19 @@ ENV THREADFIN_HOME=/home/threadfin
 ENV THREADFIN_TEMP=/tmp/threadfin
 ENV THREADFIN_UID=31337
 ENV THREADFIN_USER=threadfin
+ENV THREADFIN_BRANCH=beta
+ENV THREADFIN_DEBUG=0
+
+# Download the source code
+RUN git clone https://github.com/Threadfin/Threadfin.git /src
+WORKDIR /src
+RUN git checkout $THREADFIN_BRANCH
+
+# Install dependencies
+RUN go mod tidy && go mod vendor
+
+# Compile
+RUN go build threadfin.go
 
 # Create the user to run inside the container
 RUN adduser --uid $THREADFIN_UID $THREADFIN_USER
@@ -89,4 +92,4 @@ RUN chown -R $THREADFIN_USER $THREADFIN_HOME
 USER $THREADFIN_USER
 
 # Run the xTeVe executable
-ENTRYPOINT ${THREADFIN_BIN}/threadfin -port=${THREADFIN_PORT} -config=${THREADFIN_CONF}
+ENTRYPOINT ${THREADFIN_BIN}/threadfin -port=${THREADFIN_PORT} -config=${THREADFIN_CONF} -debug=${THREADFIN_DEBUG}

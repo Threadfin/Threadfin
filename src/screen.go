@@ -98,10 +98,16 @@ func showHighlight(str string) {
 
 		printLogOnScreen(logMsg, "highlight")
 
+	} else {
+		printLogOnScreen(str, "highlight")
 	}
 
 	notification.Type = "info"
-	notification.Message = msg[1]
+	if len(msg) > 1 {
+		notification.Message = msg[1]
+	} else {
+		notification.Message = str
+	}
 
 	addNotification(notification)
 

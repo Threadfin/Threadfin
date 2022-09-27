@@ -1961,7 +1961,7 @@ class XMLTVFile {
           displayName = SERVER["xepg"]["epgMapping"][actives[i]]["name"];
         }
         if (displayName != "") { 
-          var id = SERVER["xepg"]["epgMapping"][actives[i]]["x-name"] + " (" + SERVER["xepg"]["epgMapping"][actives[i]]["tvg-id"] + ")"
+          var id = SERVER["xepg"]["epgMapping"][actives[i]]["tvg-id"]
           var object = {"value": id, "display": displayName}
           active_list.push(object)
         }

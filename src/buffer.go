@@ -12,7 +12,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -598,6 +597,8 @@ func connectToStreamingServer(streamID int, playlistID string) {
 			var segment Segment
 
 			segment.URL = playlist.Streams[streamID].BackupChannelURL
+			showHighlight("START OF BACKUP STREAM")
+			showInfo("Backup Channel URL: " + segment.URL)
 
 			segment.Duration = 0
 
@@ -787,7 +788,13 @@ func connectToStreamingServer(streamID int, playlistID string) {
 			var contentType = resp.Header.Get("Content-Type")
 			var httpStatusCode = resp.StatusCode
 			var httpStatusInfo = fmt.Sprintf("HTTP Response Status [%d] %s", httpStatusCode, http.StatusText(resp.StatusCode))
-			log.Println("STATUS CODE: ", resp.StatusCode)
+			status_code := strconv.Itoa(resp.StatusCode)
+			if useBackup {
+				showInfo("Status Code for BACKUP URL: " + status_code)
+			} else {
+				showInfo("Status Code for PRIMARY URL: " + status_code)
+			}
+
 			if resp.StatusCode != http.StatusOK {
 
 				if !useBackup {
