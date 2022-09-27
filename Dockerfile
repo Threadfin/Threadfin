@@ -1,26 +1,22 @@
-# syntax=docker/dockerfile:1
-
 # First stage. Building a binary
 # -----------------------------------------------------------------------------
-FROM golang:1.18.1-bullseye AS builder
+FROM golang:1.18-buster AS builder
 
 # Download the source code
 RUN apt-get install -y git
 RUN git clone https://github.com/Threadfin/Threadfin.git /src
+
 WORKDIR /src
+
 RUN git checkout beta
-
-# Install dependencies
 RUN go mod tidy && go mod vendor
-
-# Compile
 RUN go build threadfin.go
 
 # Second stage. Creating an image
 # -----------------------------------------------------------------------------
 
 # Base image is a latest stable debian
-FROM debian
+FROM golang:1.18-buster
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -48,17 +44,13 @@ ENV THREADFIN_BRANCH=beta
 ENV THREADFIN_DEBUG=0
 
 # Download the source code
+RUN apt-get update
+RUN apt-get install --yes git
 RUN git clone https://github.com/Threadfin/Threadfin.git /src
 WORKDIR /src
 RUN git checkout $THREADFIN_BRANCH
-
-# Install dependencies
 RUN go mod tidy && go mod vendor
-
-# Compile
 RUN go build threadfin.go
-
-# Create the user to run inside the container
 RUN adduser --uid $THREADFIN_UID $THREADFIN_USER
 
 # Add binary to PATH
@@ -67,25 +59,18 @@ ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$THREADFIN
 # Set working directory
 WORKDIR $THREADFIN_HOME
 
-# Update package lists
-RUN apt-get update
-
-# Install CA certificates
-RUN apt-get install --yes ca-certificates
-
-# Add VLC and FFMPEG support
-RUN apt-get install --yes vlc-bin ffmpeg
+RUN apt-get update \
+&& apt-get install --yes ca-certificates \
+&& apt-get install --yes vlc-bin ffmpeg
 
 # Copy built binary from builder image
 COPY --from=builder [ "/src/threadfin", "${THREADFIN_BIN}/" ]
 
 # Set binary permissions
 RUN chmod +rx $THREADFIN_BIN/threadfin
-
-# Create XML cache directory
 RUN mkdir $THREADFIN_HOME/cache
 
-# Create working directories for xTeVe
+# Create working directories for Threadfin
 RUN mkdir $THREADFIN_CONF
 RUN chmod a+rwX $THREADFIN_CONF
 RUN mkdir $THREADFIN_TEMP
@@ -98,8 +83,8 @@ VOLUME $THREADFIN_TEMP
 # Ensure the container user has ownership of home dir
 RUN chown -R $THREADFIN_USER $THREADFIN_HOME
 
-# Switch users to the xTeVe container user
+# Switch users to the Threadfin container user
 USER $THREADFIN_USER
 
-# Run the xTeVe executable
+# Run the Threadfin executable
 ENTRYPOINT ${THREADFIN_BIN}/threadfin -port=${THREADFIN_PORT} -config=${THREADFIN_CONF} -debug=${THREADFIN_DEBUG}
