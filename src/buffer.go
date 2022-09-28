@@ -595,7 +595,6 @@ func connectToStreamingServer(streamID int, playlistID string) {
 		var backupSegment = func() {
 
 			var segment Segment
-
 			segment.URL = playlist.Streams[streamID].BackupChannelURL
 			showHighlight("START OF BACKUP STREAM")
 			showInfo("Backup Channel URL: " + segment.URL)

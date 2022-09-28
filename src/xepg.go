@@ -560,24 +560,18 @@ func mapping() (err error) {
 			return
 		}
 
-		if xepgChannel.XBackupChannel != "" {
-			for _, xmltvChannels := range Data.XMLTV.Mapping {
-				if _, ok := xmltvChannels.(map[string]interface{})[xepgChannel.XBackupChannel]; ok {
-					for xepg_backup, xchannel := range Data.XEPG.Channels {
+		if xepgChannel.XBackupChannel != "" && xepgChannel.XBackupChannel != "-" {
+			for _, stream := range Data.Streams.Active {
+				var m3uChannel M3UChannelStructXEPG
 
-						var xepgChannelBackup XEPGChannelStruct
-						err = json.Unmarshal([]byte(mapToJSON(xchannel)), &xepgChannelBackup)
-						if err != nil {
-							return
-						}
+				err = json.Unmarshal([]byte(mapToJSON(stream)), &m3uChannel)
+				if err != nil {
+					return
+				}
 
-						if xepgChannelBackup.XMapping == xepgChannel.XBackupChannel {
-							xepgChannelBackup.IsBackupChannel = true
-							xepgChannel.BackupChannelURL = xepgChannelBackup.URL
-							Data.XEPG.Channels[xepg_backup] = xepgChannelBackup
-							Data.XEPG.Channels[xepg] = xepgChannel
-						}
-					}
+				backup_channel := strings.Trim(xepgChannel.XBackupChannel, " ")
+				if m3uChannel.TvgName == backup_channel {
+					xepgChannel.BackupChannelURL = m3uChannel.URL
 				}
 			}
 		}

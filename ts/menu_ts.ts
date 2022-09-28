@@ -1951,18 +1951,16 @@ class XMLTVFile {
     var values = getObjKeys(SERVER["xepg"]["xmltvMap"][file]);
     var text = new Array()
     var displayName: string
-    var actives = getObjKeys(SERVER["xepg"]["epgMapping"])
+    var actives = getObjKeys(SERVER["data"]["StreamPreviewUI"]["activeStreams"])
     var active_list = new Array()
 
     if (active == true) {
-      for (let i = 0; i < actives.length; i++) {
-        displayName = ""
-        if (SERVER["xepg"]["epgMapping"][actives[i]].hasOwnProperty('name') == true && SERVER["xepg"]["epgMapping"][actives[i]]["x-active"] == true) {
-          displayName = SERVER["xepg"]["epgMapping"][actives[i]]["name"];
-        }
+      for (let i = 0; i < actives.length; i++) {        
+        var names_split = SERVER["data"]["StreamPreviewUI"]["activeStreams"][actives[i]].split("[");
+        displayName = names_split[0].trim();
+        
         if (displayName != "") { 
-          var id = SERVER["xepg"]["epgMapping"][actives[i]]["tvg-id"]
-          var object = {"value": id, "display": displayName}
+          var object = {"value": displayName, "display": displayName}
           active_list.push(object)
         }
       }
@@ -1982,9 +1980,6 @@ class XMLTVFile {
     values.unshift("-");
 
     var select = document.createElement("SELECT")
-    if (active == true) {
-      console.log("ACTIVES: " + JSON.stringify(active_list))
-    }
     for (let i = 0; i < text.length; i++) {
       var option = document.createElement("OPTION")
       option.setAttribute("value", values[i])
@@ -2167,6 +2162,7 @@ function savePopupData(dataType: string, id: string, remove: Boolean, option: nu
     showElement("loading", false)
 
     return
+
   }
 
   console.log("Save popup data")
