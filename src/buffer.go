@@ -189,6 +189,7 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL, channelName s
 			stream.URL = streamingURL
 			stream.ChannelName = channelName
 			stream.Status = false
+			stream.BackupChannelURL = backupStreamingURL
 
 			playlist.Streams[streamID] = stream
 			playlist.Clients[streamID] = client
@@ -217,7 +218,7 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL, channelName s
 		case "threadfin":
 			go connectToStreamingServer(streamID, playlistID)
 		case "ffmpeg", "vlc":
-			go thirdPartyBuffer(streamID, playlistID)
+			go thirdPartyBuffer(streamID, playlistID, false)
 
 		default:
 			break
@@ -814,11 +815,6 @@ func connectToStreamingServer(streamID int, playlistID string) {
 				BufferInformation.Store(playlist.PlaylistID, playlist)
 				addErrorToStream(err)
 
-				killClientConnection(streamID, playlistID, true)
-				clientConnection(stream)
-				resp.Body.Close()
-
-				return
 			}
 
 			// Informationen über den Streamingserver auslesen
@@ -1400,7 +1396,7 @@ func switchBandwidth(stream *ThisStream) (err error) {
 }
 
 // Buffer mit FFMPEG
-func thirdPartyBuffer(streamID int, playlistID string) {
+func thirdPartyBuffer(streamID int, playlistID string, useBackup bool) {
 
 	if p, ok := BufferInformation.Load(playlistID); ok {
 
@@ -1415,6 +1411,9 @@ func thirdPartyBuffer(streamID int, playlistID string) {
 
 		var tmpFolder = playlist.Streams[streamID].Folder
 		var url = playlist.Streams[streamID].URL
+		if useBackup {
+			url = playlist.Streams[streamID].BackupChannelURL
+		}
 
 		stream.Status = false
 
@@ -1555,6 +1554,14 @@ func thirdPartyBuffer(streamID int, playlistID string) {
 
 				debug = fmt.Sprintf("%s log:%s", bufferType, strings.TrimSpace(scanner.Text()))
 
+				status := strings.Contains(debug, "404")
+				if status {
+					if !useBackup {
+						thirdPartyBuffer(streamID, playlistID, true)
+						return
+					}
+				}
+
 				select {
 				case <-streamStatus:
 					showDebug(debug, 1)
@@ -1686,6 +1693,7 @@ func thirdPartyBuffer(streamID int, playlistID string) {
 		cmd.Wait()
 
 		err = errors.New(bufferType + " error")
+
 		addErrorToStream(err)
 		ShowError(err, 1204)
 
