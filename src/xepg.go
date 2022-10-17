@@ -793,13 +793,15 @@ func getProgramData(xepgChannel XEPGChannelStruct) (xepgXML XMLTV, err error) {
 			program.Stop = xmltvProgram.Stop
 
 			// Title
-			xmltvProgram.Title[0].Value = strings.TrimSpace(strings.Map(func(r rune) rune {
-				if r > unicode.MaxASCII {
-					return -1
-				}
-				return r
-			}, xmltvProgram.Title[0].Value))
-			program.Title = xmltvProgram.Title
+			if len(xmltvProgram.Title) > 0 {
+				xmltvProgram.Title[0].Value = strings.TrimSpace(strings.Map(func(r rune) rune {
+					if r > unicode.MaxASCII {
+						return -1
+					}
+					return r
+				}, xmltvProgram.Title[0].Value))
+				program.Title = xmltvProgram.Title
+			}
 
 			// Category (Kategorie)
 			getCategory(program, xmltvProgram, xepgChannel)
