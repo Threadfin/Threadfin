@@ -529,7 +529,6 @@ class Content {
                         rows.push(tr);
                     }
                 });
-                savePopupData("mapping", "", false, 0);
                 break;
             case "settings":
                 alert();
@@ -822,6 +821,7 @@ class ShowContent extends Content {
                 rows.forEach(tr => {
                     inactivetable.appendChild(tr);
                 });
+                savePopupData("mapping", "", false, 0);
             }
         }
         switch (menuKey) {

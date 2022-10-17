@@ -1412,7 +1412,9 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool) {
 		var tmpFolder = playlist.Streams[streamID].Folder
 		var url = playlist.Streams[streamID].URL
 		if useBackup {
+			showHighlight("START OF BACKUP STREAM")
 			url = playlist.Streams[streamID].BackupChannelURL
+			showInfo("Backup Channel URL: " + url)
 		}
 
 		stream.Status = false
@@ -1434,6 +1436,11 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool) {
 		}
 
 		var addErrorToStream = func(err error) {
+
+			if !useBackup {
+				thirdPartyBuffer(streamID, playlistID, true)
+				return
+			}
 
 			var stream = playlist.Streams[streamID]
 
@@ -1553,14 +1560,6 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool) {
 			for scanner.Scan() {
 
 				debug = fmt.Sprintf("%s log:%s", bufferType, strings.TrimSpace(scanner.Text()))
-
-				status := strings.Contains(debug, "404")
-				if status {
-					if !useBackup {
-						thirdPartyBuffer(streamID, playlistID, true)
-						return
-					}
-				}
 
 				select {
 				case <-streamStatus:
