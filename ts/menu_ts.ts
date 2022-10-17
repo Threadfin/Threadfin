@@ -651,8 +651,6 @@ class Content {
           }
         });
 
-        savePopupData("mapping", "", false, 0)
-
         break
 
       case "settings":
@@ -1035,6 +1033,7 @@ class ShowContent extends Content {
         rows.forEach(tr => {
           inactivetable.appendChild(tr)
         });
+        savePopupData("mapping", "", false, 0)
 
       }
     }

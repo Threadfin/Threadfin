@@ -132,7 +132,7 @@ func loadSettings() (settings SettingsStruct, err error) {
 	defaults["m3u8.adaptive.bandwidth.mbps"] = 10
 	defaults["port"] = "34400"
 	defaults["ssdp"] = true
-	defaults["storeBufferInRAM"] = false
+	defaults["storeBufferInRAM"] = true
 	defaults["tuner"] = 1
 	defaults["update"] = []string{"0000"}
 	defaults["user.agent"] = System.Name
