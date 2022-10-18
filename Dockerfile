@@ -46,9 +46,8 @@ ENV THREADFIN_DEBUG=0
 # Download the source code
 RUN apt-get update
 RUN apt-get install --yes git
-RUN git clone https://github.com/Threadfin/Threadfin.git /src
+RUN git clone https://github.com/Threadfin/Threadfin.git /src --branch $THREADFIN_BRANCH
 WORKDIR /src
-RUN git checkout $THREADFIN_BRANCH
 RUN go mod tidy && go mod vendor
 RUN go build threadfin.go
 RUN adduser --uid $THREADFIN_UID $THREADFIN_USER
