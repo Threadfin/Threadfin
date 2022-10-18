@@ -720,6 +720,11 @@ func connectToStreamingServer(streamID int, playlistID string) {
 
 				if resp == nil {
 
+					if !useBackup {
+						useBackup = true
+						goto InitBuffer
+					}
+
 					err = errors.New("No response from streaming server")
 					fmt.Println("Current URL:", currentURL)
 					if currentURL == "" {
@@ -757,6 +762,11 @@ func connectToStreamingServer(streamID int, playlistID string) {
 
 					} else {
 
+						if !useBackup {
+							useBackup = true
+							goto InitBuffer
+						}
+
 						err = errors.New("Streaming server")
 						ShowError(err, 4002)
 						addErrorToStream(err)
@@ -769,6 +779,11 @@ func connectToStreamingServer(streamID int, playlistID string) {
 
 				} else {
 
+					if !useBackup {
+						useBackup = true
+						goto InitBuffer
+					}
+
 					ShowError(err, 0)
 					addErrorToStream(err)
 
@@ -777,8 +792,6 @@ func connectToStreamingServer(streamID int, playlistID string) {
 					return
 
 				}
-
-				defer resp.Body.Close()
 
 			}
 
