@@ -389,8 +389,8 @@ class SettingsCategory {
         tdLeft.innerHTML = "{{.settings.streamBuffering.title}}" + ":"
 
         var tdRight = document.createElement("TD")
-        var text: any[] = ["{{.settings.streamBuffering.info_false}}", "Threadfin: ({{.settings.streamBuffering.info_threadfin}})", "FFmpeg: ({{.settings.streamBuffering.info_ffmpeg}})", "VLC: ({{.settings.streamBuffering.info_vlc}})"]
-        var values: any[] = ["-", "threadfin", "ffmpeg", "vlc"]
+        var text: any[] = ["{{.settings.streamBuffering.info_false}}", "FFmpeg: ({{.settings.streamBuffering.info_ffmpeg}})", "VLC: ({{.settings.streamBuffering.info_vlc}})"]
+        var values: any[] = ["-", "ffmpeg", "vlc"]
 
         var select = content.createSelect(text, values, data, settingsKey)
         select.setAttribute("onchange", "javascript: this.className = 'changed'")

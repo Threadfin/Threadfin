@@ -306,8 +306,8 @@ class SettingsCategory {
                 var tdLeft = document.createElement("TD");
                 tdLeft.innerHTML = "{{.settings.streamBuffering.title}}" + ":";
                 var tdRight = document.createElement("TD");
-                var text = ["{{.settings.streamBuffering.info_false}}", "Threadfin: ({{.settings.streamBuffering.info_threadfin}})", "FFmpeg: ({{.settings.streamBuffering.info_ffmpeg}})", "VLC: ({{.settings.streamBuffering.info_vlc}})"];
-                var values = ["-", "threadfin", "ffmpeg", "vlc"];
+                var text = ["{{.settings.streamBuffering.info_false}}", "FFmpeg: ({{.settings.streamBuffering.info_ffmpeg}})", "VLC: ({{.settings.streamBuffering.info_vlc}})"];
+                var values = ["-", "ffmpeg", "vlc"];
                 var select = content.createSelect(text, values, data, settingsKey);
                 select.setAttribute("onchange", "javascript: this.className = 'changed'");
                 tdRight.appendChild(select);
