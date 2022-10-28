@@ -74,6 +74,7 @@ RUN mkdir $THREADFIN_CONF
 RUN chmod a+rwX $THREADFIN_CONF
 RUN mkdir $THREADFIN_TEMP
 RUN chmod a+rwX $THREADFIN_TEMP
+RUN sed -i 's/geteuid/getppid/' /usr/bin/vlc
 
 # Configure container volume mappings
 VOLUME $THREADFIN_CONF
