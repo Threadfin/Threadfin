@@ -74,6 +74,7 @@ RUN mkdir $THREADFIN_CONF
 RUN chmod a+rwX $THREADFIN_CONF
 RUN mkdir $THREADFIN_TEMP
 RUN chmod a+rwX $THREADFIN_TEMP
+RUN sed -i 's/geteuid/getppid/' /usr/bin/vlc
 
 RUN mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2
 
