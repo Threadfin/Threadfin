@@ -46,7 +46,7 @@ RUN apt-get update \
 && apt-get install --yes vlc-bin ffmpeg
 
 # Set binary permissions
-RUN chmod +rx $THREADFIN_BIN/threadfin
+RUN chmod +rx $THREADFIN_HOME/threadfin
 RUN mkdir $THREADFIN_HOME/cache
 
 # Create working directories for Threadfin
@@ -66,4 +66,4 @@ RUN chown -R $THREADFIN_USER $THREADFIN_HOME
 USER $THREADFIN_USER
 
 # Run the Threadfin executable
-ENTRYPOINT ${THREADFIN_BIN}/threadfin -port=${THREADFIN_PORT} -config=${THREADFIN_CONF} -debug=${THREADFIN_DEBUG}
+ENTRYPOINT ${THREADFIN_HOME}/threadfin -port=${THREADFIN_PORT} -config=${THREADFIN_CONF} -debug=${THREADFIN_DEBUG}
