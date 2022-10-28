@@ -16,7 +16,7 @@ RUN go build threadfin.go
 # -----------------------------------------------------------------------------
 
 # Base image is a latest stable debian
-FROM golang:1.18-bullseye
+FROM alpine:latest
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -43,24 +43,24 @@ ENV THREADFIN_USER=threadfin
 ENV THREADFIN_BRANCH=beta
 ENV THREADFIN_DEBUG=0
 
-# Download the source code
-RUN apt-get update
-RUN apt-get install --yes git
-RUN git clone https://github.com/Threadfin/Threadfin.git /src --branch $THREADFIN_BRANCH
-WORKDIR /src
-RUN go mod tidy && go mod vendor
-RUN go build threadfin.go
-RUN adduser --uid $THREADFIN_UID $THREADFIN_USER
-
 # Add binary to PATH
 ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$THREADFIN_BIN
 
 # Set working directory
 WORKDIR $THREADFIN_HOME
 
-RUN apt-get update \
-&& apt-get install --yes ca-certificates \
-&& apt-get install --yes vlc-bin ffmpeg
+RUN apk update
+RUN apk upgrade
+RUN apk add --no-cache ca-certificates
+RUN apk add curl
+RUN apk add ffmpeg
+RUN apk add vlc
+
+RUN apk update && apk add --no-cache tzdata
+ENV TZ=America/New_York
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+RUN mkdir $THREADFIN_BIN
 
 # Copy built binary from builder image
 COPY --from=builder [ "/src/threadfin", "${THREADFIN_BIN}/" ]
@@ -74,17 +74,14 @@ RUN mkdir $THREADFIN_CONF
 RUN chmod a+rwX $THREADFIN_CONF
 RUN mkdir $THREADFIN_TEMP
 RUN chmod a+rwX $THREADFIN_TEMP
-RUN sed -i 's/geteuid/getppid/' /usr/bin/vlc
+
+RUN mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2
 
 # Configure container volume mappings
 VOLUME $THREADFIN_CONF
 VOLUME $THREADFIN_TEMP
 
-# Ensure the container user has ownership of home dir
-RUN chown -R $THREADFIN_USER $THREADFIN_HOME
-
-# Switch users to the Threadfin container user
-USER $THREADFIN_USER
+EXPOSE 34400
 
 # Run the Threadfin executable
 ENTRYPOINT ${THREADFIN_BIN}/threadfin -port=${THREADFIN_PORT} -config=${THREADFIN_CONF} -debug=${THREADFIN_DEBUG}
