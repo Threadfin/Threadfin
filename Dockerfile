@@ -45,9 +45,6 @@ RUN apt-get update \
 && apt-get install --yes ca-certificates \
 && apt-get install --yes vlc-bin ffmpeg
 
-# Copy built binary from builder image
-COPY --from=builder [ "/src/threadfin", "${THREADFIN_BIN}/" ]
-
 # Set binary permissions
 RUN chmod +rx $THREADFIN_BIN/threadfin
 RUN mkdir $THREADFIN_HOME/cache
