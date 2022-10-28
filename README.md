@@ -40,7 +40,7 @@ You can follow the old xTeVe documentation for now until I update it for Threadf
 #### Map Editor
 * Can now multi select Bulk Edit by holding shift
 * Now has a separate table for inactive channels
-* Can add a backup channel for an active channel (backup channel does not have to be active)
+* Can add 3 backup channels for an active channel (backup channels do NOT have to be active)
 * Alpha Numeric sorting now sorts correctly
 * Can now add a starting channel number for Bulk Edit to renumber multiple channels at a time
 * PPV channels can now map the channel name to an EPG
