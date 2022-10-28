@@ -281,7 +281,7 @@ func setDeviceID() {
 }
 
 // Provider Streaming-URL zu Threadfin Streaming-URL konvertieren
-func createStreamingURL(streamingType, playlistID, channelNumber, channelName, url string, backup_url string) (streamingURL string, err error) {
+func createStreamingURL(streamingType, playlistID, channelNumber, channelName, url string, backup_url_1 string, backup_url_2 string, backup_url_3 string) (streamingURL string, err error) {
 
 	var streamInfo StreamInfo
 	var serverProtocol string
@@ -299,7 +299,9 @@ func createStreamingURL(streamingType, playlistID, channelNumber, channelName, u
 	} else {
 
 		streamInfo.URL = url
-		streamInfo.BackupChannelURL = backup_url
+		streamInfo.BackupChannel1URL = backup_url_1
+		streamInfo.BackupChannel2URL = backup_url_2
+		streamInfo.BackupChannel3URL = backup_url_3
 		streamInfo.Name = channelName
 		streamInfo.PlaylistID = playlistID
 		streamInfo.ChannelNumber = channelNumber
@@ -343,7 +345,9 @@ func getStreamInfo(urlID string) (streamInfo StreamInfo, err error) {
 	if s, ok := Data.Cache.StreamingURLS[urlID]; ok {
 		streamInfo = s
 		streamInfo.URL = strings.Trim(streamInfo.URL, "\r\n")
-		streamInfo.BackupChannelURL = strings.Trim(streamInfo.BackupChannelURL, "\r\n")
+		streamInfo.BackupChannel1URL = strings.Trim(streamInfo.BackupChannel1URL, "\r\n")
+		streamInfo.BackupChannel2URL = strings.Trim(streamInfo.BackupChannel2URL, "\r\n")
+		streamInfo.BackupChannel3URL = strings.Trim(streamInfo.BackupChannel3URL, "\r\n")
 	} else {
 		err = errors.New("Streaming error")
 	}

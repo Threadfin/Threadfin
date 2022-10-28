@@ -251,8 +251,18 @@
       "placeholder": "",
       "description": ""
     },
-    "backupChannel": {
-      "title": "Backup Channel",
+    "backupChannel1": {
+      "title": "Backup Channel 1",
+      "placeholder": "",
+      "description": ""
+    },
+    "backupChannel2": {
+      "title": "Backup Channel 2",
+      "placeholder": "",
+      "description": ""
+    },
+    "backupChannel3": {
+      "title": "Backup Channel 3",
       "placeholder": "",
       "description": ""
     },

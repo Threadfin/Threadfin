@@ -1862,22 +1862,29 @@ function openPopUp(dataType, element) {
       sortSelect(select)
       content.appendRow("{{.mapping.xmltvChannel.title}}", select)
 
-      var dbKey: string = "x-backup-channel"
+      var dbKey: string = "x-backup-channel-1"
       var xmltv: XMLTVFile = new XMLTVFile()
       var select = xmltv.getPrograms(file, data[dbKey], true)
       select.setAttribute("name", dbKey)
-      select.setAttribute("id", "backup-channel")
+      select.setAttribute("id", "backup-channel-1")
       select.setAttribute("onchange", "javascript: this.className = 'changed'; checkXmltvChannel('" + id + "',this,'" + xmlFile + "');")
-      content.appendRow("{{.mapping.backupChannel.title}}", select)
+      content.appendRow("{{.mapping.backupChannel1.title}}", select)
 
-      if (data["is_backup_channel"] == true) {
-        var dbKey: string = "x-hide-channel"
-        var input = content.createCheckbox(dbKey)
-        input.checked = data[dbKey]
-        input.setAttribute("id", "hide-channel")
-        input.setAttribute("onchange", "javascript: this.className = 'changed'")
-        content.appendRow("{{.mapping.hideChannel.title}}", input)
-      }
+      var dbKey: string = "x-backup-channel-2"
+      var xmltv: XMLTVFile = new XMLTVFile()
+      var select = xmltv.getPrograms(file, data[dbKey], true)
+      select.setAttribute("name", dbKey)
+      select.setAttribute("id", "backup-channel-2")
+      select.setAttribute("onchange", "javascript: this.className = 'changed'; checkXmltvChannel('" + id + "',this,'" + xmlFile + "');")
+      content.appendRow("{{.mapping.backupChannel2.title}}", select)
+
+      var dbKey: string = "x-backup-channel-3"
+      var xmltv: XMLTVFile = new XMLTVFile()
+      var select = xmltv.getPrograms(file, data[dbKey], true)
+      select.setAttribute("name", dbKey)
+      select.setAttribute("id", "backup-channel-3")
+      select.setAttribute("onchange", "javascript: this.className = 'changed'; checkXmltvChannel('" + id + "',this,'" + xmlFile + "');")
+      content.appendRow("{{.mapping.backupChannel3.title}}", select)
 
       // Interaktion
       content.createInteraction()

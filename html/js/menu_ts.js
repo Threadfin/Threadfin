@@ -1505,21 +1505,27 @@ function openPopUp(dataType, element) {
             select.setAttribute("onchange", "javascript: this.className = 'changed'; checkXmltvChannel('" + id + "',this,'" + xmlFile + "');");
             sortSelect(select);
             content.appendRow("{{.mapping.xmltvChannel.title}}", select);
-            var dbKey = "x-backup-channel";
+            var dbKey = "x-backup-channel-1";
             var xmltv = new XMLTVFile();
             var select = xmltv.getPrograms(file, data[dbKey], true);
             select.setAttribute("name", dbKey);
-            select.setAttribute("id", "backup-channel");
+            select.setAttribute("id", "backup-channel-1");
             select.setAttribute("onchange", "javascript: this.className = 'changed'; checkXmltvChannel('" + id + "',this,'" + xmlFile + "');");
-            content.appendRow("{{.mapping.backupChannel.title}}", select);
-            if (data["is_backup_channel"] == true) {
-                var dbKey = "x-hide-channel";
-                var input = content.createCheckbox(dbKey);
-                input.checked = data[dbKey];
-                input.setAttribute("id", "hide-channel");
-                input.setAttribute("onchange", "javascript: this.className = 'changed'");
-                content.appendRow("{{.mapping.hideChannel.title}}", input);
-            }
+            content.appendRow("{{.mapping.backupChannel1.title}}", select);
+            var dbKey = "x-backup-channel-2";
+            var xmltv = new XMLTVFile();
+            var select = xmltv.getPrograms(file, data[dbKey], true);
+            select.setAttribute("name", dbKey);
+            select.setAttribute("id", "backup-channel-2");
+            select.setAttribute("onchange", "javascript: this.className = 'changed'; checkXmltvChannel('" + id + "',this,'" + xmlFile + "');");
+            content.appendRow("{{.mapping.backupChannel2.title}}", select);
+            var dbKey = "x-backup-channel-3";
+            var xmltv = new XMLTVFile();
+            var select = xmltv.getPrograms(file, data[dbKey], true);
+            select.setAttribute("name", dbKey);
+            select.setAttribute("id", "backup-channel-3");
+            select.setAttribute("onchange", "javascript: this.className = 'changed'; checkXmltvChannel('" + id + "',this,'" + xmlFile + "');");
+            content.appendRow("{{.mapping.backupChannel3.title}}", select);
             // Interaktion
             content.createInteraction();
             // Logo hochladen

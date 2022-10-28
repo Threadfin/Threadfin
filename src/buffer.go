@@ -46,7 +46,7 @@ func createStreamID(stream map[int]ThisStream) (streamID int) {
 	return
 }
 
-func bufferingStream(playlistID, streamingURL, backupStreamingURL, channelName string, w http.ResponseWriter, r *http.Request) {
+func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStreamingURL2, backupStreamingURL3, channelName string, w http.ResponseWriter, r *http.Request) {
 
 	time.Sleep(time.Duration(Settings.BufferTimeout) * time.Millisecond)
 
@@ -98,7 +98,9 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL, channelName s
 
 		client.Connection = 1
 		stream.URL = streamingURL
-		stream.BackupChannelURL = backupStreamingURL
+		stream.BackupChannel1URL = backupStreamingURL1
+		stream.BackupChannel2URL = backupStreamingURL2
+		stream.BackupChannel3URL = backupStreamingURL3
 		stream.ChannelName = channelName
 		stream.Status = false
 
@@ -189,7 +191,9 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL, channelName s
 			stream.URL = streamingURL
 			stream.ChannelName = channelName
 			stream.Status = false
-			stream.BackupChannelURL = backupStreamingURL
+			stream.BackupChannel1URL = backupStreamingURL1
+			stream.BackupChannel2URL = backupStreamingURL2
+			stream.BackupChannel3URL = backupStreamingURL3
 
 			playlist.Streams[streamID] = stream
 			playlist.Clients[streamID] = client
@@ -201,7 +205,7 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL, channelName s
 	}
 
 	// Überprüfen ob der Stream breits von einem anderen Client abgespielt wird
-	if playlist.Streams[streamID].Status == false && newStream == true {
+	if !playlist.Streams[streamID].Status && newStream {
 
 		// Neuer Buffer wird benötigt
 		stream = playlist.Streams[streamID]
@@ -218,7 +222,7 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL, channelName s
 		case "threadfin":
 			go connectToStreamingServer(streamID, playlistID)
 		case "ffmpeg", "vlc":
-			go thirdPartyBuffer(streamID, playlistID, false)
+			go thirdPartyBuffer(streamID, playlistID, false, 0)
 
 		default:
 			break
@@ -565,6 +569,7 @@ func connectToStreamingServer(streamID int, playlistID string) {
 		var bufferSize = Settings.BufferSize
 		var buffer = make([]byte, 1024*bufferSize*2)
 		var useBackup = false
+		var backupNumber = 0
 
 		var defaultSegment = func() {
 
@@ -593,12 +598,29 @@ func connectToStreamingServer(streamID int, playlistID string) {
 
 		}
 
-		var backupSegment = func() {
+		var backupSegment = func(iteration int) {
 
 			var segment Segment
-			segment.URL = playlist.Streams[streamID].BackupChannelURL
-			showHighlight("START OF BACKUP STREAM")
-			showInfo("Backup Channel URL: " + segment.URL)
+
+			switch iteration {
+			case 1:
+				segment.URL = playlist.Streams[streamID].BackupChannel1URL
+				showHighlight("START OF BACKUP 1 STREAM")
+				showInfo("Backup Channel 1 URL: " + segment.URL)
+				break
+
+			case 2:
+				segment.URL = playlist.Streams[streamID].BackupChannel2URL
+				showHighlight("START OF BACKU 2 STREAM")
+				showInfo("Backup Channel 2 URL: " + segment.URL)
+				break
+
+			case 3:
+				segment.URL = playlist.Streams[streamID].BackupChannel3URL
+				showHighlight("START OF BACKUP 3 STREAM")
+				showInfo("Backup Channel 3 URL: " + segment.URL)
+				break
+			}
 
 			segment.Duration = 0
 
@@ -646,7 +668,10 @@ func connectToStreamingServer(streamID int, playlistID string) {
 		// M3U8 Segmente
 	InitBuffer:
 		if useBackup {
-			backupSegment()
+			backupNumber = backupNumber + 1
+			if backupNumber >= 1 && backupNumber <= 3 {
+				backupSegment(backupNumber)
+			}
 		} else {
 			defaultSegment()
 		}
@@ -1409,7 +1434,7 @@ func switchBandwidth(stream *ThisStream) (err error) {
 }
 
 // Buffer mit FFMPEG
-func thirdPartyBuffer(streamID int, playlistID string, useBackup bool) {
+func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNumber int) {
 
 	if p, ok := BufferInformation.Load(playlistID); ok {
 
@@ -1425,9 +1450,27 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool) {
 		var tmpFolder = playlist.Streams[streamID].Folder
 		var url = playlist.Streams[streamID].URL
 		if useBackup {
-			showHighlight("START OF BACKUP STREAM")
-			url = playlist.Streams[streamID].BackupChannelURL
-			showInfo("Backup Channel URL: " + url)
+			if backupNumber >= 1 && backupNumber <= 3 {
+				switch backupNumber {
+				case 1:
+					url = playlist.Streams[streamID].BackupChannel1URL
+					showHighlight("START OF BACKUP 1 STREAM")
+					showInfo("Backup Channel 1 URL: " + url)
+					break
+
+				case 2:
+					url = playlist.Streams[streamID].BackupChannel2URL
+					showHighlight("START OF BACKU 2 STREAM")
+					showInfo("Backup Channel 2 URL: " + url)
+					break
+
+				case 3:
+					url = playlist.Streams[streamID].BackupChannel3URL
+					showHighlight("START OF BACKUP 3 STREAM")
+					showInfo("Backup Channel 3 URL: " + url)
+					break
+				}
+			}
 		}
 
 		stream.Status = false
@@ -1450,8 +1493,9 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool) {
 
 		var addErrorToStream = func(err error) {
 
-			if !useBackup {
-				thirdPartyBuffer(streamID, playlistID, true)
+			if !useBackup || (useBackup && backupNumber <= 3) {
+				backupNumber = backupNumber + 1
+				thirdPartyBuffer(streamID, playlistID, true, backupNumber)
 				return
 			}
 

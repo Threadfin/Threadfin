@@ -200,7 +200,9 @@ type XEPGChannelStruct struct {
 	XGroupTitle        string `json:"x-group-title,required"`
 	XMapping           string `json:"x-mapping,required"`
 	XmltvFile          string `json:"x-xmltv-file,required"`
-	XBackupChannel     string `json:"x-backup-channel,required"`
+	XBackupChannel1    string `json:"x-backup-channel-1,required"`
+	XBackupChannel2    string `json:"x-backup-channel-2,required"`
+	XBackupChannel3    string `json:"x-backup-channel-3,required"`
 	XHideChannel       bool   `json:"x-hide-channel,required"`
 	XName              string `json:"x-name,required"`
 	XUpdateChannelIcon bool   `json:"x-update-channel-icon,required"`
@@ -208,7 +210,9 @@ type XEPGChannelStruct struct {
 	XDescription       string `json:"x-description,required"`
 	Live               bool   `json:"live"`
 	IsBackupChannel    bool   `json:"is_backup_channel"`
-	BackupChannelURL   string `json:"backup_channel_url"`
+	BackupChannel1URL  string `json:"backup_channel_1_url"`
+	BackupChannel2URL  string `json:"backup_channel_2_url"`
+	BackupChannel3URL  string `json:"backup_channel_3_url"`
 }
 
 // M3UChannelStructXEPG : M3U Struktur für XEPG
@@ -248,12 +252,14 @@ type StreamingURLS struct {
 
 // StreamInfo : Informationen zum Kanal für die streaming URL
 type StreamInfo struct {
-	ChannelNumber    string `json:"channelNumber,required"`
-	Name             string `json:"name,required"`
-	PlaylistID       string `json:"playlistID,required"`
-	URL              string `json:"url,required"`
-	BackupChannelURL string `json:"backup_channel_url,required"`
-	URLid            string `json:"urlID,required"`
+	ChannelNumber     string `json:"channelNumber,required"`
+	Name              string `json:"name,required"`
+	PlaylistID        string `json:"playlistID,required"`
+	URL               string `json:"url,required"`
+	BackupChannel1URL string `json:"backup_channel_1_url,required"`
+	BackupChannel2URL string `json:"backup_channel_2_url,required"`
+	BackupChannel3URL string `json:"backup_channel_3_url,required"`
+	URLid             string `json:"urlID,required"`
 }
 
 // Notification : Notifikationen im Webinterface
