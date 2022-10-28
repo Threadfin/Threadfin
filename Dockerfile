@@ -1,3 +1,20 @@
+# First stage. Building a binary
+# -----------------------------------------------------------------------------
+FROM golang:1.18-bullseye AS builder
+
+# Download the source code
+RUN apt-get install -y git
+RUN git clone https://github.com/Threadfin/Threadfin.git /src
+
+WORKDIR /src
+
+RUN git checkout beta
+RUN go mod tidy && go mod vendor
+RUN go build threadfin.go
+
+# Second stage. Creating an image
+# -----------------------------------------------------------------------------
+
 # Base image is a latest stable debian
 FROM golang:1.18-bullseye
 
@@ -45,8 +62,11 @@ RUN apt-get update \
 && apt-get install --yes ca-certificates \
 && apt-get install --yes vlc-bin ffmpeg
 
+# Copy built binary from builder image
+COPY --from=builder [ "/src/threadfin", "${THREADFIN_BIN}/" ]
+
 # Set binary permissions
-RUN chmod +rx $THREADFIN_HOME/threadfin
+RUN chmod +rx $THREADFIN_BIN/threadfin
 RUN mkdir $THREADFIN_HOME/cache
 
 # Create working directories for Threadfin
@@ -66,4 +86,4 @@ RUN chown -R $THREADFIN_USER $THREADFIN_HOME
 USER $THREADFIN_USER
 
 # Run the Threadfin executable
-ENTRYPOINT ${THREADFIN_HOME}/threadfin -port=${THREADFIN_PORT} -config=${THREADFIN_CONF} -debug=${THREADFIN_DEBUG}
+ENTRYPOINT ${THREADFIN_BIN}/threadfin -port=${THREADFIN_PORT} -config=${THREADFIN_CONF} -debug=${THREADFIN_DEBUG}
