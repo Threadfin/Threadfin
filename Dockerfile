@@ -1,22 +1,5 @@
-# First stage. Building a binary
-# -----------------------------------------------------------------------------
-FROM golang:1.18-buster AS builder
-
-# Download the source code
-RUN apt-get install -y git
-RUN git clone https://github.com/Threadfin/Threadfin.git /src
-
-WORKDIR /src
-
-RUN git checkout beta
-RUN go mod tidy && go mod vendor
-RUN go build threadfin.go
-
-# Second stage. Creating an image
-# -----------------------------------------------------------------------------
-
 # Base image is a latest stable debian
-FROM golang:1.18-buster
+FROM golang:1.18-bullseye
 
 ARG BUILD_DATE
 ARG VCS_REF

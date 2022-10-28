@@ -40,13 +40,13 @@ var GitHub = GitHubStruct{Branch: "Beta", User: "Threadfin", Repo: "Threadfin", 
 const Name = "Threadfin"
 
 // Version : Version, die Build Nummer wird in der main func geparst.
-const Version = "0.9.12"
+const Version = "0.9.13"
 
 // DBVersion : Datanbank Version
 const DBVersion = "0.5.0"
 
 // APIVersion : API Version
-const APIVersion = "0.9.12"
+const APIVersion = "0.9.13"
 
 var homeDirectory = fmt.Sprintf("%s%s.%s%s", src.GetUserHomeDirectory(), string(os.PathSeparator), strings.ToLower(Name), string(os.PathSeparator))
 var samplePath = fmt.Sprintf("%spath%sto%threadfin%s", string(os.PathSeparator), string(os.PathSeparator), string(os.PathSeparator), string(os.PathSeparator))
