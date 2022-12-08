@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -1454,6 +1455,13 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 				switch backupNumber {
 				case 1:
 					url = playlist.Streams[streamID].BackupChannel1URL
+
+					// Retry original if no backup
+					if url == "" {
+						log.Println("RETRYING OG URL")
+						url = playlist.Streams[streamID].URL
+					}
+
 					showHighlight("START OF BACKUP 1 STREAM")
 					showInfo("Backup Channel 1 URL: " + url)
 					break
