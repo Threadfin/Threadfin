@@ -1438,6 +1438,10 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 
 	if p, ok := BufferInformation.Load(playlistID); ok {
 
+		if backupNumber == -1 {
+			showHighlight("RESTARTING STREAM DUE TO ERROR")
+		}
+
 		var playlist = p.(Playlist)
 		var debug, path, options, bufferType string
 		var tmpSegment = 1
@@ -1489,7 +1493,6 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 		var addErrorToStream = func(err error) {
 
 			if !useBackup && backupNumber == 0 && playlist.Streams[streamID].BackupChannel1URL == "" {
-				showHighlight("RESTARTING STREAM DUE TO ERROR")
 				thirdPartyBuffer(streamID, playlistID, false, -1)
 				return
 			}
