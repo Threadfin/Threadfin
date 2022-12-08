@@ -1457,6 +1457,8 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 
 					// Retry original if no backup
 					if url == "" {
+						cmd.Process.Kill()
+						cmd.Wait()
 						showHighlight("RETRYING OG URL")
 						url = playlist.Streams[streamID].URL
 					}
@@ -1532,7 +1534,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 		}
 
 		showInfo(fmt.Sprintf("%s path:%s", bufferType, path))
-		showInfo("Streaming URL:" + stream.URL)
+		showInfo("Streaming URL:" + url)
 
 		var tmpFile = fmt.Sprintf("%s%d.ts", tmpFolder, tmpSegment)
 
