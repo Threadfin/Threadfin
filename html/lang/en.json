@@ -256,6 +256,11 @@
       "placeholder": "",
       "description": ""
     },
+    "ppvextra": {
+      "title": "PPV Extra Title",
+      "placeholder": "",
+      "description": "This will add custom text to the Programme data"
+    },
     "backupChannel1": {
       "title": "Backup Channel 1",
       "placeholder": "",

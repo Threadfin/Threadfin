@@ -1854,7 +1854,7 @@ function openPopUp(dataType, element) {
       var select = xmltv.getFiles(data[dbKey])
       select.setAttribute("name", dbKey)
       select.setAttribute("id", "popup-xmltv")
-      select.setAttribute("onchange", "javascript: this.className = 'changed'; setXmltvChannel('" + id + "',this);")
+      select.setAttribute("onchange", "javascript: this.className = 'changed'; setXmltvChannel('" + id + "',this, '" + data["x-mapping"] + "');")
       content.appendRow("{{.mapping.xmltvFile.title}}", select)
       var file = data[dbKey]
 
@@ -1862,12 +1862,23 @@ function openPopUp(dataType, element) {
       var dbKey: string = "x-mapping"
       var xmltv: XMLTVFile = new XMLTVFile()
       var select = xmltv.getPrograms(file, data[dbKey], false)
+      var mappingType = data[dbKey]
+      console.log("CHECKING: " + mappingType)
       select.setAttribute("name", dbKey)
       select.setAttribute("id", "popup-mapping")
       select.setAttribute("onchange", "javascript: this.className = 'changed'; checkXmltvChannel('" + id + "',this,'" + xmlFile + "');")
 
       sortSelect(select)
       content.appendRow("{{.mapping.xmltvChannel.title}}", select)
+      
+      // Extra PPV Data
+      if(mappingType == "PPV") {
+        var dbKey: string = "x-ppv-extra"
+        var input = content.createInput("text", dbKey, data[dbKey])
+        input.setAttribute("onchange", "javascript: this.className = 'changed'")
+        input.setAttribute("id", "ppv-extra")
+        content.appendRow("{{.mapping.ppvextra.title}}", input)
+      }
 
       var dbKey: string = "x-backup-channel-1"
       var xmltv: XMLTVFile = new XMLTVFile()
@@ -2056,7 +2067,7 @@ function getValueFromProviderFile(file: string, fileType, key) {
 
 }
 
-function setXmltvChannel(id, element) {
+function setXmltvChannel(id, element, dummy_type) {
 
   var xmltv: XMLTVFile = new XMLTVFile()
   var xmlFile = element.value
@@ -2074,6 +2085,37 @@ function setXmltvChannel(id, element) {
   td.appendChild(select);
 
   checkXmltvChannel(id, select, xmlFile)
+}
+
+function checkPPV(title, element) {
+  var value = (element as HTMLSelectElement).value
+  console.log("DUMMY TYPE: " + value)
+  if(value == "PPV") {
+    var td = document.getElementById("x-ppv-extra").parentElement
+    td.innerHTML = ""
+
+    var dbKey: string = "x-ppv-extra"
+    var input = document.createElement("INPUT")
+    input.setAttribute("type", "text")
+    input.setAttribute("name", dbKey)
+    // input.setAttribute("value", value)
+    input.setAttribute("onchange", "javascript: this.className = 'changed'")
+    input.setAttribute("id", "ppv-extra")
+    
+    var tr = document.createElement("TR")
+
+    // Bezeichnung
+    if (title.length != 0) {
+      var td = document.createElement("TD")
+      td.className = "left"
+      td.innerHTML = title + ":"
+    }
+
+
+    // Content
+    td.appendChild(element)
+    this.table.appendChild(tr)
+  }
 }
 
 function checkXmltvChannel(id: string, element: any, xmlFile) {

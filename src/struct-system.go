@@ -200,6 +200,7 @@ type XEPGChannelStruct struct {
 	XGroupTitle        string `json:"x-group-title,required"`
 	XMapping           string `json:"x-mapping,required"`
 	XmltvFile          string `json:"x-xmltv-file,required"`
+	XPpvExtra          string `json:"x-ppv-extra"`
 	XBackupChannel1    string `json:"x-backup-channel-1,required"`
 	XBackupChannel2    string `json:"x-backup-channel-2,required"`
 	XBackupChannel3    string `json:"x-backup-channel-3,required"`

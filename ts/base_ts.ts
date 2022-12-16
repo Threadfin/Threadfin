@@ -130,7 +130,6 @@ function getLocalData(dataType, id): object {
 
     case "mapping":
       data = SERVER["xepg"]["epgMapping"][id]
-      console.log("MAPPING: " + data)
       break
 
     case "m3uGroups":
