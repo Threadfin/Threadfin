@@ -68,6 +68,11 @@
       "placeholder": "Filter Starting Number",
       "description": "Starting Channel Number to use for this Group Filter (Default is 1000)"
     },
+    "category": {
+      "title": "Filter Category",
+      "placeholder": "Filter Category",
+      "description": "Filter Category sets all channels in the filter to a specific category (news, sports, etc)"
+    },
     "description": {
       "title": "Description",
       "placeholder": "Description",

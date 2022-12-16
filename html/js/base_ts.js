@@ -97,6 +97,7 @@ function getLocalData(dataType, id) {
                 data["include"] = "";
                 data["name"] = "";
                 data["type"] = "group-title";
+                data["x-category"] = "";
                 SERVER["settings"]["filter"][id] = data;
             }
             data = SERVER["settings"]["filter"][id];
@@ -109,6 +110,7 @@ function getLocalData(dataType, id) {
             break;
         case "mapping":
             data = SERVER["xepg"]["epgMapping"][id];
+            console.log("MAPPING: " + data);
             break;
         case "m3uGroups":
             data = SERVER["data"]["playlist"]["m3u"]["groups"];

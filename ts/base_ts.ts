@@ -114,6 +114,7 @@ function getLocalData(dataType, id): object {
         data["include"] = ""
         data["name"] = ""
         data["type"] = "group-title"
+        data["x-category"] = ""
         SERVER["settings"]["filter"][id] = data
       }
       data = SERVER["settings"]["filter"][id]
@@ -129,6 +130,7 @@ function getLocalData(dataType, id): object {
 
     case "mapping":
       data = SERVER["xepg"]["epgMapping"][id]
+      console.log("MAPPING: " + data)
       break
 
     case "m3uGroups":

@@ -1606,6 +1606,13 @@ function openPopUp(dataType, element) {
       content.appendRow("{{.filter.startingnumber.title}}", input)
       content.description("{{.filter.startingnumber.description}}")
 
+      var dbKey: string = "x-category"
+      var text: string[] = ["-", "Kids", "News", "Movie", "Series", "Sports"]
+      var values: string[] = ["", "kids", "news", "movie", "series", "sports"]
+      var select = content.createSelect(text, values, data[dbKey], dbKey)
+      select.setAttribute("onchange", "javascript: this.className = 'changed'")
+      content.appendRow("{{.filter.category.title}}", select)
+
       // Interaktion
       content.createInteraction()
 
@@ -2363,6 +2370,7 @@ function donePopupData(dataType: string, idsStr: string) {
   ids.forEach(id => {
     var input = new Object();
     input = SERVER["xepg"]["epgMapping"][id]
+    console.log("INPUT: " + input)
 
     for (let i = 0; i < inputs.length; i++) {
 

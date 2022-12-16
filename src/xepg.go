@@ -411,6 +411,8 @@ func createXEPGDatabase() (err error) {
 			return
 		}
 
+		// log.Println("M3U: ", m3uChannel)
+
 		Data.Cache.Streams.Active = append(Data.Cache.Streams.Active, m3uChannel.Name+m3uChannel.FileM3UID)
 
 		// Try to find the channel based on matching all known values.  If that fails, then move to full channel scan
@@ -604,6 +606,22 @@ func mapping() (err error) {
 
 					if channel, ok := xmltvChannels.(map[string]interface{})[tvgID]; ok {
 
+						filters := []FilterStruct{}
+						for _, filter := range Settings.Filter {
+							filter_json, _ := json.Marshal(filter)
+							f := FilterStruct{}
+							json.Unmarshal(filter_json, &f)
+							filters = append(filters, f)
+						}
+						for _, filter := range filters {
+							if xepgChannel.GroupTitle == filter.Filter {
+								category := &Category{}
+								category.Value = filter.Category
+								category.Lang = "en"
+								xepgChannel.XCategory = filter.Category
+							}
+						}
+
 						if channelID, ok := channel.(map[string]interface{})["id"].(string); ok {
 
 							xepgChannel.XmltvFile = file
@@ -641,6 +659,22 @@ func mapping() (err error) {
 				if value, ok := Data.XMLTV.Mapping[file].(map[string]interface{}); ok {
 
 					if channel, ok := value[mapping].(map[string]interface{}); ok {
+
+						filters := []FilterStruct{}
+						for _, filter := range Settings.Filter {
+							filter_json, _ := json.Marshal(filter)
+							f := FilterStruct{}
+							json.Unmarshal(filter_json, &f)
+							filters = append(filters, f)
+						}
+						for _, filter := range filters {
+							if xepgChannel.GroupTitle == filter.Filter {
+								category := &Category{}
+								category.Value = filter.Category
+								category.Lang = "en"
+								xepgChannel.XCategory = filter.Category
+							}
+						}
 
 						// Kanallogo aktualisieren
 						if logo, ok := channel["icon"].(string); ok {
@@ -813,8 +847,16 @@ func getProgramData(xepgChannel XEPGChannelStruct) (xepgXML XMLTV, err error) {
 				program.Title = xmltvProgram.Title
 			}
 
+			filters := []FilterStruct{}
+			for _, filter := range Settings.Filter {
+				filter_json, _ := json.Marshal(filter)
+				f := FilterStruct{}
+				json.Unmarshal(filter_json, &f)
+				filters = append(filters, f)
+			}
+
 			// Category (Kategorie)
-			getCategory(program, xmltvProgram, xepgChannel)
+			getCategory(program, xmltvProgram, xepgChannel, filters)
 
 			// Credits : (Credits)
 			program.Credits = xmltvProgram.Credits
@@ -963,7 +1005,7 @@ func createDummyProgram(xepgChannel XEPGChannelStruct) (dummyXMLTV XMLTV) {
 }
 
 // Kategorien erweitern (createXMLTVFile)
-func getCategory(program *Program, xmltvProgram *Program, xepgChannel XEPGChannelStruct) {
+func getCategory(program *Program, xmltvProgram *Program, xepgChannel XEPGChannelStruct, filters []FilterStruct) {
 
 	for _, i := range xmltvProgram.Category {
 
@@ -972,6 +1014,16 @@ func getCategory(program *Program, xmltvProgram *Program, xepgChannel XEPGChanne
 		category.Lang = i.Lang
 		program.Category = append(program.Category, category)
 
+	}
+
+	for _, filter := range filters {
+		if xepgChannel.GroupTitle == filter.Filter {
+			category := &Category{}
+			category.Value = filter.Category
+			category.Lang = "en"
+			xepgChannel.XCategory = filter.Category
+			program.Category = append(program.Category, category)
+		}
 	}
 
 	if len(xepgChannel.XCategory) > 0 {

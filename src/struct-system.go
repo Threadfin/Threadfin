@@ -243,6 +243,7 @@ type FilterStruct struct {
 	Rule           string `json:"rule,omitempty"`
 	Type           string `json:"type"`
 	StartingNumber string `json:"startingNumber"`
+	Category       string `json:"x-category"`
 }
 
 // StreamingURLS : Informationen zu allen streaming URL's

@@ -1290,6 +1290,12 @@ function openPopUp(dataType, element) {
             input.setAttribute("placeholder", "{{.filter.startingnumber.placeholder}}");
             content.appendRow("{{.filter.startingnumber.title}}", input);
             content.description("{{.filter.startingnumber.description}}");
+            var dbKey = "x-category";
+            var text = ["-", "Kids", "News", "Movie", "Series", "Sports"];
+            var values = ["", "kids", "news", "movie", "series", "sports"];
+            var select = content.createSelect(text, values, data[dbKey], dbKey);
+            select.setAttribute("onchange", "javascript: this.className = 'changed'");
+            content.appendRow("{{.filter.category.title}}", select);
             // Interaktion
             content.createInteraction();
             // Löschen
@@ -1878,6 +1884,7 @@ function donePopupData(dataType, idsStr) {
     ids.forEach(id => {
         var input = new Object();
         input = SERVER["xepg"]["epgMapping"][id];
+        console.log("INPUT: " + input);
         for (let i = 0; i < inputs.length; i++) {
             var name;
             var value;
