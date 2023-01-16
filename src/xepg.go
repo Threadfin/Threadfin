@@ -258,7 +258,8 @@ func createXEPGMapping() {
 
 					channel["id"] = c.ID
 					channel["display-name"] = friendlyDisplayName(*c)
-					channel["icon"] = imgc.Image.GetURL(c.Icon.Src)
+					src_filtered := strings.TrimLeft(c.Icon.Src, "?")
+					channel["icon"] = imgc.Image.GetURL(src_filtered)
 					channel["active"] = c.Active
 
 					xmltvMap[c.ID] = channel
@@ -486,7 +487,8 @@ func createXEPGDatabase() (err error) {
 			// Kanallogo aktualisieren. Wird bei vorhandenem Logo in der XMLTV Datei wieder überschrieben
 			if xepgChannel.XUpdateChannelIcon == true {
 				var imgc = Data.Cache.Images
-				xepgChannel.TvgLogo = imgc.Image.GetURL(m3uChannel.TvgLogo)
+				src_filtered := strings.TrimLeft(m3uChannel.TvgLogo, "?")
+				xepgChannel.TvgLogo = imgc.Image.GetURL(src_filtered)
 			}
 
 			Data.XEPG.Channels[currentXEPGID] = xepgChannel
@@ -682,7 +684,8 @@ func mapping() (err error) {
 
 							if xepgChannel.XUpdateChannelIcon && len(logo) > 0 {
 								var imgc = Data.Cache.Images
-								xepgChannel.TvgLogo = imgc.Image.GetURL(logo)
+								src_filtered := strings.TrimLeft(logo, "?")
+								xepgChannel.TvgLogo = imgc.Image.GetURL(src_filtered)
 							}
 
 						}
@@ -784,7 +787,8 @@ func createXMLTVFile() (err error) {
 					// Kanäle
 					var channel Channel
 					channel.ID = xepgChannel.XChannelID
-					channel.Icon = Icon{Src: imgc.Image.GetURL(xepgChannel.TvgLogo)}
+					src_filtered := strings.TrimLeft(xepgChannel.TvgLogo, "?")
+					channel.Icon = Icon{Src: imgc.Image.GetURL(src_filtered)}
 					channel.DisplayName = append(channel.DisplayName, DisplayName{Value: xepgChannel.TvgName})
 					channel.Active = xepgChannel.XActive
 					xepgXML.Channel = append(xepgXML.Channel, &channel)
@@ -987,7 +991,8 @@ func createDummyProgram(xepgChannel XEPGChannelStruct) (dummyXMLTV XMLTV) {
 			}
 
 			if Settings.XepgReplaceMissingImages == true {
-				poster.Src = imgc.Image.GetURL(xepgChannel.TvgLogo)
+				src_filtered := strings.TrimLeft(xepgChannel.TvgLogo, "?")
+				poster.Src = imgc.Image.GetURL(src_filtered)
 				epg.Poster = append(epg.Poster, poster)
 			}
 
@@ -1045,7 +1050,8 @@ func getPoster(program *Program, xmltvProgram *Program, xepgChannel XEPGChannelS
 	var imgc = Data.Cache.Images
 
 	for _, poster := range xmltvProgram.Poster {
-		poster.Src = imgc.Image.GetURL(poster.Src)
+		src_filtered := strings.TrimLeft(poster.Src, "?")
+		poster.Src = imgc.Image.GetURL(src_filtered)
 		program.Poster = append(program.Poster, poster)
 	}
 
@@ -1053,7 +1059,8 @@ func getPoster(program *Program, xmltvProgram *Program, xepgChannel XEPGChannelS
 
 		if len(xmltvProgram.Poster) == 0 {
 			var poster Poster
-			poster.Src = imgc.Image.GetURL(xepgChannel.TvgLogo)
+			src_filtered := strings.TrimLeft(xepgChannel.TvgLogo, "?")
+			poster.Src = imgc.Image.GetURL(src_filtered)
 			program.Poster = append(program.Poster, poster)
 		}
 
