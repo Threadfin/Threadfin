@@ -214,13 +214,13 @@ func createXEPGMapping() {
 
 	var friendlyDisplayName = func(channel Channel) (displayName string) {
 		var dn = channel.DisplayName
-		displayName = dn[0].Value
-
-		switch len(dn) {
-		case 1:
-			displayName = dn[0].Value
-		default:
-			displayName = fmt.Sprintf("%s (%s)", dn[0].Value, dn[1].Value)
+		if len(dn) > 0 {
+			switch len(dn) {
+			case 1:
+				displayName = dn[0].Value
+			default:
+				displayName = fmt.Sprintf("%s (%s)", dn[0].Value, dn[1].Value)
+			}
 		}
 
 		return
