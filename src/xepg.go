@@ -249,7 +249,7 @@ func createXEPGMapping() {
 
 			// XML Parsen (Provider Datei)
 			if err == nil {
-
+				var imgc = Data.Cache.Images
 				// Daten aus der XML Datei in eine temporäre Map schreiben
 				var xmltvMap = make(map[string]interface{})
 
@@ -258,7 +258,7 @@ func createXEPGMapping() {
 
 					channel["id"] = c.ID
 					channel["display-name"] = friendlyDisplayName(*c)
-					channel["icon"] = c.Icon.Src
+					channel["icon"] = imgc.Image.GetURL(c.Icon.Src)
 					channel["active"] = c.Active
 
 					xmltvMap[c.ID] = channel
@@ -485,7 +485,8 @@ func createXEPGDatabase() (err error) {
 
 			// Kanallogo aktualisieren. Wird bei vorhandenem Logo in der XMLTV Datei wieder überschrieben
 			if xepgChannel.XUpdateChannelIcon == true {
-				xepgChannel.TvgLogo = m3uChannel.TvgLogo
+				var imgc = Data.Cache.Images
+				xepgChannel.TvgLogo = imgc.Image.GetURL(m3uChannel.TvgLogo)
 			}
 
 			Data.XEPG.Channels[currentXEPGID] = xepgChannel
@@ -680,7 +681,8 @@ func mapping() (err error) {
 						if logo, ok := channel["icon"].(string); ok {
 
 							if xepgChannel.XUpdateChannelIcon && len(logo) > 0 {
-								xepgChannel.TvgLogo = logo
+								var imgc = Data.Cache.Images
+								xepgChannel.TvgLogo = imgc.Image.GetURL(logo)
 							}
 
 						}
