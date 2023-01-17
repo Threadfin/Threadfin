@@ -9,6 +9,7 @@ RUN git clone https://github.com/Threadfin/Threadfin.git /src
 WORKDIR /src
 
 RUN git checkout beta
+RUN git pull
 RUN go mod tidy && go mod vendor
 RUN go build threadfin.go
 
