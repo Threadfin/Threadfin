@@ -63,7 +63,7 @@ RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 RUN mkdir $THREADFIN_BIN
 
 # Copy built binary from builder image
-COPY --from=builder [ "/src/threadfin", "${THREADFIN_BIN}/" ]
+COPY --chown=${THREADFIN_UID} --from=builder [ "/src/threadfin", "${THREADFIN_BIN}/" ]
 
 # Set binary permissions
 RUN chmod +rx $THREADFIN_BIN/threadfin
