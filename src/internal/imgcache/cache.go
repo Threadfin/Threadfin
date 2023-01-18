@@ -60,14 +60,14 @@ func New(path, chacheURL string, caching bool) (c *Cache, err error) {
 			return src
 		}
 
-		var filename = fmt.Sprintf("%s%s", strToMD5(src), filepath.Ext(u.Path))
+		src_filtered := strings.Split(src, "?")
+		var filename = fmt.Sprintf("%s%s", strToMD5(src_filtered[0]), filepath.Ext(u.Path))
 
 		if cacheURL, ok := c.images[filename]; ok {
 			return cacheURL
 		}
 
 		if indexOfString(filename, c.Cache) == -1 {
-
 			if indexOfString(src, c.Queue) == -1 {
 				c.Queue = append(c.Queue, src)
 			}
@@ -99,7 +99,8 @@ func New(path, chacheURL string, caching bool) (c *Cache, err error) {
 				continue
 			}
 
-			filename = fmt.Sprintf("%s%s%s%s", c.path, string(os.PathSeparator), strToMD5(src), filepath.Ext(src))
+			src_filtered := strings.Split(src, "?")
+			filename = fmt.Sprintf("%s%s%s", c.path, strToMD5(src_filtered[0]), filepath.Ext(src_filtered[0]))
 
 			file, err := os.Create(filename)
 			if err != nil {
@@ -113,12 +114,12 @@ func New(path, chacheURL string, caching bool) (c *Cache, err error) {
 				continue
 			}
 
-			u, err := url.Parse(src)
+			u, err := url.Parse(src_filtered[0])
 			if err == nil {
-				c.images[fmt.Sprintf("%s%s", strToMD5(src), filepath.Ext(u.Path))] = c.cacheURL + filename
+				c.images[fmt.Sprintf("%s%s", strToMD5(src_filtered[0]), filepath.Ext(u.Path))] = c.cacheURL + filename
 			}
 
-			queue = append(queue, src)
+			queue = append(queue, src_filtered[0])
 
 		}
 
