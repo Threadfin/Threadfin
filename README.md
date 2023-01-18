@@ -9,8 +9,7 @@
 You can follow the old xTeVe documentation for now until I update it for Threadfin. Documentation for setup and configuration is [here](https://github.com/xteve-project/xTeVe-Documentation/blob/master/en/configuration.md).
 
 #### Donation
-* **Bitcoin:** 3AyZ16uGWGJ4HdvZ3wx4deE5HsKZ5QxFBL  
-![Bitcoin](html/img/BC-QR.png "Bitcoin - Threadfin")
+[Github Sponsor](https://github.com/sponsors/Fyb3roptik)
 
 ## Requirements
 ### Plex
