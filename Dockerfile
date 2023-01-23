@@ -8,7 +8,7 @@ RUN git clone https://github.com/Threadfin/Threadfin.git /src
 
 WORKDIR /src
 
-RUN git checkout beta
+RUN git checkout main
 RUN git pull
 RUN go mod tidy && go mod vendor
 RUN go build threadfin.go
@@ -41,7 +41,7 @@ ENV THREADFIN_HOME=/home/threadfin
 ENV THREADFIN_TEMP=/tmp/threadfin
 ENV THREADFIN_UID=31337
 ENV THREADFIN_USER=threadfin
-ENV THREADFIN_BRANCH=beta
+ENV THREADFIN_BRANCH=main
 ENV THREADFIN_DEBUG=0
 
 # Add binary to PATH
