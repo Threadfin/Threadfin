@@ -10,6 +10,8 @@ import (
 
 	up2date "threadfin/src/internal/up2date/client"
 
+	"github.com/hashicorp/go-version"
+
 	"reflect"
 )
 
@@ -56,6 +58,7 @@ func BinaryUpdate() (err error) {
 		// Get latest prerelease tag name
 		if System.Branch == "Beta" {
 			for _, release := range git {
+				log.Println("RELEASE: ", release)
 				if release.Prerelease {
 					latest = release.TagName
 					updater.Response.Version = release.TagName
@@ -116,9 +119,10 @@ func BinaryUpdate() (err error) {
 	}
 
 	var currentVersion = System.Version + "." + System.Build
-
+	current_version, _ := version.NewVersion(currentVersion)
+	response_version, _ := version.NewVersion(updater.Response.Version)
 	// Versionsnummer überprüfen
-	if updater.Response.Version > currentVersion && updater.Response.Status {
+	if response_version.GreaterThan(current_version) && updater.Response.Status {
 		if Settings.ThreadfinAutoUpdate {
 			// Update durchführen
 			var fileType, url string
