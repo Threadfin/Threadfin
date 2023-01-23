@@ -35,9 +35,11 @@ jobs:
          env GOOS=windows GOARCH=amd64 go build -o dist/Threadfin_windows_amd64.exe
 
       - name: Release
+        run: |
+          LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1`)
         uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: $(git describe --tags `git rev-list --tags --max-count=1`)
+          automatic_release_tag: ${{LATEST_TAG}}
           prerelease: false
           files: dist/*
