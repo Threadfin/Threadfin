@@ -1,8 +1,8 @@
 name: Threadfin Beta Build
 on:
   push:
-    branches:
-      - beta
+    tags:
+      - *
 permissions:
   contents: write
 jobs:
@@ -34,7 +34,7 @@ jobs:
 
       - name: Pre-Release
         uses: softprops/action-gh-release@v1
-        # if: startsWith(github.ref, 'refs/tags/')
+        if: startsWith(github.base_ref, 'beta')
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
