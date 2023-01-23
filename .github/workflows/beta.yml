@@ -2,7 +2,7 @@ name: Threadfin Beta Build
 on:
   push:
     tags:
-      - *
+      - "*"
 permissions:
   contents: write
 jobs:
