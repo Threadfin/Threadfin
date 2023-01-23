@@ -12,6 +12,8 @@ jobs:
     steps:
       - name: Check out code into the Go module directory
         uses: actions/checkout@v3
+        with:
+          ref: beta
 
       - name: Set up and Build
         uses: actions/setup-go@v3
@@ -33,10 +35,8 @@ jobs:
          env GOOS=windows GOARCH=amd64 go build -o dist/Threadfin_windows_amd64.exe
 
       - name: Pre-Release
-        uses: softprops/action-gh-release@v1
-        if: startsWith(github.base_ref, 'beta')
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: "marvinpinto/action-automatic-releases@latest"
         with:
-          files: dist/*
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
           prerelease: true
+          files: dist/*
