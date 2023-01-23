@@ -3,6 +3,8 @@ on:
   push:
     branches:
       - beta
+    branches-ignore:
+      - main
     tags:
       - "*"
 permissions:

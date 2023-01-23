@@ -3,6 +3,8 @@ on:
   push:
     branches:
       - main
+    branches-ignore:
+      - beta
     tags: "*"
 permissions:
   contents: write
