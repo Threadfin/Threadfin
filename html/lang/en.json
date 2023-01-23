@@ -46,7 +46,9 @@
     "update": "Update",
     "craeteAccount": "Create Account",
     "resetLogs": "Reset Logs",
-    "uploadLogo": "Upload Logo"
+    "uploadLogo": "Upload Logo",
+    "sortChannelsAlpha": "Sort Channels Alphabetically",
+    "sortChannelNumbers": "Sort Channels"
   },
   "filter": {
     "table": {
@@ -60,6 +62,16 @@
       "title": "Filter Name",
       "placeholder": "Filter name",
       "description": ""
+    },
+    "startingnumber": {
+      "title": "Filter Starting Number",
+      "placeholder": "Filter Starting Number",
+      "description": "Starting Channel Number to use for this Group Filter (Default is 1000)"
+    },
+    "category": {
+      "title": "Filter Category",
+      "placeholder": "Filter Category",
+      "description": "Filter Category sets all channels in the filter to a specific category (news, sports, etc)"
     },
     "description": {
       "title": "Description",
@@ -194,6 +206,16 @@
       "placeholder": "",
       "description": ""
     },
+    "sortChannelsAlpha": {
+      "title": "Sort Alphabetically",
+      "placeholder": "",
+      "description": ""
+    },
+    "sortChannels": {
+      "title": "Sort Channels",
+      "placeholder": "",
+      "description": ""
+    },
     "description": {
       "title": "Channel Description",
       "placeholder": "Used by the Dummy as an XML description",
@@ -231,6 +253,31 @@
     },
     "xmltvChannel": {
       "title": "XMLTV Channel",
+      "placeholder": "",
+      "description": ""
+    },
+    "ppvextra": {
+      "title": "PPV Extra Title",
+      "placeholder": "",
+      "description": "This will add custom text to the Programme data"
+    },
+    "backupChannel1": {
+      "title": "Backup Channel 1",
+      "placeholder": "",
+      "description": ""
+    },
+    "backupChannel2": {
+      "title": "Backup Channel 2",
+      "placeholder": "",
+      "description": ""
+    },
+    "backupChannel3": {
+      "title": "Backup Channel 3",
+      "placeholder": "",
+      "description": ""
+    },
+    "hideChannel": {
+      "title": "Hide Backup Channel",
       "placeholder": "",
       "description": ""
     }
@@ -305,11 +352,11 @@
     },
     "epgSource": {
       "title": "EPG Source",
-      "description": "PMS:<br>- Use EPG data from Plex or Emby <br><br>XEPG:<br>- Use of one or more XMLTV files<br>- Channel management<br>- M3U / XMLTV export (HTTP link for IPTV apps)"
+      "description": "PMS:<br>- Use EPG data from Plex, Emby or Jellyfin <br><br>XEPG:<br>- Use of one or more XMLTV files<br>- Channel management<br>- M3U / XMLTV export (HTTP link for IPTV apps)"
     },
     "tuner": {
       "title": "Number of Tuners",
-      "description": "Number of parallel connections that can be established to the provider.<br>Available for: Plex, Emby (HDHR), M3U (with active buffer).<br>After a change, Threadfin must be delete in the Plex / Emby DVR settings and set up again."
+      "description": "Number of parallel connections that can be established to the provider.<br>Available for: Plex, Emby, Jellyfin, M3U (with active buffer).<br>After a change, Threadfin must be delete in the Plex / Emby / Jellyfin DVR settings and set up again."
     },
     "filesUpdate": {
       "title": "Updates all files at startup",
@@ -333,9 +380,8 @@
     },
     "streamBuffering": {
       "title": "Stream Buffer",
-      "description": "Functions of the buffer:<br>- The stream is passed from Threadfin, FFmpeg or VLC to Plex, Emby or M3U Player<br>- Small jerking of the streams can be compensated<br>- HLS / M3U8 support<br>- RTP / RTPS support (only FFmpeg or VLC)<br>- Re-streaming<br>- Separate tuner limit for each playlist",
-      "info_false": "No Buffer (Client connects to the streaming server)",
-      "info_threadfin": "Threadfin connects to the streaming server",
+      "description": "Functions of the buffer:<br>- The stream is passed from FFmpeg or VLC to Plex, Emby, Jellyfin or M3U Player<br>- Small jerking of the streams can be compensated<br>- HLS / M3U8 support<br>- RTP / RTPS support<br>- Re-streaming<br>- Separate tuner limit for each playlist",
+      "info_false": "No Buffer (Client connects directly to the streaming server)",
       "info_ffmpeg": "FFmpeg connects to the streaming server",
       "info_vlc": "VLC connects to the streaming server"
     },
@@ -367,6 +413,11 @@
     "bufferSize": {
       "title": "Buffer Size",
       "description": "Buffer size in MB.<br>M3U8: If the TS segment smaller then the buffer size, the file size of the segment is used."
+    },
+    "storeBufferInRAM":
+    {
+      "title": "Store buffer in RAM",
+      "description": "If checked, write buffer to RAM instead of writing to disk"
     },
     "bufferTimeout": {
       "title": "Timeout for new client connections",
@@ -416,11 +467,11 @@
   "wizard": {
     "epgSource": {
       "title": "EPG Source",
-      "description": "PMS:<br>- Use EPG data from Plex or Emby <br><br>XEPG:<br>- Use of one or more XMLTV files<br>- Channel management<br>- M3U / XMLTV export (HTTP link for IPTV apps)"
+      "description": "PMS:<br>- Use EPG data from Plex, Emby or Jellyfin <br><br>XEPG:<br>- Use of one or more XMLTV files<br>- Channel management<br>- M3U / XMLTV export (HTTP link for IPTV apps)"
     },
     "tuner": {
       "title": "Number of tuners",
-      "description": "Number of parallel connections that can be established to the provider.<br>Available for: Plex, Emby (HDHR), M3U (with active buffer).<br>After a change, Threadfin must be delete in the Plex / Emby DVR settings and set up again."
+      "description": "Number of parallel connections that can be established to the provider.<br>Available for: Plex, Emby, Jellyfin, M3U (with active buffer).<br>After a change, Threadfin must be delete in the Plex / Emby / Jellyfin DVR settings and set up again."
     },
     "m3u": {
       "title": "M3U Playlist",

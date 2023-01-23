@@ -27,6 +27,7 @@ class MainMenuItem extends MainMenu {
         var item = document.createElement("LI");
         item.setAttribute("onclick", "javascript: openThisMenu(this)");
         item.setAttribute("id", this.id);
+        item.setAttribute("class", "nav-item");
         var img = this.createIMG(this.imgSrc);
         var value = this.createValue(this.value);
         item.appendChild(img);
@@ -56,8 +57,12 @@ class MainMenuItem extends MainMenu {
 class Content {
     constructor() {
         this.DocumentID = "content";
+        this.HeaderID = "popup_header";
+        this.FooterID = "popup_footer";
         this.TableID = "content_table";
+        this.InactiveTableID = "inactive_content_table";
         this.headerClass = "content_table_header";
+        this.headerClassInactive = "inactive_content_table_header";
         this.interactionID = "content-interaction";
     }
     createHeadline(value) {
@@ -67,6 +72,10 @@ class Content {
     }
     createHR() {
         var element = document.createElement("HR");
+        return element;
+    }
+    createBR() {
+        var element = document.createElement("BR");
         return element;
     }
     createInteraction() {
@@ -81,12 +90,23 @@ class Content {
     }
     createTABLE() {
         var element = document.createElement("TABLE");
+        element.setAttribute('class', 'table');
         element.id = this.TableID;
         return element;
     }
     createTableRow() {
         var element = document.createElement("TR");
         element.className = this.headerClass;
+        return element;
+    }
+    createInactiveTABLE() {
+        var element = document.createElement("TABLE");
+        element.id = this.InactiveTableID;
+        return element;
+    }
+    createInactiveTableRow() {
+        var element = document.createElement("TR");
+        element.className = this.headerClassInactive;
         return element;
     }
     createTableContent(menuKey) {
@@ -310,97 +330,204 @@ class Content {
                 data = SERVER["xepg"]["epgMapping"];
                 var keys = getObjKeys(data);
                 keys.forEach(key => {
-                    var tr = document.createElement("TR");
-                    tr.id = key;
-                    //tr.setAttribute('oncontextmenu', 'javascript: rightClick(this)')
-                    switch (data[key]["x-active"]) {
-                        case true:
-                            tr.className = "activeEPG";
-                            break;
-                        case false:
-                            tr.className = "notActiveEPG";
-                            break;
+                    if (data[key]["x-active"]) {
+                        var tr = document.createElement("TR");
+                        tr.id = key;
+                        tr.className = "activeEPG";
+                        // Bulk
+                        var cell = new Cell();
+                        cell.child = true;
+                        cell.childType = "BULK";
+                        cell.value = false;
+                        tr.appendChild(cell.createCell());
+                        // Kanalnummer
+                        var cell = new Cell();
+                        cell.child = true;
+                        cell.childType = "INPUTCHANNEL";
+                        cell.value = data[key]["x-channelID"];
+                        //td.setAttribute('onclick', 'javascript: changeChannelNumber("' + key + '", this)')
+                        tr.appendChild(cell.createCell());
+                        // Logo
+                        var cell = new Cell();
+                        cell.child = true;
+                        cell.childType = "IMG";
+                        cell.imageURL = data[key]["tvg-logo"];
+                        var td = cell.createCell();
+                        td.setAttribute('onclick', 'javascript: openPopUp("mapping", this)');
+                        td.id = key;
+                        tr.appendChild(td);
+                        // Kanalname
+                        var cell = new Cell();
+                        cell.child = true;
+                        cell.childType = "P";
+                        cell.className = data[key]["x-category"];
+                        cell.value = data[key]["x-name"];
+                        var td = cell.createCell();
+                        td.setAttribute('onclick', 'javascript: openPopUp("mapping", this)');
+                        td.id = key;
+                        tr.appendChild(td);
+                        // Playlist
+                        var cell = new Cell();
+                        cell.child = true;
+                        cell.childType = "P";
+                        //cell.value = data[key]["_file.m3u.name"] 
+                        cell.value = getValueFromProviderFile(data[key]["_file.m3u.id"], "m3u", "name");
+                        var td = cell.createCell();
+                        td.setAttribute('onclick', 'javascript: openPopUp("mapping", this)');
+                        td.id = key;
+                        tr.appendChild(td);
+                        // Gruppe (group-title)
+                        var cell = new Cell();
+                        cell.child = true;
+                        cell.childType = "P";
+                        cell.value = data[key]["x-group-title"];
+                        var td = cell.createCell();
+                        td.setAttribute('onclick', 'javascript: openPopUp("mapping", this)');
+                        td.id = key;
+                        tr.appendChild(td);
+                        // XMLTV Datei
+                        var cell = new Cell();
+                        cell.child = true;
+                        cell.childType = "P";
+                        if (data[key]["x-xmltv-file"] != "-") {
+                            cell.value = getValueFromProviderFile(data[key]["x-xmltv-file"], "xmltv", "name");
+                        }
+                        else {
+                            cell.value = data[key]["x-xmltv-file"];
+                        }
+                        var td = cell.createCell();
+                        td.setAttribute('onclick', 'javascript: openPopUp("mapping", this)');
+                        td.id = key;
+                        tr.appendChild(td);
+                        // XMLTV Kanal
+                        var cell = new Cell();
+                        cell.child = true;
+                        cell.childType = "P";
+                        //var value = str.substring(1, 4);
+                        var value = data[key]["x-mapping"];
+                        if (value.length > 20) {
+                            value = data[key]["x-mapping"].substring(0, 20) + "...";
+                        }
+                        cell.value = value;
+                        var td = cell.createCell();
+                        td.setAttribute('onclick', 'javascript: openPopUp("mapping", this)');
+                        td.id = key;
+                        tr.appendChild(td);
+                        rows.push(tr);
                     }
-                    // Bulk
-                    var cell = new Cell();
-                    cell.child = true;
-                    cell.childType = "BULK";
-                    cell.value = false;
-                    tr.appendChild(cell.createCell());
-                    // Kanalnummer
-                    var cell = new Cell();
-                    cell.child = true;
-                    cell.childType = "INPUTCHANNEL";
-                    cell.value = data[key]["x-channelID"];
-                    //td.setAttribute('onclick', 'javascript: changeChannelNumber("' + key + '", this)')
-                    tr.appendChild(cell.createCell());
-                    // Logo
-                    var cell = new Cell();
-                    cell.child = true;
-                    cell.childType = "IMG";
-                    cell.imageURL = data[key]["tvg-logo"];
-                    var td = cell.createCell();
-                    td.setAttribute('onclick', 'javascript: openPopUp("mapping", this)');
-                    td.id = key;
-                    tr.appendChild(td);
-                    // Kanalname
-                    var cell = new Cell();
-                    cell.child = true;
-                    cell.childType = "P";
-                    cell.className = data[key]["x-category"];
-                    cell.value = data[key]["x-name"];
-                    var td = cell.createCell();
-                    td.setAttribute('onclick', 'javascript: openPopUp("mapping", this)');
-                    td.id = key;
-                    tr.appendChild(td);
-                    // Playlist
-                    var cell = new Cell();
-                    cell.child = true;
-                    cell.childType = "P";
-                    //cell.value = data[key]["_file.m3u.name"] 
-                    cell.value = getValueFromProviderFile(data[key]["_file.m3u.id"], "m3u", "name");
-                    var td = cell.createCell();
-                    td.setAttribute('onclick', 'javascript: openPopUp("mapping", this)');
-                    td.id = key;
-                    tr.appendChild(td);
-                    // Gruppe (group-title)
-                    var cell = new Cell();
-                    cell.child = true;
-                    cell.childType = "P";
-                    cell.value = data[key]["x-group-title"];
-                    var td = cell.createCell();
-                    td.setAttribute('onclick', 'javascript: openPopUp("mapping", this)');
-                    td.id = key;
-                    tr.appendChild(td);
-                    // XMLTV Datei
-                    var cell = new Cell();
-                    cell.child = true;
-                    cell.childType = "P";
-                    if (data[key]["x-xmltv-file"] != "-") {
-                        cell.value = getValueFromProviderFile(data[key]["x-xmltv-file"], "xmltv", "name");
+                });
+                break;
+            case "settings":
+                alert();
+                break;
+            default:
+                console.log("Table content (menuKey):", menuKey);
+                break;
+        }
+        return rows;
+    }
+    createInactiveTableContent(menuKey) {
+        var data = new Object();
+        var rows = new Array();
+        switch (menuKey) {
+            case "mapping":
+                BULK_EDIT = false;
+                createSearchObj();
+                checkUndo("epgMapping");
+                console.log("MAPPING");
+                data = SERVER["xepg"]["epgMapping"];
+                var keys = getObjKeys(data);
+                keys.forEach(key => {
+                    if (data[key]["x-active"] === false) {
+                        var tr = document.createElement("TR");
+                        tr.id = key;
+                        tr.className = "notActiveEPG";
+                        // Bulk
+                        var cell = new Cell();
+                        cell.child = true;
+                        cell.childType = "BULK";
+                        cell.value = false;
+                        tr.appendChild(cell.createCell());
+                        // Kanalnummer
+                        var cell = new Cell();
+                        cell.child = true;
+                        cell.childType = "INPUTCHANNEL";
+                        if (data[key]["x-active"] == true) {
+                            cell.value = data[key]["x-channelID"];
+                        }
+                        else {
+                            cell.value = data[key]["x-channelID"] * 10;
+                        }
+                        //td.setAttribute('onclick', 'javascript: changeChannelNumber("' + key + '", this)')
+                        tr.appendChild(cell.createCell());
+                        // Logo
+                        var cell = new Cell();
+                        cell.child = true;
+                        cell.childType = "IMG";
+                        cell.imageURL = data[key]["tvg-logo"];
+                        var td = cell.createCell();
+                        td.setAttribute('onclick', 'javascript: openPopUp("mapping", this)');
+                        td.id = key;
+                        tr.appendChild(td);
+                        // Kanalname
+                        var cell = new Cell();
+                        cell.child = true;
+                        cell.childType = "P";
+                        cell.className = data[key]["x-category"];
+                        cell.value = data[key]["x-name"];
+                        var td = cell.createCell();
+                        td.setAttribute('onclick', 'javascript: openPopUp("mapping", this)');
+                        td.id = key;
+                        tr.appendChild(td);
+                        // Playlist
+                        var cell = new Cell();
+                        cell.child = true;
+                        cell.childType = "P";
+                        //cell.value = data[key]["_file.m3u.name"] 
+                        cell.value = getValueFromProviderFile(data[key]["_file.m3u.id"], "m3u", "name");
+                        var td = cell.createCell();
+                        td.setAttribute('onclick', 'javascript: openPopUp("mapping", this)');
+                        td.id = key;
+                        tr.appendChild(td);
+                        // Gruppe (group-title)
+                        var cell = new Cell();
+                        cell.child = true;
+                        cell.childType = "P";
+                        cell.value = data[key]["x-group-title"];
+                        var td = cell.createCell();
+                        td.setAttribute('onclick', 'javascript: openPopUp("mapping", this)');
+                        td.id = key;
+                        tr.appendChild(td);
+                        // XMLTV Datei
+                        var cell = new Cell();
+                        cell.child = true;
+                        cell.childType = "P";
+                        if (data[key]["x-xmltv-file"] != "-") {
+                            cell.value = getValueFromProviderFile(data[key]["x-xmltv-file"], "xmltv", "name");
+                        }
+                        else {
+                            cell.value = data[key]["x-xmltv-file"];
+                        }
+                        var td = cell.createCell();
+                        td.setAttribute('onclick', 'javascript: openPopUp("mapping", this)');
+                        td.id = key;
+                        tr.appendChild(td);
+                        // XMLTV Kanal
+                        var cell = new Cell();
+                        cell.child = true;
+                        cell.childType = "P";
+                        //var value = str.substring(1, 4);
+                        var value = data[key]["x-mapping"];
+                        if (value.length > 20) {
+                            value = data[key]["x-mapping"].substring(0, 20) + "...";
+                        }
+                        cell.value = value;
+                        var td = cell.createCell();
+                        td.setAttribute('onclick', 'javascript: openPopUp("mapping", this)');
+                        td.id = key;
+                        tr.appendChild(td);
+                        rows.push(tr);
                     }
-                    else {
-                        cell.value = data[key]["x-xmltv-file"];
-                    }
-                    var td = cell.createCell();
-                    td.setAttribute('onclick', 'javascript: openPopUp("mapping", this)');
-                    td.id = key;
-                    tr.appendChild(td);
-                    // XMLTV Kanal
-                    var cell = new Cell();
-                    cell.child = true;
-                    cell.childType = "P";
-                    //var value = str.substring(1, 4);
-                    var value = data[key]["x-mapping"];
-                    if (value.length > 20) {
-                        value = data[key]["x-mapping"].substring(0, 20) + "...";
-                    }
-                    cell.value = value;
-                    var td = cell.createCell();
-                    td.setAttribute('onclick', 'javascript: openPopUp("mapping", this)');
-                    td.id = key;
-                    tr.appendChild(td);
-                    rows.push(tr);
                 });
                 break;
             case "settings":
@@ -446,7 +573,12 @@ class Cell {
                     element.checked = this.value;
                     element.type = "checkbox";
                     element.className = "bulk hideBulk";
-                    element.setAttribute("onclick", "javascript: selectAllChannels()");
+                    if (this.active) {
+                        element.setAttribute("onclick", "javascript: selectAllChannels()");
+                    }
+                    else {
+                        element.setAttribute("onclick", "javascript: selectAllChannels('inactive_content_table')");
+                    }
                     break;
                 case "IMG":
                     element = document.createElement(this.childType);
@@ -490,10 +622,17 @@ class ShowContent extends Content {
         doc.innerHTML = "";
         showPreview(false);
         // Überschrift
+        var popup_header = document.getElementById(this.HeaderID);
         var headline = menuItems[this.menuID].headline;
         var menuKey = menuItems[this.menuID].menuKey;
         var h = this.createHeadline(headline);
-        doc.appendChild(h);
+        var existingHeader = popup_header.querySelector('h3');
+        if (existingHeader) {
+            popup_header.replaceChild(h, existingHeader);
+        }
+        else {
+            popup_header.appendChild(h);
+        }
         var hr = this.createHR();
         doc.appendChild(hr);
         // Interaktion
@@ -505,28 +644,36 @@ class ShowContent extends Content {
                 var input = this.createInput("button", menuKey, "{{.button.new}}");
                 input.setAttribute("id", "-");
                 input.setAttribute("onclick", 'javascript: openPopUp("playlist")');
+                input.setAttribute('data-bs-toggle', 'modal');
+                input.setAttribute('data-bs-target', '#popup');
                 interaction.appendChild(input);
                 break;
             case "filter":
                 var input = this.createInput("button", menuKey, "{{.button.new}}");
                 input.setAttribute("id", -1);
                 input.setAttribute("onclick", 'javascript: openPopUp("filter", this)');
+                input.setAttribute('data-bs-toggle', 'modal');
+                input.setAttribute('data-bs-target', '#popup');
                 interaction.appendChild(input);
                 break;
             case "xmltv":
                 var input = this.createInput("button", menuKey, "{{.button.new}}");
                 input.setAttribute("id", "xmltv");
                 input.setAttribute("onclick", 'javascript: openPopUp("xmltv")');
+                input.setAttribute('data-bs-toggle', 'modal');
+                input.setAttribute('data-bs-target', '#popup');
                 interaction.appendChild(input);
                 break;
             case "users":
                 var input = this.createInput("button", menuKey, "{{.button.new}}");
                 input.setAttribute("id", "users");
                 input.setAttribute("onclick", 'javascript: openPopUp("users")');
+                input.setAttribute('data-bs-toggle', 'modal');
+                input.setAttribute('data-bs-target', '#popup');
                 interaction.appendChild(input);
                 break;
             case "mapping":
-                showElement("loading", true);
+                // showElement("loading", true)
                 var input = this.createInput("button", menuKey, "{{.button.save}}");
                 input.setAttribute("onclick", 'javascript: savePopupData("mapping", "", "")');
                 interaction.appendChild(input);
@@ -598,6 +745,7 @@ class ShowContent extends Content {
                 cell.value = element;
                 if (element == "BULK") {
                     cell.childType = "BULK_HEAD";
+                    cell.active = true;
                     cell.value = false;
                 }
                 if (menuKey == "mapping") {
@@ -627,10 +775,59 @@ class ShowContent extends Content {
             rows.forEach(tr => {
                 table.appendChild(tr);
             });
+            var br = this.createBR();
+            doc.appendChild(br);
+            // Create inactive channels for mapping
+            if (menuKey == "mapping") {
+                var inactivetable = this.createInactiveTABLE();
+                wrapper.appendChild(inactivetable);
+                var header = this.createInactiveTableRow();
+                inactivetable.appendChild(header);
+                // Kopfzeile der Tablle
+                tableHeader.forEach(element => {
+                    var cell = new Cell();
+                    cell.child = true;
+                    cell.childType = "P";
+                    cell.value = element;
+                    if (element == "BULK") {
+                        cell.childType = "BULK_HEAD";
+                        cell.active = false;
+                        cell.value = false;
+                    }
+                    if (menuKey == "mapping") {
+                        if (element == "{{.mapping.table.chNo}}") {
+                            cell.onclick = true;
+                            cell.onclickFunktion = "javascript: sortTable(1, 'inactive_content_table');";
+                            cell.tdClassName = "sortThis";
+                        }
+                        if (element == "{{.mapping.table.channelName}}") {
+                            cell.onclick = true;
+                            cell.onclickFunktion = "javascript: sortTable(3, 'inactive_content_table');";
+                        }
+                        if (element == "{{.mapping.table.playlist}}") {
+                            cell.onclick = true;
+                            cell.onclickFunktion = "javascript: sortTable(4, 'inactive_content_table');";
+                        }
+                        if (element == "{{.mapping.table.groupTitle}}") {
+                            cell.onclick = true;
+                            cell.onclickFunktion = "javascript: sortTable(5, 'inactive_content_table');";
+                        }
+                    }
+                    header.appendChild(cell.createCell());
+                });
+                inactivetable.appendChild(header);
+                // Inhalt der Tabelle
+                var rows = this.createInactiveTableContent(menuKey);
+                rows.forEach(tr => {
+                    inactivetable.appendChild(tr);
+                });
+                savePopupData("mapping", "", false, 0);
+            }
         }
         switch (menuKey) {
             case "mapping":
                 sortTable(1);
+                sortTable(1, "inactive_content_table");
                 break;
             case "filter":
                 showPreview(true);
@@ -647,9 +844,6 @@ class ShowContent extends Content {
 function PageReady() {
     var server = new Server("getServerConfig");
     server.request(new Object());
-    window.addEventListener("resize", function () {
-        calculateWrapperHeight();
-    }, true);
     setInterval(function () {
         updateLog();
     }, 10000);
@@ -661,7 +855,7 @@ function createLayout() {
     var keys = getObjKeys(obj);
     for (var i = 0; i < keys.length; i++) {
         if (document.getElementById(keys[i])) {
-            document.getElementById(keys[i]).innerHTML = obj[keys[i]];
+            document.getElementById(keys[i]).value = obj[keys[i]];
         }
     }
     if (!document.getElementById("main-menu")) {
@@ -695,7 +889,7 @@ function openThisMenu(element) {
     var id = element.id;
     var content = new ShowContent(id);
     content.show();
-    calculateWrapperHeight();
+    enableGroupSelection(".bulk");
     return;
 }
 class PopupWindow {
@@ -1085,6 +1279,23 @@ function openPopUp(dataType, element) {
                 default:
                     break;
             }
+            // Name      
+            var dbKey = "startingNumber";
+            if (data[dbKey] !== undefined) {
+                var input = content.createInput("text", dbKey, data[dbKey]);
+            }
+            else {
+                var input = content.createInput("text", dbKey, "1000");
+            }
+            input.setAttribute("placeholder", "{{.filter.startingnumber.placeholder}}");
+            content.appendRow("{{.filter.startingnumber.title}}", input);
+            content.description("{{.filter.startingnumber.description}}");
+            var dbKey = "x-category";
+            var text = ["-", "Kids", "News", "Movie", "Series", "Sports"];
+            var values = ["", "kids", "news", "movie", "series", "sports"];
+            var select = content.createSelect(text, values, data[dbKey], dbKey);
+            select.setAttribute("onchange", "javascript: this.className = 'changed'");
+            content.appendRow("{{.filter.category.title}}", select);
             // Interaktion
             content.createInteraction();
             // Löschen
@@ -1213,7 +1424,9 @@ function openPopUp(dataType, element) {
                 // Set the value to the first selected channel
                 var channels = getAllSelectedChannels();
                 var channel = SERVER["xepg"]["epgMapping"][channels[0]];
-                input.setAttribute("value", channel["x-channelID"]);
+                if (typeof channel !== "undefined") {
+                    input.setAttribute("value", channel["x-channelID"]);
+                }
                 input.setAttribute("onchange", 'javascript: changeChannelNumbers("' + channels + '");');
                 content.appendRow("{{.mapping.channelGroupStart.title}}", input);
             }
@@ -1266,8 +1479,8 @@ function openPopUp(dataType, element) {
             content.appendRow("{{.mapping.updateChannelLogo.title}}", input);
             // Erweitern der EPG Kategorie
             var dbKey = "x-category";
-            var text = ["-", "Kids (Emby only)", "News", "Movie", "Series", "Sports"];
-            var values = ["", "Kids", "News", "Movie", "Series", "Sports"];
+            var text = ["-", "Kids", "News", "Movie", "Series", "Sports"];
+            var values = ["", "kids", "news", "movie", "series", "sports"];
             var select = content.createSelect(text, values, data[dbKey], dbKey);
             select.setAttribute("onchange", "javascript: this.className = 'changed'");
             content.appendRow("{{.mapping.epgCategory.title}}", select);
@@ -1286,18 +1499,49 @@ function openPopUp(dataType, element) {
             var select = xmltv.getFiles(data[dbKey]);
             select.setAttribute("name", dbKey);
             select.setAttribute("id", "popup-xmltv");
-            select.setAttribute("onchange", "javascript: this.className = 'changed'; setXmltvChannel('" + id + "',this);");
+            select.setAttribute("onchange", "javascript: this.className = 'changed'; setXmltvChannel('" + id + "',this, '" + data["x-mapping"] + "');");
             content.appendRow("{{.mapping.xmltvFile.title}}", select);
             var file = data[dbKey];
             // XMLTV Mapping
             var dbKey = "x-mapping";
             var xmltv = new XMLTVFile();
-            var select = xmltv.getPrograms(file, data[dbKey]);
+            var select = xmltv.getPrograms(file, data[dbKey], false);
+            var mappingType = data[dbKey];
+            console.log("CHECKING: " + mappingType);
             select.setAttribute("name", dbKey);
             select.setAttribute("id", "popup-mapping");
             select.setAttribute("onchange", "javascript: this.className = 'changed'; checkXmltvChannel('" + id + "',this,'" + xmlFile + "');");
             sortSelect(select);
             content.appendRow("{{.mapping.xmltvChannel.title}}", select);
+            // Extra PPV Data
+            if (mappingType == "PPV") {
+                var dbKey = "x-ppv-extra";
+                var input = content.createInput("text", dbKey, data[dbKey]);
+                input.setAttribute("onchange", "javascript: this.className = 'changed'");
+                input.setAttribute("id", "ppv-extra");
+                content.appendRow("{{.mapping.ppvextra.title}}", input);
+            }
+            var dbKey = "x-backup-channel-1";
+            var xmltv = new XMLTVFile();
+            var select = xmltv.getPrograms(file, data[dbKey], true);
+            select.setAttribute("name", dbKey);
+            select.setAttribute("id", "backup-channel-1");
+            select.setAttribute("onchange", "javascript: this.className = 'changed'; checkXmltvChannel('" + id + "',this,'" + xmlFile + "');");
+            content.appendRow("{{.mapping.backupChannel1.title}}", select);
+            var dbKey = "x-backup-channel-2";
+            var xmltv = new XMLTVFile();
+            var select = xmltv.getPrograms(file, data[dbKey], true);
+            select.setAttribute("name", dbKey);
+            select.setAttribute("id", "backup-channel-2");
+            select.setAttribute("onchange", "javascript: this.className = 'changed'; checkXmltvChannel('" + id + "',this,'" + xmlFile + "');");
+            content.appendRow("{{.mapping.backupChannel2.title}}", select);
+            var dbKey = "x-backup-channel-3";
+            var xmltv = new XMLTVFile();
+            var select = xmltv.getPrograms(file, data[dbKey], true);
+            select.setAttribute("name", dbKey);
+            select.setAttribute("id", "backup-channel-3");
+            select.setAttribute("onchange", "javascript: this.className = 'changed'; checkXmltvChannel('" + id + "',this,'" + xmlFile + "');");
+            content.appendRow("{{.mapping.backupChannel3.title}}", select);
             // Interaktion
             content.createInteraction();
             // Logo hochladen
@@ -1350,19 +1594,33 @@ class XMLTVFile {
         }
         return select;
     }
-    getPrograms(file, set) {
+    getPrograms(file, set, active) {
         //var fileIDs:string[] = getObjKeys(SERVER["xepg"]["xmltvMap"])
         var values = getObjKeys(SERVER["xepg"]["xmltvMap"][file]);
         var text = new Array();
         var displayName;
-        for (let i = 0; i < values.length; i++) {
-            if (SERVER["xepg"]["xmltvMap"][file][values[i]].hasOwnProperty('display-name') == true) {
-                displayName = SERVER["xepg"]["xmltvMap"][file][values[i]]["display-name"];
+        var actives = getObjKeys(SERVER["data"]["StreamPreviewUI"]["activeStreams"]);
+        var active_list = new Array();
+        if (active == true) {
+            for (let i = 0; i < actives.length; i++) {
+                var names_split = SERVER["data"]["StreamPreviewUI"]["activeStreams"][actives[i]].split("[");
+                displayName = names_split[0].trim();
+                if (displayName != "") {
+                    var object = { "value": displayName, "display": displayName };
+                    active_list.push(object);
+                }
             }
-            else {
-                displayName = "-";
+        }
+        else {
+            for (let i = 0; i < values.length; i++) {
+                if (SERVER["xepg"]["xmltvMap"][file][values[i]].hasOwnProperty('display-name') == true) {
+                    displayName = SERVER["xepg"]["xmltvMap"][file][values[i]]["display-name"];
+                }
+                else {
+                    displayName = "-";
+                }
+                text[i] = displayName + " (" + values[i] + ")";
             }
-            text[i] = displayName + " (" + values[i] + ")";
         }
         text.unshift("-");
         values.unshift("-");
@@ -1371,6 +1629,12 @@ class XMLTVFile {
             var option = document.createElement("OPTION");
             option.setAttribute("value", values[i]);
             option.innerText = text[i];
+            select.appendChild(option);
+        }
+        for (let i = 0; i < active_list.length; i++) {
+            var option = document.createElement("OPTION");
+            option.setAttribute("value", active_list[i]["value"]);
+            option.innerText = active_list[i]["display"];
             select.appendChild(option);
         }
         if (set != "") {
@@ -1408,13 +1672,13 @@ function getValueFromProviderFile(file, fileType, key) {
     }
     return;
 }
-function setXmltvChannel(id, element) {
+function setXmltvChannel(id, element, dummy_type) {
     var xmltv = new XMLTVFile();
     var xmlFile = element.value;
     var tvgId = SERVER["xepg"]["epgMapping"][id]["tvg-id"];
     var td = document.getElementById("popup-mapping").parentElement;
     td.innerHTML = "";
-    var select = xmltv.getPrograms(element.value, tvgId);
+    var select = xmltv.getPrograms(element.value, tvgId, false);
     select.setAttribute("name", "x-mapping");
     select.setAttribute("id", "popup-mapping");
     select.setAttribute("onchange", "javascript: this.className = 'changed'; checkXmltvChannel('" + id + "',this,'" + xmlFile + "');");
@@ -1422,6 +1686,31 @@ function setXmltvChannel(id, element) {
     sortSelect(select);
     td.appendChild(select);
     checkXmltvChannel(id, select, xmlFile);
+}
+function checkPPV(title, element) {
+    var value = element.value;
+    console.log("DUMMY TYPE: " + value);
+    if (value == "PPV") {
+        var td = document.getElementById("x-ppv-extra").parentElement;
+        td.innerHTML = "";
+        var dbKey = "x-ppv-extra";
+        var input = document.createElement("INPUT");
+        input.setAttribute("type", "text");
+        input.setAttribute("name", dbKey);
+        // input.setAttribute("value", value)
+        input.setAttribute("onchange", "javascript: this.className = 'changed'");
+        input.setAttribute("id", "ppv-extra");
+        var tr = document.createElement("TR");
+        // Bezeichnung
+        if (title.length != 0) {
+            var td = document.createElement("TD");
+            td.className = "left";
+            td.innerHTML = title + ":";
+        }
+        // Content
+        td.appendChild(element);
+        this.table.appendChild(tr);
+    }
 }
 function checkXmltvChannel(id, element, xmlFile) {
     var value = element.value;
@@ -1480,6 +1769,7 @@ function changeChannelLogo(id) {
     }
 }
 function savePopupData(dataType, id, remove, option) {
+    showElement("loading", true);
     if (dataType == "mapping") {
         var data = new Object();
         console.log("Save mapping data");
@@ -1489,6 +1779,7 @@ function savePopupData(dataType, id, remove, option) {
         var server = new Server(cmd);
         server.request(data);
         delete UNDO["epgMapping"];
+        showElement("loading", false);
         return;
     }
     console.log("Save popup data");
@@ -1619,6 +1910,7 @@ function savePopupData(dataType, id, remove, option) {
     console.log(data);
     var server = new Server(cmd);
     server.request(data);
+    showElement("loading", false);
 }
 function donePopupData(dataType, idsStr) {
     var ids = idsStr.split(',');
@@ -1627,7 +1919,7 @@ function donePopupData(dataType, idsStr) {
     ids.forEach(id => {
         var input = new Object();
         input = SERVER["xepg"]["epgMapping"][id];
-        console.log(input);
+        console.log("INPUT: " + input);
         for (let i = 0; i < inputs.length; i++) {
             var name;
             var value;
@@ -1683,6 +1975,12 @@ function donePopupData(dataType, idsStr) {
                     }
                     document.getElementById(id).childNodes[7].firstChild.innerHTML = value;
                     break;
+                case "x-backup-channel":
+                    document.getElementById(id).childNodes[7].firstChild.innerHTML = value;
+                    break;
+                case "x-hide-channel":
+                    document.getElementById(id).childNodes[7].firstChild.innerHTML = value;
+                    break;
                 default:
             }
             createSearchObj();
@@ -1713,6 +2011,13 @@ function showPreview(element) {
         var table = document.getElementById(preview);
         table.innerHTML = "";
         var obj = SERVER["data"]["StreamPreviewUI"][preview];
+        var caption = document.createElement("CAPTION");
+        var result = preview.replace(/([A-Z])/g, " $1");
+        var finalResult = result.charAt(0).toUpperCase() + result.slice(1);
+        caption.innerHTML = finalResult;
+        table.appendChild(caption);
+        var tbody = document.createElement("TBODY");
+        table.appendChild(tbody);
         obj.forEach(channel => {
             var tr = document.createElement("TR");
             var tdKey = document.createElement("TD");
@@ -1730,10 +2035,11 @@ function showPreview(element) {
             tdVal.innerText = channel;
             tr.appendChild(tdKey);
             tr.appendChild(tdVal);
+            tbody.appendChild(tr);
             table.appendChild(tr);
         });
     });
-    showElement("loading", false);
+    // showElement("loading", false)
     div.className = "visible";
     return;
 }

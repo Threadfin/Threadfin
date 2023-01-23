@@ -1,0 +1,42 @@
+name: Threadfin Beta Build
+on:
+  push:
+    tags:
+      - "*"
+permissions:
+  contents: write
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v3
+        with:
+          ref: beta
+
+      - name: Set up and Build
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.18
+        id: go
+      - run: |
+         go mod tidy && go mod vendor
+         echo "Building Linux"
+         env GOOS=linux GOARCH=arm64 go build -o dist/Threadfin_linux_arm64
+         env GOOS=linux GOARCH=amd64 go build -o dist/Threadfin_linux_amd64
+         echo "Building FreeBSD"
+         env GOOS=freebsd GOARCH=amd64 go build -o dist/Threadfin_freebsd_amd64
+         env GOOS=freebsd GOARCH=arm go build -o dist/Threadfin_freebsd_arm
+         echo "Building Macos"
+         env GOOS=darwin GOARCH=arm64 go build -o dist/Threadfin_darwin_arm64
+         env GOOS=darwin GOARCH=amd64 go build -o dist/Threadfin_darwin_amd64
+         echo "Building Windows"
+         env GOOS=windows GOARCH=amd64 go build -o dist/Threadfin_windows_amd64.exe
+
+      - name: Pre-Release
+        uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          prerelease: true
+          files: dist/*

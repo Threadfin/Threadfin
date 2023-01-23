@@ -180,7 +180,7 @@ func Stream(w http.ResponseWriter, r *http.Request) {
 		showInfo("Streaming Info:Threadfin is no longer involved, the client connects directly to the streaming server.")
 
 	default:
-		bufferingStream(streamInfo.PlaylistID, streamInfo.URL, streamInfo.Name, w, r)
+		bufferingStream(streamInfo.PlaylistID, streamInfo.URL, streamInfo.BackupChannel1URL, streamInfo.BackupChannel2URL, streamInfo.BackupChannel3URL, streamInfo.Name, w, r)
 
 	}
 
@@ -414,6 +414,7 @@ func WS(w http.ResponseWriter, r *http.Request) {
 		// Daten schreiben
 		case "saveSettings":
 			var authenticationUpdate = Settings.AuthenticationWEB
+			var previousStoreBufferInRAM = Settings.StoreBufferInRAM
 			response.Settings, err = updateServerSettings(request)
 			if err == nil {
 
@@ -421,6 +422,10 @@ func WS(w http.ResponseWriter, r *http.Request) {
 
 				if Settings.AuthenticationWEB == true && authenticationUpdate == false {
 					response.Reload = true
+				}
+
+				if Settings.StoreBufferInRAM != previousStoreBufferInRAM {
+					initBufferVFS(Settings.StoreBufferInRAM)
 				}
 
 			}

@@ -37,6 +37,7 @@ class MainMenuItem extends MainMenu {
     var item = document.createElement("LI")
     item.setAttribute("onclick", "javascript: openThisMenu(this)")
     item.setAttribute("id", this.id)
+    item.setAttribute("class", "nav-item")
     var img = this.createIMG(this.imgSrc)
     var value = this.createValue(this.value)
 
@@ -77,9 +78,13 @@ class MainMenuItem extends MainMenu {
 class Content {
 
   DocumentID: string = "content"
+  HeaderID: string = "popup_header"
+  FooterID: string = "popup_footer"
   TableID: string = "content_table"
+  InactiveTableID: string = "inactive_content_table"
   DivID: string
   headerClass: string = "content_table_header"
+  headerClassInactive: string = "inactive_content_table_header"
   interactionID: string = "content-interaction"
 
   createHeadline(value): any {
@@ -90,6 +95,11 @@ class Content {
 
   createHR(): any {
     var element = document.createElement("HR")
+    return element
+  }
+
+  createBR(): any {
+    var element = document.createElement("BR")
     return element
   }
 
@@ -107,6 +117,7 @@ class Content {
 
   createTABLE(): any {
     var element = document.createElement("TABLE")
+    element.setAttribute('class', 'table')
     element.id = this.TableID
     return element
   }
@@ -114,6 +125,18 @@ class Content {
   createTableRow(): any {
     var element = document.createElement("TR")
     element.className = this.headerClass
+    return element
+  }
+
+  createInactiveTABLE(): any {
+    var element = document.createElement("TABLE")
+    element.id = this.InactiveTableID
+    return element
+  }
+
+  createInactiveTableRow(): any {
+    var element = document.createElement("TR")
+    element.className = this.headerClassInactive
     return element
   }
 
@@ -389,114 +412,243 @@ class Content {
 
         var keys = getObjKeys(data)
         keys.forEach(key => {
-          var tr = document.createElement("TR")
-          tr.id = key
+          if (data[key]["x-active"]) {
+            var tr = document.createElement("TR")
+            tr.id = key
+            tr.className = "activeEPG"
 
-          //tr.setAttribute('oncontextmenu', 'javascript: rightClick(this)')
+            // Bulk
+            var cell: Cell = new Cell()
+            cell.child = true
+            cell.childType = "BULK"
+            cell.value = false
+            tr.appendChild(cell.createCell())
 
-          switch (data[key]["x-active"]) {
-            case true:
-              tr.className = "activeEPG"
-              break;
+            // Kanalnummer
+            var cell: Cell = new Cell()
+            cell.child = true
+            cell.childType = "INPUTCHANNEL"
+            cell.value = data[key]["x-channelID"]
+            //td.setAttribute('onclick', 'javascript: changeChannelNumber("' + key + '", this)')
+            tr.appendChild(cell.createCell())
 
-            case false:
-              tr.className = "notActiveEPG"
-              break;
+            // Logo
+            var cell: Cell = new Cell()
+            cell.child = true
+            cell.childType = "IMG"
+            cell.imageURL = data[key]["tvg-logo"]
+            var td = cell.createCell()
+            td.setAttribute('onclick', 'javascript: openPopUp("mapping", this)')
+            td.id = key
+
+            tr.appendChild(td)
+
+            // Kanalname
+            var cell: Cell = new Cell()
+            cell.child = true
+            cell.childType = "P"
+            cell.className = data[key]["x-category"]
+            cell.value = data[key]["x-name"]
+            var td = cell.createCell()
+            td.setAttribute('onclick', 'javascript: openPopUp("mapping", this)')
+            td.id = key
+            tr.appendChild(td)
+
+
+            // Playlist
+            var cell: Cell = new Cell()
+            cell.child = true
+            cell.childType = "P"
+            //cell.value = data[key]["_file.m3u.name"] 
+            cell.value = getValueFromProviderFile(data[key]["_file.m3u.id"], "m3u", "name")
+            var td = cell.createCell()
+            td.setAttribute('onclick', 'javascript: openPopUp("mapping", this)')
+            td.id = key
+            tr.appendChild(td)
+
+
+            // Gruppe (group-title)
+            var cell: Cell = new Cell()
+            cell.child = true
+            cell.childType = "P"
+            cell.value = data[key]["x-group-title"]
+            var td = cell.createCell()
+            td.setAttribute('onclick', 'javascript: openPopUp("mapping", this)')
+            td.id = key
+            tr.appendChild(td)
+
+            // XMLTV Datei
+            var cell: Cell = new Cell()
+            cell.child = true
+            cell.childType = "P"
+
+            if (data[key]["x-xmltv-file"] != "-") {
+              cell.value = getValueFromProviderFile(data[key]["x-xmltv-file"], "xmltv", "name")
+            } else {
+              cell.value = data[key]["x-xmltv-file"]
+            }
+
+            var td = cell.createCell()
+            td.setAttribute('onclick', 'javascript: openPopUp("mapping", this)')
+            td.id = key
+            tr.appendChild(td)
+
+            // XMLTV Kanal
+            var cell: Cell = new Cell()
+            cell.child = true
+            cell.childType = "P"
+            //var value = str.substring(1, 4);
+            var value = data[key]["x-mapping"]
+            if (value.length > 20) {
+              value = data[key]["x-mapping"].substring(0, 20) + "..."
+            }
+            cell.value = value
+            var td = cell.createCell()
+            td.setAttribute('onclick', 'javascript: openPopUp("mapping", this)')
+            td.id = key
+
+            tr.appendChild(td)
+
+            rows.push(tr)
           }
+        });
 
-          // Bulk
-          var cell: Cell = new Cell()
-          cell.child = true
-          cell.childType = "BULK"
-          cell.value = false
-          tr.appendChild(cell.createCell())
+        break
 
-          // Kanalnummer
-          var cell: Cell = new Cell()
-          cell.child = true
-          cell.childType = "INPUTCHANNEL"
-          cell.value = data[key]["x-channelID"]
-          //td.setAttribute('onclick', 'javascript: changeChannelNumber("' + key + '", this)')
-          tr.appendChild(cell.createCell())
+      case "settings":
+        alert()
+        break
 
-          // Logo
-          var cell: Cell = new Cell()
-          cell.child = true
-          cell.childType = "IMG"
-          cell.imageURL = data[key]["tvg-logo"]
-          var td = cell.createCell()
-          td.setAttribute('onclick', 'javascript: openPopUp("mapping", this)')
-          td.id = key
+      default:
+        console.log("Table content (menuKey):", menuKey);
 
-          tr.appendChild(td)
+        break
 
-          // Kanalname
-          var cell: Cell = new Cell()
-          cell.child = true
-          cell.childType = "P"
-          cell.className = data[key]["x-category"]
-          cell.value = data[key]["x-name"]
-          var td = cell.createCell()
-          td.setAttribute('onclick', 'javascript: openPopUp("mapping", this)')
-          td.id = key
-          tr.appendChild(td)
+    }
+
+    return rows
+
+  }
+
+  createInactiveTableContent(menuKey: string): string[] {
+
+    var data = new Object()
+    var rows = new Array()
+
+    switch (menuKey) {
+      case "mapping":
+        BULK_EDIT = false
+        createSearchObj()
+        checkUndo("epgMapping")
+        console.log("MAPPING")
+        data = SERVER["xepg"]["epgMapping"]
+
+        var keys = getObjKeys(data)
+        keys.forEach(key => {
+          if (data[key]["x-active"] === false) {
+
+            var tr = document.createElement("TR")
+            tr.id = key
+            tr.className = "notActiveEPG"
+
+            // Bulk
+            var cell: Cell = new Cell()
+            cell.child = true
+            cell.childType = "BULK"
+            cell.value = false
+            tr.appendChild(cell.createCell())
+
+            // Kanalnummer
+            var cell: Cell = new Cell()
+            cell.child = true
+            cell.childType = "INPUTCHANNEL"
+            if (data[key]["x-active"] == true) {
+              cell.value = data[key]["x-channelID"]
+            } else {
+              cell.value = data[key]["x-channelID"] * 10
+            }
+            //td.setAttribute('onclick', 'javascript: changeChannelNumber("' + key + '", this)')
+            tr.appendChild(cell.createCell())
+
+            // Logo
+            var cell: Cell = new Cell()
+            cell.child = true
+            cell.childType = "IMG"
+            cell.imageURL = data[key]["tvg-logo"]
+            var td = cell.createCell()
+            td.setAttribute('onclick', 'javascript: openPopUp("mapping", this)')
+            td.id = key
+
+            tr.appendChild(td)
+
+            // Kanalname
+            var cell: Cell = new Cell()
+            cell.child = true
+            cell.childType = "P"
+            cell.className = data[key]["x-category"]
+            cell.value = data[key]["x-name"]
+            var td = cell.createCell()
+            td.setAttribute('onclick', 'javascript: openPopUp("mapping", this)')
+            td.id = key
+            tr.appendChild(td)
 
 
-          // Playlist
-          var cell: Cell = new Cell()
-          cell.child = true
-          cell.childType = "P"
-          //cell.value = data[key]["_file.m3u.name"] 
-          cell.value = getValueFromProviderFile(data[key]["_file.m3u.id"], "m3u", "name")
-          var td = cell.createCell()
-          td.setAttribute('onclick', 'javascript: openPopUp("mapping", this)')
-          td.id = key
-          tr.appendChild(td)
+            // Playlist
+            var cell: Cell = new Cell()
+            cell.child = true
+            cell.childType = "P"
+            //cell.value = data[key]["_file.m3u.name"] 
+            cell.value = getValueFromProviderFile(data[key]["_file.m3u.id"], "m3u", "name")
+            var td = cell.createCell()
+            td.setAttribute('onclick', 'javascript: openPopUp("mapping", this)')
+            td.id = key
+            tr.appendChild(td)
 
 
-          // Gruppe (group-title)
-          var cell: Cell = new Cell()
-          cell.child = true
-          cell.childType = "P"
-          cell.value = data[key]["x-group-title"]
-          var td = cell.createCell()
-          td.setAttribute('onclick', 'javascript: openPopUp("mapping", this)')
-          td.id = key
-          tr.appendChild(td)
+            // Gruppe (group-title)
+            var cell: Cell = new Cell()
+            cell.child = true
+            cell.childType = "P"
+            cell.value = data[key]["x-group-title"]
+            var td = cell.createCell()
+            td.setAttribute('onclick', 'javascript: openPopUp("mapping", this)')
+            td.id = key
+            tr.appendChild(td)
 
-          // XMLTV Datei
-          var cell: Cell = new Cell()
-          cell.child = true
-          cell.childType = "P"
+            // XMLTV Datei
+            var cell: Cell = new Cell()
+            cell.child = true
+            cell.childType = "P"
 
-          if (data[key]["x-xmltv-file"] != "-") {
-            cell.value = getValueFromProviderFile(data[key]["x-xmltv-file"], "xmltv", "name")
-          } else {
-            cell.value = data[key]["x-xmltv-file"]
+            if (data[key]["x-xmltv-file"] != "-") {
+              cell.value = getValueFromProviderFile(data[key]["x-xmltv-file"], "xmltv", "name")
+            } else {
+              cell.value = data[key]["x-xmltv-file"]
+            }
+
+            var td = cell.createCell()
+            td.setAttribute('onclick', 'javascript: openPopUp("mapping", this)')
+            td.id = key
+            tr.appendChild(td)
+
+            // XMLTV Kanal
+            var cell: Cell = new Cell()
+            cell.child = true
+            cell.childType = "P"
+            //var value = str.substring(1, 4);
+            var value = data[key]["x-mapping"]
+            if (value.length > 20) {
+              value = data[key]["x-mapping"].substring(0, 20) + "..."
+            }
+            cell.value = value
+            var td = cell.createCell()
+            td.setAttribute('onclick', 'javascript: openPopUp("mapping", this)')
+            td.id = key
+
+            tr.appendChild(td)
+
+            rows.push(tr)
           }
-
-          var td = cell.createCell()
-          td.setAttribute('onclick', 'javascript: openPopUp("mapping", this)')
-          td.id = key
-          tr.appendChild(td)
-
-          // XMLTV Kanal
-          var cell: Cell = new Cell()
-          cell.child = true
-          cell.childType = "P"
-          //var value = str.substring(1, 4);
-          var value = data[key]["x-mapping"]
-          if (value.length > 20) {
-            value = data[key]["x-mapping"].substring(0, 20) + "..."
-          }
-          cell.value = value
-          var td = cell.createCell()
-          td.setAttribute('onclick', 'javascript: openPopUp("mapping", this)')
-          td.id = key
-
-          tr.appendChild(td)
-
-          rows.push(tr)
         });
 
         break
@@ -522,6 +674,7 @@ class Content {
 class Cell {
   child: Boolean
   childType: string
+  active: Boolean
   value: any
   className: string
   tdClassName: string
@@ -568,7 +721,11 @@ class Cell {
           (element as HTMLInputElement).checked = this.value;
           (element as HTMLInputElement).type = "checkbox";
           (element as HTMLInputElement).className = "bulk hideBulk";
-          (element as HTMLInputElement).setAttribute("onclick", "javascript: selectAllChannels()")
+          if (this.active) {
+            (element as HTMLInputElement).setAttribute("onclick", "javascript: selectAllChannels()")
+          } else {
+            (element as HTMLInputElement).setAttribute("onclick", "javascript: selectAllChannels('inactive_content_table')")
+          }
           break
 
         case "IMG":
@@ -626,11 +783,17 @@ class ShowContent extends Content {
     showPreview(false)
 
     // Überschrift
+    var popup_header = document.getElementById(this.HeaderID)
     var headline: string[] = menuItems[this.menuID].headline
 
     var menuKey = menuItems[this.menuID].menuKey
     var h = this.createHeadline(headline)
-    doc.appendChild(h)
+    var existingHeader = popup_header.querySelector('h3')
+    if(existingHeader) {
+      popup_header.replaceChild(h, existingHeader)
+    } else {
+      popup_header.appendChild(h)
+    }
 
     var hr = this.createHR()
     doc.appendChild(hr)
@@ -644,6 +807,8 @@ class ShowContent extends Content {
         var input = this.createInput("button", menuKey, "{{.button.new}}")
         input.setAttribute("id", "-")
         input.setAttribute("onclick", 'javascript: openPopUp("playlist")')
+        input.setAttribute('data-bs-toggle', 'modal')
+        input.setAttribute('data-bs-target', '#popup')
         interaction.appendChild(input)
         break;
 
@@ -651,6 +816,8 @@ class ShowContent extends Content {
         var input = this.createInput("button", menuKey, "{{.button.new}}")
         input.setAttribute("id", -1)
         input.setAttribute("onclick", 'javascript: openPopUp("filter", this)')
+        input.setAttribute('data-bs-toggle', 'modal')
+        input.setAttribute('data-bs-target', '#popup')
         interaction.appendChild(input)
         break;
 
@@ -659,6 +826,8 @@ class ShowContent extends Content {
         var input = this.createInput("button", menuKey, "{{.button.new}}")
         input.setAttribute("id", "xmltv")
         input.setAttribute("onclick", 'javascript: openPopUp("xmltv")')
+        input.setAttribute('data-bs-toggle', 'modal')
+        input.setAttribute('data-bs-target', '#popup')
         interaction.appendChild(input)
         break;
 
@@ -666,11 +835,13 @@ class ShowContent extends Content {
         var input = this.createInput("button", menuKey, "{{.button.new}}")
         input.setAttribute("id", "users")
         input.setAttribute("onclick", 'javascript: openPopUp("users")')
+        input.setAttribute('data-bs-toggle', 'modal')
+        input.setAttribute('data-bs-target', '#popup')
         interaction.appendChild(input)
         break;
 
       case "mapping":
-        showElement("loading", true)
+        // showElement("loading", true)
         var input = this.createInput("button", menuKey, "{{.button.save}}")
         input.setAttribute("onclick", 'javascript: savePopupData("mapping", "", "")')
         interaction.appendChild(input)
@@ -762,6 +933,7 @@ class ShowContent extends Content {
         cell.value = element
         if (element == "BULK") {
           cell.childType = "BULK_HEAD";
+          cell.active = true
           cell.value = false
         }
 
@@ -801,11 +973,75 @@ class ShowContent extends Content {
         table.appendChild(tr)
       });
 
+      var br = this.createBR()
+      doc.appendChild(br)
+
+      // Create inactive channels for mapping
+      if (menuKey == "mapping") {
+
+
+        var inactivetable = this.createInactiveTABLE()
+        wrapper.appendChild(inactivetable)
+
+        var header = this.createInactiveTableRow()
+        inactivetable.appendChild(header)
+
+        // Kopfzeile der Tablle
+        tableHeader.forEach(element => {
+          var cell: Cell = new Cell()
+          cell.child = true
+          cell.childType = "P"
+          cell.value = element
+          if (element == "BULK") {
+            cell.childType = "BULK_HEAD";
+            cell.active = false
+            cell.value = false
+          }
+
+          if (menuKey == "mapping") {
+
+            if (element == "{{.mapping.table.chNo}}") {
+              cell.onclick = true
+              cell.onclickFunktion = "javascript: sortTable(1, 'inactive_content_table');"
+              cell.tdClassName = "sortThis"
+            }
+
+            if (element == "{{.mapping.table.channelName}}") {
+              cell.onclick = true
+              cell.onclickFunktion = "javascript: sortTable(3, 'inactive_content_table');"
+            }
+
+            if (element == "{{.mapping.table.playlist}}") {
+              cell.onclick = true
+              cell.onclickFunktion = "javascript: sortTable(4, 'inactive_content_table');"
+            }
+
+            if (element == "{{.mapping.table.groupTitle}}") {
+              cell.onclick = true
+              cell.onclickFunktion = "javascript: sortTable(5, 'inactive_content_table');"
+            }
+
+          }
+
+          header.appendChild(cell.createCell())
+        });
+
+        inactivetable.appendChild(header)
+
+        // Inhalt der Tabelle
+        var rows: any = this.createInactiveTableContent(menuKey)
+        rows.forEach(tr => {
+          inactivetable.appendChild(tr)
+        });
+        savePopupData("mapping", "", false, 0)
+
+      }
     }
 
     switch (menuKey) {
       case "mapping":
         sortTable(1)
+        sortTable(1, "inactive_content_table")
         break;
 
       case "filter":
@@ -829,10 +1065,6 @@ function PageReady() {
   var server: Server = new Server("getServerConfig")
   server.request(new Object())
 
-  window.addEventListener("resize", function () {
-    calculateWrapperHeight();
-  }, true);
-
   setInterval(function () {
     updateLog()
   }, 10000);
@@ -849,7 +1081,7 @@ function createLayout() {
   for (var i = 0; i < keys.length; i++) {
 
     if (document.getElementById(keys[i])) {
-      document.getElementById(keys[i]).innerHTML = obj[keys[i]];
+      (<HTMLInputElement>document.getElementById(keys[i])).value = obj[keys[i]];
     }
 
   }
@@ -896,8 +1128,7 @@ function openThisMenu(element) {
   var id = element.id
   var content: ShowContent = new ShowContent(id)
   content.show()
-  calculateWrapperHeight()
-
+  enableGroupSelection(".bulk")
   return
 }
 
@@ -1364,6 +1595,24 @@ function openPopUp(dataType, element) {
           break;
       }
 
+      // Name      
+      var dbKey: string = "startingNumber"
+      if (data[dbKey] !== undefined) {
+        var input = content.createInput("text", dbKey, data[dbKey])
+      } else {
+        var input = content.createInput("text", dbKey, "1000")
+      }
+      input.setAttribute("placeholder", "{{.filter.startingnumber.placeholder}}")
+      content.appendRow("{{.filter.startingnumber.title}}", input)
+      content.description("{{.filter.startingnumber.description}}")
+
+      var dbKey: string = "x-category"
+      var text: string[] = ["-", "Kids", "News", "Movie", "Series", "Sports"]
+      var values: string[] = ["", "kids", "news", "movie", "series", "sports"]
+      var select = content.createSelect(text, values, data[dbKey], dbKey)
+      select.setAttribute("onchange", "javascript: this.className = 'changed'")
+      content.appendRow("{{.filter.category.title}}", select)
+
       // Interaktion
       content.createInteraction()
 
@@ -1518,7 +1767,9 @@ function openPopUp(dataType, element) {
         // Set the value to the first selected channel
         var channels = getAllSelectedChannels()
         var channel = SERVER["xepg"]["epgMapping"][channels[0]]
-        input.setAttribute("value", channel["x-channelID"])
+        if (typeof channel !== "undefined") {
+          input.setAttribute("value", channel["x-channelID"])
+        }
 
         input.setAttribute("onchange", 'javascript: changeChannelNumbers("' + channels + '");')
         content.appendRow("{{.mapping.channelGroupStart.title}}", input)
@@ -1580,8 +1831,8 @@ function openPopUp(dataType, element) {
 
       // Erweitern der EPG Kategorie
       var dbKey: string = "x-category"
-      var text: string[] = ["-", "Kids (Emby only)", "News", "Movie", "Series", "Sports"]
-      var values: string[] = ["", "Kids", "News", "Movie", "Series", "Sports"]
+      var text: string[] = ["-", "Kids", "News", "Movie", "Series", "Sports"]
+      var values: string[] = ["", "kids", "news", "movie", "series", "sports"]
       var select = content.createSelect(text, values, data[dbKey], dbKey)
       select.setAttribute("onchange", "javascript: this.className = 'changed'")
       content.appendRow("{{.mapping.epgCategory.title}}", select)
@@ -1603,20 +1854,55 @@ function openPopUp(dataType, element) {
       var select = xmltv.getFiles(data[dbKey])
       select.setAttribute("name", dbKey)
       select.setAttribute("id", "popup-xmltv")
-      select.setAttribute("onchange", "javascript: this.className = 'changed'; setXmltvChannel('" + id + "',this);")
+      select.setAttribute("onchange", "javascript: this.className = 'changed'; setXmltvChannel('" + id + "',this, '" + data["x-mapping"] + "');")
       content.appendRow("{{.mapping.xmltvFile.title}}", select)
       var file = data[dbKey]
 
       // XMLTV Mapping
       var dbKey: string = "x-mapping"
       var xmltv: XMLTVFile = new XMLTVFile()
-      var select = xmltv.getPrograms(file, data[dbKey])
+      var select = xmltv.getPrograms(file, data[dbKey], false)
+      var mappingType = data[dbKey]
+      console.log("CHECKING: " + mappingType)
       select.setAttribute("name", dbKey)
       select.setAttribute("id", "popup-mapping")
       select.setAttribute("onchange", "javascript: this.className = 'changed'; checkXmltvChannel('" + id + "',this,'" + xmlFile + "');")
 
       sortSelect(select)
       content.appendRow("{{.mapping.xmltvChannel.title}}", select)
+      
+      // Extra PPV Data
+      if(mappingType == "PPV") {
+        var dbKey: string = "x-ppv-extra"
+        var input = content.createInput("text", dbKey, data[dbKey])
+        input.setAttribute("onchange", "javascript: this.className = 'changed'")
+        input.setAttribute("id", "ppv-extra")
+        content.appendRow("{{.mapping.ppvextra.title}}", input)
+      }
+
+      var dbKey: string = "x-backup-channel-1"
+      var xmltv: XMLTVFile = new XMLTVFile()
+      var select = xmltv.getPrograms(file, data[dbKey], true)
+      select.setAttribute("name", dbKey)
+      select.setAttribute("id", "backup-channel-1")
+      select.setAttribute("onchange", "javascript: this.className = 'changed'; checkXmltvChannel('" + id + "',this,'" + xmlFile + "');")
+      content.appendRow("{{.mapping.backupChannel1.title}}", select)
+
+      var dbKey: string = "x-backup-channel-2"
+      var xmltv: XMLTVFile = new XMLTVFile()
+      var select = xmltv.getPrograms(file, data[dbKey], true)
+      select.setAttribute("name", dbKey)
+      select.setAttribute("id", "backup-channel-2")
+      select.setAttribute("onchange", "javascript: this.className = 'changed'; checkXmltvChannel('" + id + "',this,'" + xmlFile + "');")
+      content.appendRow("{{.mapping.backupChannel2.title}}", select)
+
+      var dbKey: string = "x-backup-channel-3"
+      var xmltv: XMLTVFile = new XMLTVFile()
+      var select = xmltv.getPrograms(file, data[dbKey], true)
+      select.setAttribute("name", dbKey)
+      select.setAttribute("id", "backup-channel-3")
+      select.setAttribute("onchange", "javascript: this.className = 'changed'; checkXmltvChannel('" + id + "',this,'" + xmlFile + "');")
+      content.appendRow("{{.mapping.backupChannel3.title}}", select)
 
       // Interaktion
       content.createInteraction()
@@ -1684,20 +1970,34 @@ class XMLTVFile {
     return select
   }
 
-  getPrograms(file: string, set: string): any {
+  getPrograms(file: string, set: string, active: boolean): any {
     //var fileIDs:string[] = getObjKeys(SERVER["xepg"]["xmltvMap"])
     var values = getObjKeys(SERVER["xepg"]["xmltvMap"][file]);
     var text = new Array()
     var displayName: string
+    var actives = getObjKeys(SERVER["data"]["StreamPreviewUI"]["activeStreams"])
+    var active_list = new Array()
 
-    for (let i = 0; i < values.length; i++) {
-      if (SERVER["xepg"]["xmltvMap"][file][values[i]].hasOwnProperty('display-name') == true) {
-        displayName = SERVER["xepg"]["xmltvMap"][file][values[i]]["display-name"];
-      } else {
-        displayName = "-"
+    if (active == true) {
+      for (let i = 0; i < actives.length; i++) {        
+        var names_split = SERVER["data"]["StreamPreviewUI"]["activeStreams"][actives[i]].split("[");
+        displayName = names_split[0].trim();
+        
+        if (displayName != "") { 
+          var object = {"value": displayName, "display": displayName}
+          active_list.push(object)
+        }
       }
-
-      text[i] = displayName + " (" + values[i] + ")";
+    } else {
+      for (let i = 0; i < values.length; i++) {
+          if (SERVER["xepg"]["xmltvMap"][file][values[i]].hasOwnProperty('display-name') == true) {
+            displayName = SERVER["xepg"]["xmltvMap"][file][values[i]]["display-name"];
+          } else {
+            displayName = "-"
+          }
+  
+        text[i] = displayName + " (" + values[i] + ")";
+      }
     }
 
     text.unshift("-");
@@ -1708,6 +2008,12 @@ class XMLTVFile {
       var option = document.createElement("OPTION")
       option.setAttribute("value", values[i])
       option.innerText = text[i]
+      select.appendChild(option)
+    }
+    for (let i = 0; i < active_list.length; i++) {
+      var option = document.createElement("OPTION")
+      option.setAttribute("value", active_list[i]["value"])
+      option.innerText = active_list[i]["display"]
       select.appendChild(option)
     }
 
@@ -1761,7 +2067,7 @@ function getValueFromProviderFile(file: string, fileType, key) {
 
 }
 
-function setXmltvChannel(id, element) {
+function setXmltvChannel(id, element, dummy_type) {
 
   var xmltv: XMLTVFile = new XMLTVFile()
   var xmlFile = element.value
@@ -1770,7 +2076,7 @@ function setXmltvChannel(id, element) {
   var td = document.getElementById("popup-mapping").parentElement
   td.innerHTML = ""
 
-  var select = xmltv.getPrograms(element.value, tvgId)
+  var select = xmltv.getPrograms(element.value, tvgId, false)
   select.setAttribute("name", "x-mapping")
   select.setAttribute("id", "popup-mapping")
   select.setAttribute("onchange", "javascript: this.className = 'changed'; checkXmltvChannel('" + id + "',this,'" + xmlFile + "');")
@@ -1779,6 +2085,37 @@ function setXmltvChannel(id, element) {
   td.appendChild(select);
 
   checkXmltvChannel(id, select, xmlFile)
+}
+
+function checkPPV(title, element) {
+  var value = (element as HTMLSelectElement).value
+  console.log("DUMMY TYPE: " + value)
+  if(value == "PPV") {
+    var td = document.getElementById("x-ppv-extra").parentElement
+    td.innerHTML = ""
+
+    var dbKey: string = "x-ppv-extra"
+    var input = document.createElement("INPUT")
+    input.setAttribute("type", "text")
+    input.setAttribute("name", dbKey)
+    // input.setAttribute("value", value)
+    input.setAttribute("onchange", "javascript: this.className = 'changed'")
+    input.setAttribute("id", "ppv-extra")
+    
+    var tr = document.createElement("TR")
+
+    // Bezeichnung
+    if (title.length != 0) {
+      var td = document.createElement("TD")
+      td.className = "left"
+      td.innerHTML = title + ":"
+    }
+
+
+    // Content
+    td.appendChild(element)
+    this.table.appendChild(tr)
+  }
 }
 
 function checkXmltvChannel(id: string, element: any, xmlFile) {
@@ -1859,7 +2196,10 @@ function changeChannelLogo(id: string) {
 
 function savePopupData(dataType: string, id: string, remove: Boolean, option: number) {
 
+  showElement("loading", true)
+
   if (dataType == "mapping") {
+
 
     var data = new Object()
     console.log("Save mapping data")
@@ -1874,7 +2214,10 @@ function savePopupData(dataType: string, id: string, remove: Boolean, option: nu
 
     delete UNDO["epgMapping"]
 
+    showElement("loading", false)
+
     return
+
   }
 
   console.log("Save popup data")
@@ -2056,6 +2399,8 @@ function savePopupData(dataType: string, id: string, remove: Boolean, option: nu
   var server: Server = new Server(cmd)
   server.request(data)
 
+  showElement("loading", false)
+
 }
 
 function donePopupData(dataType: string, idsStr: string) {
@@ -2067,8 +2412,7 @@ function donePopupData(dataType: string, idsStr: string) {
   ids.forEach(id => {
     var input = new Object();
     input = SERVER["xepg"]["epgMapping"][id]
-
-    console.log(input);
+    console.log("INPUT: " + input)
 
     for (let i = 0; i < inputs.length; i++) {
 
@@ -2147,6 +2491,16 @@ function donePopupData(dataType: string, idsStr: string) {
 
           break
 
+        case "x-backup-channel":
+          (document.getElementById(id).childNodes[7].firstChild as HTMLElement).innerHTML = value
+
+          break
+
+        case "x-hide-channel":
+          (document.getElementById(id).childNodes[7].firstChild as HTMLElement).innerHTML = value
+
+          break
+
         default:
 
       }
@@ -2192,6 +2546,15 @@ function showPreview(element: boolean) {
     table.innerHTML = ""
     var obj: string[] = SERVER["data"]["StreamPreviewUI"][preview]
 
+    var caption = document.createElement("CAPTION")
+    var result = preview.replace( /([A-Z])/g, " $1" );
+    var finalResult = result.charAt(0).toUpperCase() + result.slice(1);
+    caption.innerHTML = finalResult
+    table.appendChild(caption)
+
+    var tbody = document.createElement("TBODY")
+    table.appendChild(tbody)
+
     obj.forEach(channel => {
 
       var tr = document.createElement("TR")
@@ -2215,13 +2578,15 @@ function showPreview(element: boolean) {
       tr.appendChild(tdKey)
       tr.appendChild(tdVal)
 
+      tbody.appendChild(tr)
+
       table.appendChild(tr)
 
     });
 
   });
 
-  showElement("loading", false)
+  // showElement("loading", false)
   div.className = "visible"
 
   return

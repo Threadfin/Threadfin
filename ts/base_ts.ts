@@ -1,18 +1,42 @@
 var SERVER = new Object()
 var BULK_EDIT: Boolean = false
 var COLUMN_TO_SORT: number
+var INACTIVE_COLUMN_TO_SORT: number
 var SEARCH_MAPPING = new Object()
 var UNDO = new Object()
 var SERVER_CONNECTION = false
 var WS_AVAILABLE = false
+declare var bootstrap: any;
+declare var ClipboardJS: any;
 
+const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
+// new ClipboardJS('.copy-btn');
+var clipboard = new ClipboardJS('.copy-btn');
+clipboard.on('success', function(e) {
+  const tooltip = bootstrap.Tooltip.getInstance(e.trigger);
+  tooltip.setContent({ '.tooltip-inner': 'Copied!' });
+
+});
+clipboard.on('error', function(e) {
+  console.log(e);
+});
+
+var popupModal = new bootstrap.Modal(document.getElementById("popup"), {
+  keyboard: true,
+  focus: true
+})
+
+var loadingModal = new bootstrap.Modal(document.getElementById("loading"), {
+  keyboard: true,
+  focus: true
+})
 
 // Menü
 var menuItems = new Array()
 menuItems.push(new MainMenuItem("playlist", "{{.mainMenu.item.playlist}}", "m3u.png", "{{.mainMenu.headline.playlist}}"))
-//menuItems.push(new MainMenuItem("pmsID", "{{.mainMenu.item.pmsID}}", "number.png", "{{.mainMenu.headline.pmsID}}"))
-menuItems.push(new MainMenuItem("filter", "{{.mainMenu.item.filter}}", "filter.png", "{{.mainMenu.headline.filter}}"))
 menuItems.push(new MainMenuItem("xmltv", "{{.mainMenu.item.xmltv}}", "xmltv.png", "{{.mainMenu.headline.xmltv}}"))
+menuItems.push(new MainMenuItem("filter", "{{.mainMenu.item.filter}}", "filter.png", "{{.mainMenu.headline.filter}}"))
 menuItems.push(new MainMenuItem("mapping", "{{.mainMenu.item.mapping}}", "mapping.png", "{{.mainMenu.headline.mapping}}"))
 menuItems.push(new MainMenuItem("users", "{{.mainMenu.item.users}}", "users.png", "{{.mainMenu.headline.users}}"))
 menuItems.push(new MainMenuItem("settings", "{{.mainMenu.item.settings}}", "settings.png", "{{.mainMenu.headline.settings}}"))
@@ -22,36 +46,43 @@ menuItems.push(new MainMenuItem("logout", "{{.mainMenu.item.logout}}", "logout.p
 // Kategorien für die Einstellungen
 var settingsCategory = new Array()
 settingsCategory.push(new SettingsCategoryItem("{{.settings.category.general}}", "ThreadfinAutoUpdate,tuner,epgSource,api")); settingsCategory.push(new SettingsCategoryItem("{{.settings.category.files}}", "update,files.update,temp.path,cache.images,xepg.replace.missing.images,xepg.replace.channel.title"))
-settingsCategory.push(new SettingsCategoryItem("{{.settings.category.streaming}}", "buffer,udpxy,buffer.size.kb,buffer.timeout,user.agent,ffmpeg.path,ffmpeg.options,vlc.path,vlc.options"))
+settingsCategory.push(new SettingsCategoryItem("{{.settings.category.streaming}}", "buffer,udpxy,buffer.size.kb,storeBufferInRAM,buffer.timeout,user.agent,ffmpeg.path,ffmpeg.options,vlc.path,vlc.options"))
 settingsCategory.push(new SettingsCategoryItem("{{.settings.category.backup}}", "backup.path,backup.keep"))
 settingsCategory.push(new SettingsCategoryItem("{{.settings.category.authentication}}", "authentication.web,authentication.pms,authentication.m3u,authentication.xml,authentication.api"))
 
 function showPopUpElement(elm) {
 
-  var allElements = new Array("popup-custom");
-
-  for (var i = 0; i < allElements.length; i++) {
-    showElement(allElements[i], false)
-  }
-
   showElement(elm, true)
 
-  setTimeout(function () {
-    showElement("popup", true);
-  }, 10);
+  // setTimeout(function () {
+  //   showElement("popup", true);
+  // }, 10);
 
   return
 }
 
 function showElement(elmID, type) {
-
-  var cssClass: string
-  switch (type) {
-    case true: cssClass = "block"; break;
-    case false: cssClass = "none"; break;
+  if (elmID == "popup-custom" || elmID == "popup") {
+    switch (type) {
+      case true: 
+        popupModal.show()
+        break;
+      case false: 
+        popupModal.hide()
+        break;
+    }
   }
 
-  document.getElementById(elmID).className = cssClass;
+  if (elmID == "loading") {
+    switch (type) {
+      case true: 
+      loadingModal.show()
+        break;
+      case false: 
+      loadingModal.hide()
+        break;
+    }
+  }
 }
 
 function changeButtonAction(element, buttonID, attribute) {
@@ -82,6 +113,7 @@ function getLocalData(dataType, id): object {
         data["include"] = ""
         data["name"] = ""
         data["type"] = "group-title"
+        data["x-category"] = ""
         SERVER["settings"]["filter"][id] = data
       }
       data = SERVER["settings"]["filter"][id]
@@ -144,10 +176,10 @@ function getAllSelectedChannels(): string[] {
   return channels
 }
 
-function selectAllChannels() {
+function selectAllChannels(table_name = "content_table") {
 
   var bulk: Boolean = false
-  var trs = document.getElementById("content_table").getElementsByTagName("TR")
+  var trs = document.getElementById(table_name).getElementsByTagName("TR")
 
   if ((trs[0].firstChild.firstChild as HTMLInputElement).checked == true) {
     bulk = true
@@ -200,15 +232,15 @@ function bulkEdit() {
   return
 }
 
-function sortTable(column) {
-  //console.log(columm);
+function sortTable(column, table_name = "content_table") {
+  // console.log("COLUMN: " + column);
 
-  if (column == COLUMN_TO_SORT) {
+  if ((column == COLUMN_TO_SORT && table_name == "content_table") || (column == INACTIVE_COLUMN_TO_SORT && table_name == "inactive_content_table")) {
     return;
   }
 
 
-  var table = document.getElementById("content_table");
+  var table = document.getElementById(table_name);
   var tableHead = table.getElementsByTagName("TR")[0];
   var tableItems = tableHead.getElementsByTagName("TD");
 
@@ -217,12 +249,20 @@ function sortTable(column) {
   var tableHeader
   var sortByString = false
 
-  if (column > 0 && COLUMN_TO_SORT > 0) {
+  if (column > 0 && COLUMN_TO_SORT > 0 && table_name == "content_table") {
     tableItems[COLUMN_TO_SORT].className = "pointer";
+    tableItems[column].className = "sortThis";
+  } else if (column > 0 && INACTIVE_COLUMN_TO_SORT > 0 && table_name == "inactive_content_table") {
+    tableItems[INACTIVE_COLUMN_TO_SORT].className = "pointer";
     tableItems[column].className = "sortThis";
   }
 
-  COLUMN_TO_SORT = column;
+  if (table_name == "content_table") {
+    COLUMN_TO_SORT = column;
+  } else if (table_name == "inactive_content_table") {
+    INACTIVE_COLUMN_TO_SORT = column;
+  }
+
 
 
   var rows = (table as HTMLTableElement).rows;
@@ -248,7 +288,7 @@ function sortTable(column) {
         default: console.log(x.childNodes[0].tagName);
       }
 
-      if (xValue == "" || xValue == NaN) {
+      if (xValue == "") {
 
         xValue = i
         sortObj[i] = rows[i];
@@ -281,8 +321,12 @@ function sortTable(column) {
     var sortValues = getObjKeys(sortObj)
 
     if (sortByString == true) {
-      sortValues.sort()
-      console.log(sortValues);
+      if (column == 3) {
+        var collator = new Intl.Collator(undefined, {numeric: true, sensitivity: 'base'});
+        sortValues.sort(collator.compare)
+      } else {
+        sortValues.sort()
+      }
     } else {
       function sortFloat(a, b) {
         return a - b;
@@ -351,6 +395,29 @@ function createSearchObj() {
   return
 }
 
+function enableGroupSelection(selector) {
+  var lastcheck = null // no checkboxes clicked yet
+
+  // get desired checkboxes
+  var checkboxes = document.querySelectorAll(selector)
+  // loop over checkboxes to add event listener
+  Array.prototype.forEach.call(checkboxes, function (cbx, idx) {
+    cbx.addEventListener('click', function (evt) {
+      // test for shift key, not first checkbox, and not same checkbox
+      if (evt.shiftKey && null !== lastcheck && idx !== lastcheck) {
+        // get range of checks between last-checkbox and shift-checkbox
+        // Math.min/max does our sorting for us
+        Array.prototype.slice.call(checkboxes, Math.min(lastcheck, idx), Math.max(lastcheck, idx))
+          // and loop over each
+          .forEach(function (ccbx) {
+            ccbx.checked = true
+          })
+      }
+      lastcheck = idx // set this checkbox as last-checked for later
+    })
+  })
+}
+
 function searchInMapping() {
 
   var searchValue = (document.getElementById("searchMapping") as HTMLInputElement).value;
@@ -377,25 +444,6 @@ function searchInMapping() {
   return
 }
 
-function calculateWrapperHeight() {
-
-  if (document.getElementById("box-wrapper")) {
-
-    var elm = document.getElementById("box-wrapper");
-
-    var divs = new Array("myStreamsBox", "clientInfo", "content");
-    var elementsHeight = 0 - elm.offsetHeight;
-    for (var i = 0; i < divs.length; i++) {
-      elementsHeight = elementsHeight + document.getElementById(divs[i]).offsetHeight;
-    }
-
-    elm.style.height = window.innerHeight - elementsHeight + "px";
-
-  }
-
-  return
-}
-
 function changeChannelNumbers(elements) {
   var starting_number_element = (document.getElementsByName("x-channels-start")[0] as HTMLInputElement)
   var elems = elements.split(",")
@@ -411,6 +459,10 @@ function changeChannelNumbers(elements) {
   if (COLUMN_TO_SORT == 1) {
     COLUMN_TO_SORT = -1
     sortTable(1)
+  }
+  if (INACTIVE_COLUMN_TO_SORT == 1) {
+    INACTIVE_COLUMN_TO_SORT = -1
+    sortTable(1, "inactive_content_page")
   }
 }
 
@@ -441,24 +493,27 @@ function changeChannelNumber(element) {
       break
     }
 
-    // if (Math.floor(newNumber) == newNumber) {
-    //   newNumber = newNumber + 1
-    // } else {
-    //   newNumber = newNumber + 0.1;
-    //   newNumber.toFixed(1)
-    //   newNumber = Math.round(newNumber * 10) / 10
-    // }
+    if (Math.floor(newNumber) == newNumber) {
+      newNumber = newNumber + 1
+    } else {
+      newNumber = newNumber + 0.1;
+      newNumber.toFixed(1)
+      newNumber = Math.round(newNumber * 10) / 10
+    }
 
   }
 
   data[dbID]["x-channelID"] = newNumber.toString()
   element.value = newNumber
 
-  console.log(data[dbID]["x-channelID"])
-
   if (COLUMN_TO_SORT == 1) {
     COLUMN_TO_SORT = -1
     sortTable(1)
+  }
+
+  if (INACTIVE_COLUMN_TO_SORT == 1) {
+    INACTIVE_COLUMN_TO_SORT = -1
+    sortTable(1, "inactive_content_page")
   }
 
   return

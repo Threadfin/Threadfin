@@ -136,7 +136,7 @@ func getLineup() (jsonContent []byte, err error) {
 
 			}
 
-			stream.URL, err = createStreamingURL("DVR", m3uChannel.FileM3UID, stream.GuideNumber, m3uChannel.Name, m3uChannel.URL)
+			stream.URL, err = createStreamingURL("DVR", m3uChannel.FileM3UID, stream.GuideNumber, m3uChannel.Name, m3uChannel.URL, "", "", "")
 			if err == nil {
 				lineup = append(lineup, stream)
 			} else {
@@ -154,12 +154,12 @@ func getLineup() (jsonContent []byte, err error) {
 				return
 			}
 
-			if xepgChannel.XActive == true {
+			if xepgChannel.XActive == true && !xepgChannel.XHideChannel {
 				var stream LineupStream
 				stream.GuideName = xepgChannel.XName
 				stream.GuideNumber = xepgChannel.XChannelID
 				//stream.URL = fmt.Sprintf("%s://%s/stream/%s-%s", System.ServerProtocol.DVR, System.Domain, xepgChannel.FileM3UID, base64.StdEncoding.EncodeToString([]byte(xepgChannel.URL)))
-				stream.URL, err = createStreamingURL("DVR", xepgChannel.FileM3UID, xepgChannel.XChannelID, xepgChannel.XName, xepgChannel.URL)
+				stream.URL, err = createStreamingURL("DVR", xepgChannel.FileM3UID, xepgChannel.XChannelID, xepgChannel.XName, xepgChannel.URL, xepgChannel.BackupChannel1URL, xepgChannel.BackupChannel2URL, xepgChannel.BackupChannel3URL)
 				if err == nil {
 					lineup = append(lineup, stream)
 				} else {

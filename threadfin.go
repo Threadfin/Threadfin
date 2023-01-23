@@ -27,7 +27,7 @@ type GitHubStruct struct {
 
 // GitHub : GitHub Account
 // If you want to fork this project, enter your Github account here. This prevents a newer version of Threadfin from updating your version.
-var GitHub = GitHubStruct{Branch: "beta", User: "Threadfin", Repo: "Threadfin", Update: true}
+var GitHub = GitHubStruct{Branch: "Main", User: "Threadfin", Repo: "Threadfin", Update: true}
 
 /*
 	Branch: GitHub Branch
@@ -40,13 +40,13 @@ var GitHub = GitHubStruct{Branch: "beta", User: "Threadfin", Repo: "Threadfin", 
 const Name = "Threadfin"
 
 // Version : Version, die Build Nummer wird in der main func geparst.
-const Version = "0.5.0"
+const Version = "1.0.0"
 
 // DBVersion : Datanbank Version
 const DBVersion = "0.5.0"
 
 // APIVersion : API Version
-const APIVersion = "0.5.0"
+const APIVersion = "1.0.0"
 
 var homeDirectory = fmt.Sprintf("%s%s.%s%s", src.GetUserHomeDirectory(), string(os.PathSeparator), strings.ToLower(Name), string(os.PathSeparator))
 var samplePath = fmt.Sprintf("%spath%sto%threadfin%s", string(os.PathSeparator), string(os.PathSeparator), string(os.PathSeparator), string(os.PathSeparator))
@@ -56,7 +56,7 @@ var configFolder = flag.String("config", "", ": Config Folder        ["+samplePa
 var port = flag.String("port", "", ": Server port          [34400] (default: 34400)")
 var restore = flag.String("restore", "", ": Restore from backup  ["+sampleRestore+"threadfin_backup.zip]")
 
-var gitBranch = flag.String("branch", "", ": Git Branch           [master|beta] (default: master)")
+var gitBranch = flag.String("branch", "", ": Git Branch           [main|beta] (default: main)")
 var debug = flag.Int("debug", 0, ": Debug level          [0 - 3] (default: 0)")
 var info = flag.Bool("info", false, ": Show system info")
 var h = flag.Bool("h", false, ": Show help")

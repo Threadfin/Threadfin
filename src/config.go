@@ -7,6 +7,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/avfs/avfs"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
@@ -28,6 +29,9 @@ var SystemFiles = []string{"authentication.json", "pms.json", "settings.json", "
 
 // BufferInformation : Informationen über den Buffer (aktive Streams, maximale Streams)
 var BufferInformation sync.Map
+
+// bufferVFS : Filesystem to use for the Buffer
+var bufferVFS avfs.VFS
 
 // BufferClients : Anzahl der Clients die einen Stream über den Buffer abspielen
 var BufferClients sync.Map
@@ -64,7 +68,7 @@ func Init() (err error) {
 	//System.Update.Git = "https://github.com/Threadfin/Threadfin/blob"
 	System.Update.Git = fmt.Sprintf("https://github.com/%s/%s", System.GitHub.User, System.GitHub.Repo)
 	System.Update.Github = fmt.Sprintf("https://api.github.com/repos/%s/%s", System.GitHub.User, System.GitHub.Repo)
-	System.Update.Name = "threadfin"
+	System.Update.Name = "Threadfin"
 
 	// Ordnerpfade festlegen
 	var tempFolder = os.TempDir() + string(os.PathSeparator) + System.AppName + string(os.PathSeparator)

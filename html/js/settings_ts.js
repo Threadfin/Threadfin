@@ -216,6 +216,17 @@ class SettingsCategory {
                 setting.appendChild(tdLeft);
                 setting.appendChild(tdRight);
                 break;
+            case "storeBufferInRAM":
+                var tdLeft = document.createElement("TD");
+                tdLeft.innerHTML = "{{.settings.storeBufferInRAM.title}}" + ":";
+                var tdRight = document.createElement("TD");
+                var input = content.createCheckbox(settingsKey);
+                input.checked = data;
+                input.setAttribute("onchange", "javascript: this.className = 'changed'");
+                tdRight.appendChild(input);
+                setting.appendChild(tdLeft);
+                setting.appendChild(tdRight);
+                break;
             case "ThreadfinAutoUpdate":
                 var tdLeft = document.createElement("TD");
                 tdLeft.innerHTML = "{{.settings.ThreadfinAutoUpdate.title}}" + ":";
@@ -295,8 +306,8 @@ class SettingsCategory {
                 var tdLeft = document.createElement("TD");
                 tdLeft.innerHTML = "{{.settings.streamBuffering.title}}" + ":";
                 var tdRight = document.createElement("TD");
-                var text = ["{{.settings.streamBuffering.info_false}}", "Threadfin: ({{.settings.streamBuffering.info_threadfin}})", "FFmpeg: ({{.settings.streamBuffering.info_ffmpeg}})", "VLC: ({{.settings.streamBuffering.info_vlc}})"];
-                var values = ["-", "threadfin", "ffmpeg", "vlc"];
+                var text = ["{{.settings.streamBuffering.info_false}}", "FFmpeg: ({{.settings.streamBuffering.info_ffmpeg}})", "VLC: ({{.settings.streamBuffering.info_vlc}})"];
+                var values = ["-", "ffmpeg", "vlc"];
                 var select = content.createSelect(text, values, data, settingsKey);
                 select.setAttribute("onchange", "javascript: this.className = 'changed'");
                 tdRight.appendChild(select);
@@ -355,6 +366,9 @@ class SettingsCategory {
                 break;
             case "buffer.size.kb":
                 text = "{{.settings.bufferSize.description}}";
+                break;
+            case "storeBufferInRAM":
+                text = "{{.settings.storeBufferInRAM.description}}";
                 break;
             case "buffer.timeout":
                 text = "{{.settings.bufferTimeout.description}}";

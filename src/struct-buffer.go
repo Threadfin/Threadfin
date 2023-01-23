@@ -20,15 +20,18 @@ type ThisClient struct {
 
 // ThisStream : Enthält Informationen zu dem abzuspielenden Stream einer Playlist
 type ThisStream struct {
-	ChannelName      string
-	Error            string
-	Folder           string
-	MD5              string
-	NetworkBandwidth int
-	PlaylistID       string
-	PlaylistName     string
-	Status           bool
-	URL              string
+	ChannelName       string
+	Error             string
+	Folder            string
+	MD5               string
+	NetworkBandwidth  int
+	PlaylistID        string
+	PlaylistName      string
+	Status            bool
+	URL               string
+	BackupChannel1URL string
+	BackupChannel2URL string
+	BackupChannel3URL string
 
 	Segment []Segment
 

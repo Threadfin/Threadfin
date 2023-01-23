@@ -15,6 +15,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
 
 	"threadfin/src/internal/imgcache"
 )
@@ -213,13 +214,13 @@ func createXEPGMapping() {
 
 	var friendlyDisplayName = func(channel Channel) (displayName string) {
 		var dn = channel.DisplayName
-		displayName = dn[0].Value
-
-		switch len(dn) {
-		case 1:
-			displayName = dn[0].Value
-		default:
-			displayName = fmt.Sprintf("%s (%s)", dn[0].Value, dn[1].Value)
+		if len(dn) > 0 {
+			switch len(dn) {
+			case 1:
+				displayName = dn[0].Value
+			default:
+				displayName = fmt.Sprintf("%s (%s)", dn[0].Value, dn[1].Value)
+			}
 		}
 
 		return
@@ -248,7 +249,7 @@ func createXEPGMapping() {
 
 			// XML Parsen (Provider Datei)
 			if err == nil {
-
+				var imgc = Data.Cache.Images
 				// Daten aus der XML Datei in eine temporäre Map schreiben
 				var xmltvMap = make(map[string]interface{})
 
@@ -257,7 +258,8 @@ func createXEPGMapping() {
 
 					channel["id"] = c.ID
 					channel["display-name"] = friendlyDisplayName(*c)
-					channel["icon"] = c.Icon.Src
+					channel["icon"] = imgc.Image.GetURL(c.Icon.Src)
+					channel["active"] = c.Active
 
 					xmltvMap[c.ID] = channel
 
@@ -312,6 +314,7 @@ func createXEPGDatabase() (err error) {
 	var allChannelNumbers = make([]float64, 0, System.UnfilteredChannelLimit)
 	Data.Cache.Streams.Active = make([]string, 0, System.UnfilteredChannelLimit)
 	Data.XEPG.Channels = make(map[string]interface{}, System.UnfilteredChannelLimit)
+	Settings = SettingsStruct{}
 
 	Data.XEPG.Channels, err = loadJSONFileToMap(System.File.XEPG)
 	if err != nil {
@@ -319,6 +322,12 @@ func createXEPGDatabase() (err error) {
 		return err
 	}
 
+	settings, err := loadJSONFileToMap(System.File.Settings)
+	if err != nil || len(settings) == 0 {
+		return
+	}
+	settings_json, _ := json.Marshal(settings)
+	json.Unmarshal(settings_json, &Settings)
 	var createNewID = func() (xepg string) {
 
 		var firstID = 0 //len(Data.XEPG.Channels)
@@ -334,21 +343,19 @@ func createXEPGDatabase() (err error) {
 		return
 	}
 
-	var getFreeChannelNumber = func() (xChannelID string) {
+	var getFreeChannelNumber = func(startingNumber float64) (xChannelID string) {
 
 		sort.Float64s(allChannelNumbers)
 
-		var firstFreeNumber float64 = Settings.MappingFirstChannel
-
 		for {
 
-			if indexOfFloat64(firstFreeNumber, allChannelNumbers) == -1 {
-				xChannelID = fmt.Sprintf("%g", firstFreeNumber)
-				allChannelNumbers = append(allChannelNumbers, firstFreeNumber)
+			if indexOfFloat64(startingNumber, allChannelNumbers) == -1 {
+				xChannelID = fmt.Sprintf("%g", startingNumber)
+				allChannelNumbers = append(allChannelNumbers, startingNumber)
 				return
 			}
 
-			firstFreeNumber++
+			startingNumber++
 
 		}
 	}
@@ -403,6 +410,8 @@ func createXEPGDatabase() (err error) {
 		if err != nil {
 			return
 		}
+
+		// log.Println("M3U: ", m3uChannel)
 
 		Data.Cache.Streams.Active = append(Data.Cache.Streams.Active, m3uChannel.Name+m3uChannel.FileM3UID)
 
@@ -476,15 +485,33 @@ func createXEPGDatabase() (err error) {
 
 			// Kanallogo aktualisieren. Wird bei vorhandenem Logo in der XMLTV Datei wieder überschrieben
 			if xepgChannel.XUpdateChannelIcon == true {
-				xepgChannel.TvgLogo = m3uChannel.TvgLogo
+				var imgc = Data.Cache.Images
+				xepgChannel.TvgLogo = imgc.Image.GetURL(m3uChannel.TvgLogo)
 			}
 
 			Data.XEPG.Channels[currentXEPGID] = xepgChannel
 
 		case false:
 			// Neuer Kanal
+			var firstFreeNumber float64 = Settings.MappingFirstChannel
+			// Check channel start number from Group Filter
+			filters := []FilterStruct{}
+			for _, filter := range Settings.Filter {
+				filter_json, _ := json.Marshal(filter)
+				f := FilterStruct{}
+				json.Unmarshal(filter_json, &f)
+				filters = append(filters, f)
+			}
+
+			for _, filter := range filters {
+				if m3uChannel.GroupTitle == filter.Filter {
+					start_num, _ := strconv.ParseFloat(filter.StartingNumber, 64)
+					firstFreeNumber = start_num
+				}
+			}
+
 			var xepg = createNewID()
-			var xChannelID = getFreeChannelNumber()
+			var xChannelID = getFreeChannelNumber(firstFreeNumber)
 
 			var newChannel XEPGChannelStruct
 			newChannel.FileM3UID = m3uChannel.FileM3UID
@@ -536,8 +563,34 @@ func mapping() (err error) {
 			return
 		}
 
+		if (xepgChannel.XBackupChannel1 != "" && xepgChannel.XBackupChannel1 != "-") || (xepgChannel.XBackupChannel2 != "" && xepgChannel.XBackupChannel2 != "-") || (xepgChannel.XBackupChannel3 != "" && xepgChannel.XBackupChannel3 != "-") {
+			for _, stream := range Data.Streams.Active {
+				var m3uChannel M3UChannelStructXEPG
+
+				err = json.Unmarshal([]byte(mapToJSON(stream)), &m3uChannel)
+				if err != nil {
+					return
+				}
+
+				backup_channel1 := strings.Trim(xepgChannel.XBackupChannel1, " ")
+				if m3uChannel.TvgName == backup_channel1 {
+					xepgChannel.BackupChannel1URL = m3uChannel.URL
+				}
+
+				backup_channel2 := strings.Trim(xepgChannel.XBackupChannel2, " ")
+				if m3uChannel.TvgName == backup_channel2 {
+					xepgChannel.BackupChannel2URL = m3uChannel.URL
+				}
+
+				backup_channel3 := strings.Trim(xepgChannel.XBackupChannel3, " ")
+				if m3uChannel.TvgName == backup_channel3 {
+					xepgChannel.BackupChannel3URL = m3uChannel.URL
+				}
+			}
+		}
+
 		// Automatische Mapping für neue Kanäle. Wird nur ausgeführt, wenn der Kanal deaktiviert ist und keine XMLTV Datei und kein XMLTV Kanal zugeordnet ist.
-		if xepgChannel.XActive == false {
+		if !xepgChannel.XActive {
 
 			// Werte kann "-" sein, deswegen len < 1
 			if len(xepgChannel.XmltvFile) < 1 && len(xepgChannel.XmltvFile) < 1 {
@@ -553,6 +606,22 @@ func mapping() (err error) {
 				for file, xmltvChannels := range Data.XMLTV.Mapping {
 
 					if channel, ok := xmltvChannels.(map[string]interface{})[tvgID]; ok {
+
+						filters := []FilterStruct{}
+						for _, filter := range Settings.Filter {
+							filter_json, _ := json.Marshal(filter)
+							f := FilterStruct{}
+							json.Unmarshal(filter_json, &f)
+							filters = append(filters, f)
+						}
+						for _, filter := range filters {
+							if xepgChannel.GroupTitle == filter.Filter {
+								category := &Category{}
+								category.Value = filter.Category
+								category.Lang = "en"
+								xepgChannel.XCategory = filter.Category
+							}
+						}
 
 						if channelID, ok := channel.(map[string]interface{})["id"].(string); ok {
 
@@ -581,7 +650,7 @@ func mapping() (err error) {
 		}
 
 		// Überprüfen, ob die zugeordneten XMLTV Dateien und Kanäle noch existieren.
-		if xepgChannel.XActive == true {
+		if xepgChannel.XActive && !xepgChannel.XHideChannel {
 
 			var mapping = xepgChannel.XMapping
 			var file = xepgChannel.XmltvFile
@@ -592,11 +661,28 @@ func mapping() (err error) {
 
 					if channel, ok := value[mapping].(map[string]interface{}); ok {
 
+						filters := []FilterStruct{}
+						for _, filter := range Settings.Filter {
+							filter_json, _ := json.Marshal(filter)
+							f := FilterStruct{}
+							json.Unmarshal(filter_json, &f)
+							filters = append(filters, f)
+						}
+						for _, filter := range filters {
+							if xepgChannel.GroupTitle == filter.Filter {
+								category := &Category{}
+								category.Value = filter.Category
+								category.Lang = "en"
+								xepgChannel.XCategory = filter.Category
+							}
+						}
+
 						// Kanallogo aktualisieren
 						if logo, ok := channel["icon"].(string); ok {
 
-							if xepgChannel.XUpdateChannelIcon == true && len(logo) > 0 {
-								xepgChannel.TvgLogo = logo
+							if xepgChannel.XUpdateChannelIcon && len(logo) > 0 {
+								var imgc = Data.Cache.Images
+								xepgChannel.TvgLogo = imgc.Image.GetURL(logo)
 							}
 
 						}
@@ -693,13 +779,14 @@ func createXMLTVFile() (err error) {
 		var xepgChannel XEPGChannelStruct
 		err := json.Unmarshal([]byte(mapToJSON(dxc)), &xepgChannel)
 		if err == nil {
-			if xepgChannel.XActive {
-				if Settings.XepgReplaceChannelTitle && xepgChannel.TvgName != "" {
+			if xepgChannel.XActive && !xepgChannel.XHideChannel {
+				if (Settings.XepgReplaceChannelTitle && xepgChannel.XMapping == "PPV") || xepgChannel.TvgName != "" {
 					// Kanäle
 					var channel Channel
 					channel.ID = xepgChannel.XChannelID
 					channel.Icon = Icon{Src: imgc.Image.GetURL(xepgChannel.TvgLogo)}
 					channel.DisplayName = append(channel.DisplayName, DisplayName{Value: xepgChannel.TvgName})
+					channel.Active = xepgChannel.XActive
 					xepgXML.Channel = append(xepgXML.Channel, &channel)
 				}
 
@@ -752,10 +839,26 @@ func getProgramData(xepgChannel XEPGChannelStruct) (xepgXML XMLTV, err error) {
 			program.Stop = xmltvProgram.Stop
 
 			// Title
-			program.Title = xmltvProgram.Title
+			if len(xmltvProgram.Title) > 0 {
+				xmltvProgram.Title[0].Value = strings.TrimSpace(strings.Map(func(r rune) rune {
+					if r > unicode.MaxASCII {
+						return -1
+					}
+					return r
+				}, xmltvProgram.Title[0].Value))
+				program.Title = xmltvProgram.Title
+			}
+
+			filters := []FilterStruct{}
+			for _, filter := range Settings.Filter {
+				filter_json, _ := json.Marshal(filter)
+				f := FilterStruct{}
+				json.Unmarshal(filter_json, &f)
+				filters = append(filters, f)
+			}
 
 			// Category (Kategorie)
-			getCategory(program, xmltvProgram, xepgChannel)
+			getCategory(program, xmltvProgram, xepgChannel, filters)
 
 			// Credits : (Credits)
 			program.Credits = xmltvProgram.Credits
@@ -826,9 +929,10 @@ func createLiveProgram(xepgChannel XEPGChannelStruct, channelId string) *Program
 		var re = regexp.MustCompile(`(?m)(?i)PPV|EVENT[ ]?-?\d+:?`)
 		ppv_matches := re.FindAllString(name, -1)
 		if len(ppv_matches) > 0 {
-			title_parsed := strings.Replace(name, ppv_matches[0], "", -1)
+			title_parsed := fmt.Sprintf("%s %s", strings.Replace(name, ppv_matches[0], "", -1), xepgChannel.XPpvExtra)
 			t := &Title{Value: strings.TrimSpace(title_parsed)}
 			title = append(title, t)
+
 			program.Title = title
 		}
 	}
@@ -882,7 +986,7 @@ func createDummyProgram(xepgChannel XEPGChannelStruct) (dummyXMLTV XMLTV) {
 				epg.Desc = append(epg.Desc, &Desc{Value: xepgChannel.XDescription, Lang: "en"})
 			}
 
-			if Settings.XepgReplaceMissingImages == true {
+			if Settings.XepgReplaceMissingImages {
 				poster.Src = imgc.Image.GetURL(xepgChannel.TvgLogo)
 				epg.Poster = append(epg.Poster, poster)
 			}
@@ -904,7 +1008,7 @@ func createDummyProgram(xepgChannel XEPGChannelStruct) (dummyXMLTV XMLTV) {
 }
 
 // Kategorien erweitern (createXMLTVFile)
-func getCategory(program *Program, xmltvProgram *Program, xepgChannel XEPGChannelStruct) {
+func getCategory(program *Program, xmltvProgram *Program, xepgChannel XEPGChannelStruct, filters []FilterStruct) {
 
 	for _, i := range xmltvProgram.Category {
 
@@ -915,16 +1019,24 @@ func getCategory(program *Program, xmltvProgram *Program, xepgChannel XEPGChanne
 
 	}
 
+	for _, filter := range filters {
+		if xepgChannel.GroupTitle == filter.Filter {
+			category := &Category{}
+			category.Value = filter.Category
+			category.Lang = "en"
+			xepgChannel.XCategory = filter.Category
+			program.Category = append(program.Category, category)
+		}
+	}
+
 	if len(xepgChannel.XCategory) > 0 {
 
 		category := &Category{}
-		category.Value = xepgChannel.XCategory
+		category.Value = strings.ToLower(xepgChannel.XCategory)
 		category.Lang = "en"
 		program.Category = append(program.Category, category)
 
 	}
-
-	return
 }
 
 // Programm Poster Cover aus der XMLTV Datei laden
@@ -937,7 +1049,7 @@ func getPoster(program *Program, xmltvProgram *Program, xepgChannel XEPGChannelS
 		program.Poster = append(program.Poster, poster)
 	}
 
-	if Settings.XepgReplaceMissingImages == true {
+	if Settings.XepgReplaceMissingImages {
 
 		if len(xmltvProgram.Poster) == 0 {
 			var poster Poster
@@ -1076,7 +1188,7 @@ func cleanupXEPG() {
 			if indexOfString(xepgChannel.Name+xepgChannel.FileM3UID, Data.Cache.Streams.Active) == -1 {
 				delete(Data.XEPG.Channels, id)
 			} else {
-				if xepgChannel.XActive == true {
+				if xepgChannel.XActive == true && !xepgChannel.XHideChannel {
 					Data.XEPG.XEPGCount++
 				}
 			}

@@ -1,2 +1,4 @@
 
 threadfin
+vendor/
+.DS_Store

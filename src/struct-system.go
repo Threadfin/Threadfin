@@ -200,11 +200,20 @@ type XEPGChannelStruct struct {
 	XGroupTitle        string `json:"x-group-title,required"`
 	XMapping           string `json:"x-mapping,required"`
 	XmltvFile          string `json:"x-xmltv-file,required"`
+	XPpvExtra          string `json:"x-ppv-extra"`
+	XBackupChannel1    string `json:"x-backup-channel-1,required"`
+	XBackupChannel2    string `json:"x-backup-channel-2,required"`
+	XBackupChannel3    string `json:"x-backup-channel-3,required"`
+	XHideChannel       bool   `json:"x-hide-channel,required"`
 	XName              string `json:"x-name,required"`
 	XUpdateChannelIcon bool   `json:"x-update-channel-icon,required"`
 	XUpdateChannelName bool   `json:"x-update-channel-name,required"`
 	XDescription       string `json:"x-description,required"`
 	Live               bool   `json:"live"`
+	IsBackupChannel    bool   `json:"is_backup_channel"`
+	BackupChannel1URL  string `json:"backup_channel_1_url"`
+	BackupChannel2URL  string `json:"backup_channel_2_url"`
+	BackupChannel3URL  string `json:"backup_channel_3_url"`
 }
 
 // M3UChannelStructXEPG : M3U Struktur für XEPG
@@ -225,15 +234,17 @@ type M3UChannelStructXEPG struct {
 
 // FilterStruct : Filter Struktur
 type FilterStruct struct {
-	Active        bool   `json:"active,required"`
-	CaseSensitive bool   `json:"caseSensitive,required"`
-	Description   string `json:"description,required"`
-	Exclude       string `json:"exclude,required"`
-	Filter        string `json:"filter,required"`
-	Include       string `json:"include,required"`
-	Name          string `json:"name,required"`
-	Rule          string `json:"rule,omitempty"`
-	Type          string `json:"type,required"`
+	Active         bool   `json:"active"`
+	CaseSensitive  bool   `json:"caseSensitive"`
+	Description    string `json:"description"`
+	Exclude        string `json:"exclude"`
+	Filter         string `json:"filter"`
+	Include        string `json:"include"`
+	Name           string `json:"name"`
+	Rule           string `json:"rule,omitempty"`
+	Type           string `json:"type"`
+	StartingNumber string `json:"startingNumber"`
+	Category       string `json:"x-category"`
 }
 
 // StreamingURLS : Informationen zu allen streaming URL's
@@ -243,11 +254,14 @@ type StreamingURLS struct {
 
 // StreamInfo : Informationen zum Kanal für die streaming URL
 type StreamInfo struct {
-	ChannelNumber string `json:"channelNumber,required"`
-	Name          string `json:"name,required"`
-	PlaylistID    string `json:"playlistID,required"`
-	URL           string `json:"url,required"`
-	URLid         string `json:"urlID,required"`
+	ChannelNumber     string `json:"channelNumber,required"`
+	Name              string `json:"name,required"`
+	PlaylistID        string `json:"playlistID,required"`
+	URL               string `json:"url,required"`
+	BackupChannel1URL string `json:"backup_channel_1_url,required"`
+	BackupChannel2URL string `json:"backup_channel_2_url,required"`
+	BackupChannel3URL string `json:"backup_channel_3_url,required"`
+	URLid             string `json:"urlID,required"`
 }
 
 // Notification : Notifikationen im Webinterface
@@ -308,6 +322,7 @@ type SettingsStruct struct {
 	XepgReplaceMissingImages  bool                  `json:"xepg.replace.missing.images"`
 	XepgReplaceChannelTitle   bool                  `json:"xepg.replace.channel.title"`
 	ThreadfinAutoUpdate       bool                  `json:"ThreadfinAutoUpdate"`
+	StoreBufferInRAM          bool                  `json:"storeBufferInRAM"`
 }
 
 // LanguageUI : Sprache für das WebUI

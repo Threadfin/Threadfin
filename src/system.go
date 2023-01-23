@@ -132,6 +132,7 @@ func loadSettings() (settings SettingsStruct, err error) {
 	defaults["m3u8.adaptive.bandwidth.mbps"] = 10
 	defaults["port"] = "34400"
 	defaults["ssdp"] = true
+	defaults["storeBufferInRAM"] = true
 	defaults["tuner"] = 1
 	defaults["update"] = []string{"0000"}
 	defaults["user.agent"] = System.Name
@@ -170,6 +171,9 @@ func loadSettings() (settings SettingsStruct, err error) {
 	if len(settings.VLCPath) == 0 {
 		settings.VLCPath = searchFileInOS("cvlc")
 	}
+
+	// Initialze virutal filesystem for the Buffer
+	initBufferVFS(settings.StoreBufferInRAM)
 
 	settings.Version = System.DBVersion
 
@@ -234,9 +238,9 @@ func setGlobalDomain(domain string) {
 
 	switch Settings.AuthenticationM3U {
 	case true:
-		System.Addresses.M3U = System.ServerProtocol.M3U + "://" + System.Domain + "/m3u/threadfin.m3u?username=xxx&password=yyy<br>(Specific groups: [http://...&group-title=foo,bar])"
+		System.Addresses.M3U = System.ServerProtocol.M3U + "://" + System.Domain + "/m3u/threadfin.m3u?username=xxx&password=yyy"
 	case false:
-		System.Addresses.M3U = System.ServerProtocol.M3U + "://" + System.Domain + "/m3u/threadfin.m3u     (Specific groups: [http://...?group-title=foo,bar])"
+		System.Addresses.M3U = System.ServerProtocol.M3U + "://" + System.Domain + "/m3u/threadfin.m3u"
 	}
 
 	switch Settings.AuthenticationXML {
@@ -277,7 +281,7 @@ func setDeviceID() {
 }
 
 // Provider Streaming-URL zu Threadfin Streaming-URL konvertieren
-func createStreamingURL(streamingType, playlistID, channelNumber, channelName, url string) (streamingURL string, err error) {
+func createStreamingURL(streamingType, playlistID, channelNumber, channelName, url string, backup_url_1 string, backup_url_2 string, backup_url_3 string) (streamingURL string, err error) {
 
 	var streamInfo StreamInfo
 	var serverProtocol string
@@ -295,6 +299,9 @@ func createStreamingURL(streamingType, playlistID, channelNumber, channelName, u
 	} else {
 
 		streamInfo.URL = url
+		streamInfo.BackupChannel1URL = backup_url_1
+		streamInfo.BackupChannel2URL = backup_url_2
+		streamInfo.BackupChannel3URL = backup_url_3
 		streamInfo.Name = channelName
 		streamInfo.PlaylistID = playlistID
 		streamInfo.ChannelNumber = channelNumber
@@ -338,6 +345,9 @@ func getStreamInfo(urlID string) (streamInfo StreamInfo, err error) {
 	if s, ok := Data.Cache.StreamingURLS[urlID]; ok {
 		streamInfo = s
 		streamInfo.URL = strings.Trim(streamInfo.URL, "\r\n")
+		streamInfo.BackupChannel1URL = strings.Trim(streamInfo.BackupChannel1URL, "\r\n")
+		streamInfo.BackupChannel2URL = strings.Trim(streamInfo.BackupChannel2URL, "\r\n")
+		streamInfo.BackupChannel3URL = strings.Trim(streamInfo.BackupChannel3URL, "\r\n")
 	} else {
 		err = errors.New("Streaming error")
 	}

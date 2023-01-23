@@ -1,178 +1,169 @@
 package imgcache
 
 import (
-  "fmt"
-  "io"
-  "io/ioutil"
-  "net/http"
-  "net/url"
-  "os"
-  "path/filepath"
-  "strings"
-  "sync"
+	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+	"os"
+	"path/filepath"
+	"strings"
+	"sync"
 )
 
 // Cache : Cache strcut
 type Cache struct {
-  path     string
-  cacheURL string
-  caching  bool
-  images   map[string]string
-  Queue    []string
-  Cache    []string
-  Image    imageFunc
-  sync.RWMutex
+	path     string
+	cacheURL string
+	caching  bool
+	images   map[string]string
+	Queue    []string
+	Cache    []string
+	Image    imageFunc
+	sync.RWMutex
 }
 
 type imageFunc struct {
-  GetURL  func(string) string
-  Caching func()
-  Remove  func()
+	GetURL  func(string) string
+	Caching func()
+	Remove  func()
 }
 
 // New : New cahce
 func New(path, chacheURL string, caching bool) (c *Cache, err error) {
 
-  c = &Cache{}
+	c = &Cache{}
 
-  c.images = make(map[string]string)
-  c.path = path
-  c.cacheURL = chacheURL
-  c.caching = caching
-  c.Queue = []string{}
-  c.Cache = []string{}
+	c.images = make(map[string]string)
+	c.path = path
+	c.cacheURL = chacheURL
+	c.caching = caching
+	c.Queue = []string{}
+	c.Cache = []string{}
 
-  var queue []string
+	var queue []string
 
-  c.Image.GetURL = func(src string) (cacheURL string) {
+	c.Image.GetURL = func(src string) (cacheURL string) {
 
-    c.Lock()
-    defer c.Unlock()
+		c.Lock()
+		defer c.Unlock()
 
-    src = strings.Trim(src, "\r\n")
+		src = strings.Trim(src, "\r\n")
 
-    if c.caching == false {
-      return src
-    }
+		if !c.caching {
+			return src
+		}
 
-    u, err := url.Parse(src)
-    if err != nil || len(filepath.Ext(u.Path)) == 0 {
-      return src
-    }
+		u, err := url.Parse(src)
 
-    var filename = fmt.Sprintf("%s%s", strToMD5(src), filepath.Ext(u.Path))
-    if cacheURL, ok := c.images[fmt.Sprintf("%s%s", strToMD5(src), filepath.Ext(u.Path))]; ok {
-      return cacheURL
-    }
+		if err != nil || len(filepath.Ext(u.Path)) == 0 {
+			return src
+		}
 
-    if indexOfString(filename, c.Cache) == -1 {
+		src_filtered := strings.Split(src, "?")
+		var filename = fmt.Sprintf("%s%s", strToMD5(src_filtered[0]), filepath.Ext(u.Path))
 
-      if indexOfString(src, c.Queue) == -1 {
-        c.Queue = append(c.Queue, src)
-      }
+		if cacheURL, ok := c.images[filename]; ok {
+			return cacheURL
+		}
 
-    } else {
-      c.images[filename] = c.cacheURL + filename
-      src = c.cacheURL + filename
-    }
+		if indexOfString(filename, c.Cache) == -1 {
+			if indexOfString(src, c.Queue) == -1 {
+				c.Queue = append(c.Queue, src)
+			}
 
-    /*
-       if _, err := os.Stat(c.path + filename); err != nil {
-         //c.images[filename] = c.cacheURL + filename
-         if indexOfString(src, c.Queue) == -1 {
-           c.Queue = append(c.Queue, src)
-         }
-       } else {
-         c.images[filename] = c.cacheURL + filename
-       }
-    */
+		} else {
+			c.images[filename] = c.cacheURL + filename
+			src = c.cacheURL + filename
+		}
 
-    return src
-  }
+		return src
+	}
 
-  c.Image.Caching = func() {
+	c.Image.Caching = func() {
 
-    c.Lock()
-    defer c.Unlock()
+		c.Lock()
+		defer c.Unlock()
 
-    var filename string
+		var filename string
 
-    for _, src := range c.Queue {
+		for _, src := range c.Queue {
 
-      resp, err := http.Get(src)
-      if err != nil {
-        continue
-      }
-      defer resp.Body.Close()
+			resp, err := http.Get(src)
+			if err != nil {
+				continue
+			}
+			defer resp.Body.Close()
 
-      if resp.StatusCode != http.StatusOK {
-        continue
-      }
+			if resp.StatusCode != http.StatusOK {
+				continue
+			}
 
-      filename = fmt.Sprintf("%s%s%s%s", c.path, string(os.PathSeparator), strToMD5(src), filepath.Ext(src))
+			src_filtered := strings.Split(src, "?")
+			filename = fmt.Sprintf("%s%s%s", c.path, strToMD5(src_filtered[0]), filepath.Ext(src_filtered[0]))
 
-      file, err := os.Create(filename)
-      if err != nil {
-        continue
-      }
+			file, err := os.Create(filename)
+			if err != nil {
+				continue
+			}
 
-      defer file.Close()
+			defer file.Close()
 
-      _, err = io.Copy(file, resp.Body)
-      if err != nil {
-        continue
-      }
+			_, err = io.Copy(file, resp.Body)
+			if err != nil {
+				continue
+			}
 
-      u, err := url.Parse(src)
-      if err == nil {
-        c.images[fmt.Sprintf("%s%s", strToMD5(src), filepath.Ext(u.Path))] = c.cacheURL + filename
-      }
+			u, err := url.Parse(src_filtered[0])
+			if err == nil {
+				c.images[fmt.Sprintf("%s%s", strToMD5(src_filtered[0]), filepath.Ext(u.Path))] = c.cacheURL + filename
+			}
 
-      queue = append(queue, src)
+			queue = append(queue, src_filtered[0])
 
-    }
+		}
 
-    for _, q := range queue {
-      c.Queue = removeStringFromSlice(q, c.Queue)
-    }
+		for _, q := range queue {
+			c.Queue = removeStringFromSlice(q, c.Queue)
+		}
 
-  }
+	}
 
-  c.Image.Remove = func() {
+	c.Image.Remove = func() {
 
-    c.Lock()
-    defer c.Unlock()
+		c.Lock()
+		defer c.Unlock()
 
-    files, err := ioutil.ReadDir(c.path)
-    if err != nil {
-      return
-    }
+		files, err := os.ReadDir(c.path)
+		if err != nil {
+			return
+		}
 
-    for _, file := range files {
+		for _, file := range files {
 
-      switch c.caching {
+			switch c.caching {
 
-      case true:
-        if _, ok := c.images[file.Name()]; !ok {
-          os.RemoveAll(c.path + file.Name())
-        }
+			case true:
+				if _, ok := c.images[file.Name()]; !ok {
+					os.RemoveAll(c.path + file.Name())
+				}
 
-      case false:
-        os.RemoveAll(c.path + file.Name())
-      }
+			case false:
+				os.RemoveAll(c.path + file.Name())
+			}
 
-    }
+		}
 
-  }
+	}
 
-  files, err := ioutil.ReadDir(c.path)
-  if err != nil {
-    return
-  }
+	files, err := os.ReadDir(c.path)
+	if err != nil {
+		return
+	}
 
-  for _, file := range files {
-    c.Cache = append(c.Cache, file.Name())
-  }
+	for _, file := range files {
+		c.Cache = append(c.Cache, file.Name())
+	}
 
-  return
+	return
 }

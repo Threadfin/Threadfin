@@ -6,11 +6,10 @@
 # Threadfin
 ## M3U Proxy for Plex DVR and Emby/Jellyfin Live TV. Based on xTeVe.
 
-Documentation for setup and configuration is [here](https://github.com/xteve-project/xTeVe-Documentation/blob/master/en/configuration.md).
+You can follow the old xTeVe documentation for now until I update it for Threadfin. Documentation for setup and configuration is [here](https://github.com/xteve-project/xTeVe-Documentation/blob/master/en/configuration.md).
 
 #### Donation
-* **Bitcoin:** 3AyZ16uGWGJ4HdvZ3wx4deE5HsKZ5QxFBL  
-![Bitcoin](html/img/BC-QR.png "Bitcoin - Threadfin")
+[Github Sponsor](https://github.com/sponsors/Fyb3roptik)
 
 ## Requirements
 ### Plex
@@ -23,9 +22,30 @@ Documentation for setup and configuration is [here](https://github.com/xteve-pro
 * Emby Client with Live-TV support
 * Emby Premiere
 
+### Jellyfin
+* Jellyfin Server (10.7.1 or newer)
+* Jellyfin Client with Live-TV support
+
 --- 
 
-## Features
+## Threadfin Features
+
+* New Bootstrap based UI
+* RAM based buffer instead of File based
+
+#### Filter Group
+* Can now add a starting channel number for the filter group
+
+#### Map Editor
+* Can now multi select Bulk Edit by holding shift
+* Now has a separate table for inactive channels
+* Can add 3 backup channels for an active channel (backup channels do NOT have to be active)
+* Alpha Numeric sorting now sorts correctly
+* Can now add a starting channel number for Bulk Edit to renumber multiple channels at a time
+* PPV channels can now map the channel name to an EPG
+* Removed old Threadfin buffer option, since FFMPEG/VLC will always be a better solution
+
+## xTeVe Features
 
 #### Files
 * Merge external M3U files
@@ -44,58 +64,39 @@ Documentation for setup and configuration is [here](https://github.com/xteve-pro
 * Buffer with HLS / M3U8 support
 * Re-streaming
 * Number of tuners adjustable
-* Compatible with Plex / Emby EPG
+* Compatible with Plex / Emby / Jellyfin EPG
 
 ---
 
-#### Recommended Docker Image (Linux 64 Bit)
-Thanks to @alturismo and @LeeD for creating the Docker Images.
-
-**Created by alturismo:**  
-[xTeVe](https://hub.docker.com/r/alturismo/xteve)  
-[xTeVe / Guide2go](https://hub.docker.com/r/alturismo/xteve_guide2go)  
-[xTeVe / Guide2go / owi2plex](https://hub.docker.com/r/alturismo/xteve_g2g_owi)
-
-Including:  
-- Guide2go: XMLTV grabber for Schedules Direct  
-- owi2plex: XMLTV file grabber for Enigma receivers
-
-**Created by LeeD:**  
-[xTeVe / Guide2go / Zap2XML](https://hub.docker.com/r/dnsforge/xteve)  
-
-Including:  
-- Guide2go: XMLTV grabber for Schedules Direct  
-- Zap2XML: Perl based zap2it XMLTV grabber  
-- Bash: A Unix / Linux shell  
-- Crond: Daemon to execute scheduled commands  
-- Perl: Programming language   
+## Docker Image
+[Threadfin](https://hub.docker.com/r/fyb3roptik/threadfin)
 
 ---
 
 ### Threadfin Beta branch
-New features and bug fixes are only available in beta branch. Only after successful testing are they are merged into the master branch.
+New features and bug fixes are only available in beta branch. Only after successful testing are they are merged into the main branch.
 
 **It is not recommended to use the beta version in a production system.**  
 
-With the command line argument `branch` the Git Branch can be changed. xTeVe must be started via the terminal.  
+With the command line argument `branch` the Git Branch can be changed. Threadfin must be started via the terminal.  
 
 #### Switch from master to beta branch:
 ```
-xteve -branch beta
+threadfin -branch beta
 
 ...
-[Threadfin] GitHub:                https://github.com/Threadfin
+[Threadfin] GitHub:                https://github.com/Threadfin/Threadfin
 [Threadfin] Git Branch:            beta [Threadfin]
 ...
 ```
 
 #### Switch from beta to master branch:
 ```
-threadfin -branch master
+threadfin -branch main
 
 ...
-[Threadfin] GitHub:                https://github.com/Threadfin
-[Threadfin] Git Branch:            master [Threadfin]
+[Threadfin] GitHub:                https://github.com/Threadfin/Threadfin
+[Threadfin] Git Branch:            main [Threadfin]
 ...
 ```
 
@@ -106,18 +107,19 @@ When the branch is changed, an update is only performed if there is a new versio
 ## Build from source code [Go / Golang]
 
 #### Requirements
-* [Go](https://golang.org) (go1.16.2 or newer)
+* [Go](https://golang.org) (go1.18 or newer)
 
 #### Dependencies
 * [go-ssdp](https://github.com/koron/go-ssdp)
 * [websocket](https://github.com/gorilla/websocket)
 * [osext](https://github.com/kardianos/osext)
+* [avfs](github.com/avfs/avfs)
 
 #### Build
 1. Download source code
 2. Install dependencies
 ```
-go mod tidy
+go mod tidy && go mod vendor
 ```
 3. Build Threadfin
 ```
@@ -143,7 +145,7 @@ threadfin -dev
 
 ## Fork without pull request :mega:
 When creating a fork, the Threadfin GitHub account must be changed from the source code or the update function disabled.
-Future updates of Threadfin would update your fork. :wink:
+Future updates of Threadfin would update your fork.
 
 threadfin.go - Line: 29
 ```Go
