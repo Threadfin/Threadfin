@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - main
+    tags: "*"
 permissions:
   contents: write
 jobs:
@@ -34,14 +35,9 @@ jobs:
          echo "Building Windows"
          env GOOS=windows GOARCH=amd64 go build -o dist/Threadfin_windows_amd64.exe
 
-      - name: Latest Tag
-        run: |
-          LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1`)
-          
       - name: Release
         uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: ${{LATEST_TAG}}
           prerelease: false
           files: dist/*
