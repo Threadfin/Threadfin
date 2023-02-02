@@ -60,6 +60,7 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 
 	//w.Header().Set("Connection", "keep-alive")
 	w.Header().Set("Connection", "close")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 
 	// Überprüfen ob die Playlist schon verwendet wird
 	if p, ok := BufferInformation.Load(playlistID); !ok {
@@ -1694,12 +1695,14 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 
 			fileSize = fileSize + len(buffer[:n])
 
-			if _, err := f.Write(buffer[:n]); err != nil {
-				cmd.Process.Kill()
-				ShowError(err, 0)
-				addErrorToStream(err)
-				cmd.Wait()
-				return
+			if len(buffer) == n {
+				if _, err := f.Write(buffer[:n]); err != nil {
+					cmd.Process.Kill()
+					ShowError(err, 0)
+					addErrorToStream(err)
+					cmd.Wait()
+					return
+				}
 			}
 
 			if fileSize >= bufferSize/2 {
