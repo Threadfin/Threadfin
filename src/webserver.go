@@ -174,6 +174,7 @@ func Stream(w http.ResponseWriter, r *http.Request) {
 
 	case "-":
 		showInfo("Streaming URL:" + streamInfo.URL)
+		w.Header().Set("Access-Control-Allow-Origin", "*")
 		http.Redirect(w, r, streamInfo.URL, 302)
 
 		showInfo("Streaming Info:URL was passed to the client.")
