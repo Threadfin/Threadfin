@@ -8,8 +8,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
-	"io/ioutil"
 	"net"
 	"os"
 	"os/exec"
@@ -147,7 +147,7 @@ func checkFilePermission(dir string) (err error) {
 
 	var filename = dir + "permission.test"
 
-	err = ioutil.WriteFile(filename, []byte(""), 0644)
+	err = os.WriteFile(filename, []byte(""), 0644)
 	if err == nil {
 		err = os.RemoveAll(filename)
 	}
@@ -271,7 +271,8 @@ func saveMapToJSONFile(file string, tmpMap interface{}) error {
 		return err
 	}
 
-	err = ioutil.WriteFile(filename, []byte(jsonString), 0644)
+	os.Create(filename)
+	err = os.WriteFile(filename, []byte(jsonString), 0644)
 	if err != nil {
 		return err
 	}
@@ -284,7 +285,7 @@ func loadJSONFileToMap(file string) (tmpMap map[string]interface{}, err error) {
 	f, err := os.Open(getPlatformFile(file))
 	defer f.Close()
 
-	content, err := ioutil.ReadAll(f)
+	content, err := io.ReadAll(f)
 
 	if err == nil {
 		err = json.Unmarshal([]byte(content), &tmpMap)
@@ -301,7 +302,7 @@ func readByteFromFile(file string) (content []byte, err error) {
 	f, err := os.Open(getPlatformFile(file))
 	defer f.Close()
 
-	content, err = ioutil.ReadAll(f)
+	content, err = io.ReadAll(f)
 	f.Close()
 
 	return
@@ -310,7 +311,7 @@ func readByteFromFile(file string) (content []byte, err error) {
 func writeByteToFile(file string, data []byte) (err error) {
 
 	var filename = getPlatformFile(file)
-	err = ioutil.WriteFile(filename, data, 0644)
+	err = os.WriteFile(filename, data, 0644)
 
 	return
 }
@@ -325,7 +326,7 @@ func readStringFromFile(file string) (str string, err error) {
 		return
 	}
 
-	content, err = ioutil.ReadFile(filename)
+	content, err = os.ReadFile(filename)
 	if err != nil {
 		ShowError(err, 0)
 		return
