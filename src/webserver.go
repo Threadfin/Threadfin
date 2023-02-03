@@ -432,10 +432,17 @@ func WS(w http.ResponseWriter, r *http.Request) {
 			}
 
 		case "saveFilesM3U":
+
+			// Reset cache for urls.json
+			var filename = getPlatformFile(System.Folder.Config + "urls.json")
+			saveMapToJSONFile(filename, make(map[string]StreamInfo))
+			Data.Cache.StreamingURLS = make(map[string]StreamInfo)
+
 			err = saveFiles(request, "m3u")
 			if err == nil {
 				response.OpenMenu = strconv.Itoa(indexOfString("playlist", System.WEB.Menu))
 			}
+			updateUrlsJson()
 
 		case "updateFileM3U":
 			err = updateFile(request, "m3u")

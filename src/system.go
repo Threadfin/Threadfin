@@ -50,7 +50,6 @@ func createSystemFolders() (err error) {
 
 // Alle Systemdateien erstellen
 func createSystemFiles() (err error) {
-
 	var debug string
 	for _, file := range SystemFiles {
 
@@ -58,7 +57,7 @@ func createSystemFiles() (err error) {
 
 		err = checkFile(filename)
 		if err != nil {
-			// Datei existiert nicht, wird jetzt erstellt
+			// File does not exist, will be created now
 			err = saveMapToJSONFile(filename, make(map[string]interface{}))
 			if err != nil {
 				return
@@ -87,6 +86,23 @@ func createSystemFiles() (err error) {
 	}
 
 	return
+}
+
+func updateUrlsJson() {
+
+	getProviderData("m3u", "")
+	getProviderData("hdhr", "")
+
+	if Settings.EpgSource == "XEPG" {
+		getProviderData("xmltv", "")
+	}
+	err := buildDatabaseDVR()
+	if err != nil {
+		ShowError(err, 0)
+		return
+	}
+
+	buildXEPG(false)
 }
 
 // Einstellungen laden und default Werte setzen (Threadfin)
@@ -293,11 +309,9 @@ func createStreamingURL(streamingType, playlistID, channelNumber, channelName, u
 	var urlID = getMD5(fmt.Sprintf("%s-%s", playlistID, url))
 
 	if s, ok := Data.Cache.StreamingURLS[urlID]; ok {
-
 		streamInfo = s
 
 	} else {
-
 		streamInfo.URL = url
 		streamInfo.BackupChannel1URL = backup_url_1
 		streamInfo.BackupChannel2URL = backup_url_2
