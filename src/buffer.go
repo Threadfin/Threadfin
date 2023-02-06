@@ -1695,14 +1695,12 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 
 			fileSize = fileSize + len(buffer[:n])
 
-			if len(buffer) == n {
-				if _, err := f.Write(buffer[:n]); err != nil {
-					cmd.Process.Kill()
-					ShowError(err, 0)
-					addErrorToStream(err)
-					cmd.Wait()
-					return
-				}
+			if _, err := f.Write(buffer[:n]); err != nil {
+				cmd.Process.Kill()
+				ShowError(err, 0)
+				addErrorToStream(err)
+				cmd.Wait()
+				return
 			}
 
 			if fileSize >= bufferSize/2 {
