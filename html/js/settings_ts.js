@@ -227,6 +227,39 @@ class SettingsCategory {
                 setting.appendChild(tdLeft);
                 setting.appendChild(tdRight);
                 break;
+            case "forceHttps":
+                var tdLeft = document.createElement("TD");
+                tdLeft.innerHTML = "{{.settings.forceHttps.title}}" + ":";
+                var tdRight = document.createElement("TD");
+                var input = content.createCheckbox(settingsKey);
+                input.checked = data;
+                input.setAttribute("onchange", "javascript: this.className = 'changed'");
+                tdRight.appendChild(input);
+                setting.appendChild(tdLeft);
+                setting.appendChild(tdRight);
+                break;
+            case "httpsPort":
+                var tdLeft = document.createElement("TD");
+                tdLeft.innerHTML = "{{.settings.httpsPort.title}}" + ":";
+                var tdRight = document.createElement("TD");
+                var input = content.createInput("text", "httpsPort", data.toString());
+                input.setAttribute("placeholder", "{{.settings.httpsPort.placeholder}}");
+                input.setAttribute("onchange", "javascript: this.className = 'changed'");
+                tdRight.appendChild(input);
+                setting.appendChild(tdLeft);
+                setting.appendChild(tdRight);
+                break;
+            case "enableNonAscii":
+                var tdLeft = document.createElement("TD");
+                tdLeft.innerHTML = "{{.settings.enableNonAscii.title}}" + ":";
+                var tdRight = document.createElement("TD");
+                var input = content.createCheckbox(settingsKey);
+                input.checked = data;
+                input.setAttribute("onchange", "javascript: this.className = 'changed'");
+                tdRight.appendChild(input);
+                setting.appendChild(tdLeft);
+                setting.appendChild(tdRight);
+                break;
             case "ThreadfinAutoUpdate":
                 var tdLeft = document.createElement("TD");
                 tdLeft.innerHTML = "{{.settings.ThreadfinAutoUpdate.title}}" + ":";
@@ -369,6 +402,15 @@ class SettingsCategory {
                 break;
             case "storeBufferInRAM":
                 text = "{{.settings.storeBufferInRAM.description}}";
+                break;
+            case "forceHttps":
+                text = "{{.settings.forceHttps.description}}";
+                break;
+            case "httpsPort":
+                text = "{{.settings.httpsPort.description}}";
+                break;
+            case "enableNonAscii":
+                text = "{{.settings.enableNonAscii.description}}";
                 break;
             case "buffer.timeout":
                 text = "{{.settings.bufferTimeout.description}}";

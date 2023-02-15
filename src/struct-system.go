@@ -323,6 +323,9 @@ type SettingsStruct struct {
 	XepgReplaceChannelTitle   bool                  `json:"xepg.replace.channel.title"`
 	ThreadfinAutoUpdate       bool                  `json:"ThreadfinAutoUpdate"`
 	StoreBufferInRAM          bool                  `json:"storeBufferInRAM"`
+	ForceHttps                bool                  `json:"forceHttps"`
+	HttpsPort                 int                   `json:"httpsPort"`
+	EnableNonAscii            bool                  `json:"enableNonAscii"`
 }
 
 // LanguageUI : Sprache für das WebUI

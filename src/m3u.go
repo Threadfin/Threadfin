@@ -224,7 +224,7 @@ func buildM3U(groups []string) (m3u string, err error) {
 
 		var channel = m3uChannels[channelNumber]
 
-		var parameter = fmt.Sprintf(`#EXTINF:0 channelID="%s" tvg-chno="%s" tvg-name="%s" tvg-id="%s" tvg-logo="%s" group-title="%s",%s`+"\n", channel.XEPG, channel.XChannelID, channel.XName, channel.XChannelID, imgc.Image.GetURL(channel.TvgLogo), channel.XGroupTitle, channel.XName)
+		var parameter = fmt.Sprintf(`#EXTINF:0 channelID="%s" tvg-chno="%s" tvg-name="%s" tvg-id="%s" tvg-logo="%s" group-title="%s",%s`+"\n", channel.XEPG, channel.XChannelID, channel.XName, channel.XChannelID, imgc.Image.GetURL(channel.TvgLogo, Settings.ForceHttps, Settings.HttpsPort), channel.XGroupTitle, channel.XName)
 		var stream, err = createStreamingURL("M3U", channel.FileM3UID, channel.XChannelID, channel.XName, channel.URL, channel.BackupChannel1URL, channel.BackupChannel2URL, channel.BackupChannel3URL)
 		if err == nil {
 			m3u = m3u + parameter + stream + "\n"

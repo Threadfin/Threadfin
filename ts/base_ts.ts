@@ -45,8 +45,8 @@ menuItems.push(new MainMenuItem("logout", "{{.mainMenu.item.logout}}", "logout.p
 
 // Kategorien für die Einstellungen
 var settingsCategory = new Array()
-settingsCategory.push(new SettingsCategoryItem("{{.settings.category.general}}", "ThreadfinAutoUpdate,tuner,epgSource,api")); settingsCategory.push(new SettingsCategoryItem("{{.settings.category.files}}", "update,files.update,temp.path,cache.images,xepg.replace.missing.images,xepg.replace.channel.title"))
-settingsCategory.push(new SettingsCategoryItem("{{.settings.category.streaming}}", "buffer,udpxy,buffer.size.kb,storeBufferInRAM,buffer.timeout,user.agent,ffmpeg.path,ffmpeg.options,vlc.path,vlc.options"))
+settingsCategory.push(new SettingsCategoryItem("{{.settings.category.general}}", "ThreadfinAutoUpdate,tuner,epgSource,api")); settingsCategory.push(new SettingsCategoryItem("{{.settings.category.files}}", "update,files.update,temp.path,cache.images,xepg.replace.missing.images,xepg.replace.channel.title,enableNonAscii"))
+settingsCategory.push(new SettingsCategoryItem("{{.settings.category.streaming}}", "buffer,forceHttps,httpsPort,udpxy,buffer.size.kb,storeBufferInRAM,buffer.timeout,user.agent,ffmpeg.path,ffmpeg.options,vlc.path,vlc.options"))
 settingsCategory.push(new SettingsCategoryItem("{{.settings.category.backup}}", "backup.path,backup.keep"))
 settingsCategory.push(new SettingsCategoryItem("{{.settings.category.authentication}}", "authentication.web,authentication.pms,authentication.m3u,authentication.xml,authentication.api"))
 
