@@ -673,7 +673,9 @@ func mapping() (err error) {
 								category := &Category{}
 								category.Value = filter.Category
 								category.Lang = "en"
-								xepgChannel.XCategory = filter.Category
+								if xepgChannel.XCategory == "" {
+									xepgChannel.XCategory = filter.Category
+								}
 							}
 						}
 
@@ -1023,16 +1025,6 @@ func getCategory(program *Program, xmltvProgram *Program, xepgChannel XEPGChanne
 		category.Lang = i.Lang
 		program.Category = append(program.Category, category)
 
-	}
-
-	for _, filter := range filters {
-		if xepgChannel.GroupTitle == filter.Filter {
-			category := &Category{}
-			category.Value = filter.Category
-			category.Lang = "en"
-			xepgChannel.XCategory = filter.Category
-			program.Category = append(program.Category, category)
-		}
 	}
 
 	if len(xepgChannel.XCategory) > 0 {
