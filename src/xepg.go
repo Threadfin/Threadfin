@@ -860,6 +860,12 @@ func getProgramData(xepgChannel XEPGChannelStruct) (xepgXML XMLTV, err error) {
 			// Category (Kategorie)
 			getCategory(program, xmltvProgram, xepgChannel, filters)
 
+			// Sub-Title
+			program.SubTitle = xmltvProgram.SubTitle
+
+			// Description
+			program.Desc = xmltvProgram.Desc
+
 			// Credits : (Credits)
 			program.Credits = xmltvProgram.Credits
 
