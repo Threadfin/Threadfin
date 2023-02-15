@@ -149,6 +149,9 @@ func loadSettings() (settings SettingsStruct, err error) {
 	defaults["port"] = "34400"
 	defaults["ssdp"] = true
 	defaults["storeBufferInRAM"] = true
+	defaults["forceHttps"] = false
+	defaults["httpsPort"] = 443
+	defaults["enableNonAscii"] = false
 	defaults["tuner"] = 1
 	defaults["update"] = []string{"0000"}
 	defaults["user.agent"] = System.Name

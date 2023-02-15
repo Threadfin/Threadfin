@@ -419,6 +419,21 @@
       "title": "Store buffer in RAM",
       "description": "If checked, write buffer to RAM instead of writing to disk"
     },
+    "forceHttps":
+    {
+      "title": "Force HTTPS",
+      "description": "If checked, will rewrite M3U and EPG urls to include https protocol as well as https port (default is 443)"
+    },
+    "httpsPort":
+    {
+      "title": "HTTPS Port",
+      "description": "Port to use for forcing https. Default is 443"
+    },
+    "enableNonAscii":
+    {
+      "title": "Enable Non-ASCII",
+      "description": "If checked, will allow special non ascii characters in the M3U and EPG. Default is disabled"
+    },
     "bufferTimeout": {
       "title": "Timeout for new client connections",
       "description": "The Threadfin buffer waits until new client connections are established. Helpful for fast channel switching. Value in milliseconds.",

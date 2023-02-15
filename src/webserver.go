@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -130,6 +131,18 @@ func Stream(w http.ResponseWriter, r *http.Request) {
 		ShowError(err, 1203)
 		httpStatusError(w, r, 404)
 		return
+	}
+
+	if Settings.ForceHttps {
+		u, err := url.Parse(streamInfo.URL)
+		if err == nil {
+			u.Scheme = "https"
+			host_split := strings.Split(u.Host, ":")
+			if len(host_split) > 0 {
+				u.Host = host_split[0]
+			}
+			streamInfo.URL = fmt.Sprintf("https://%s:%d%s", u.Host, Settings.HttpsPort, u.Path)
+		}
 	}
 
 	// If an UDPxy host is set, and the stream URL is multicast (i.e. starts with 'udp://@'),

@@ -46,6 +46,9 @@ type RequestStruct struct {
 		SchemeM3U                *string   `json:"scheme.m3u,omitempty"`
 		SchemeXML                *string   `json:"scheme.xml,omitempty"`
 		StoreBufferInRAM         *bool     `json:"storeBufferInRAM,omitempty"`
+		ForceHttps               *bool     `json:"forceHttps,omitempty"`
+		HttpsPort                *int      `json:"httpsPort,omitempty"`
+		EnableNonAscii           *bool     `json:"enableNonAscii,omitempty"`
 	} `json:"settings,omitempty"`
 
 	// Upload Logo

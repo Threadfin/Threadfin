@@ -258,7 +258,7 @@ func createXEPGMapping() {
 
 					channel["id"] = c.ID
 					channel["display-name"] = friendlyDisplayName(*c)
-					channel["icon"] = imgc.Image.GetURL(c.Icon.Src)
+					channel["icon"] = imgc.Image.GetURL(c.Icon.Src, Settings.ForceHttps, Settings.HttpsPort)
 					channel["active"] = c.Active
 
 					xmltvMap[c.ID] = channel
@@ -486,7 +486,7 @@ func createXEPGDatabase() (err error) {
 			// Kanallogo aktualisieren. Wird bei vorhandenem Logo in der XMLTV Datei wieder überschrieben
 			if xepgChannel.XUpdateChannelIcon == true {
 				var imgc = Data.Cache.Images
-				xepgChannel.TvgLogo = imgc.Image.GetURL(m3uChannel.TvgLogo)
+				xepgChannel.TvgLogo = imgc.Image.GetURL(m3uChannel.TvgLogo, Settings.ForceHttps, Settings.HttpsPort)
 			}
 
 			Data.XEPG.Channels[currentXEPGID] = xepgChannel
@@ -673,7 +673,9 @@ func mapping() (err error) {
 								category := &Category{}
 								category.Value = filter.Category
 								category.Lang = "en"
-								xepgChannel.XCategory = filter.Category
+								if xepgChannel.XCategory == "" {
+									xepgChannel.XCategory = filter.Category
+								}
 							}
 						}
 
@@ -682,7 +684,7 @@ func mapping() (err error) {
 
 							if xepgChannel.XUpdateChannelIcon && len(logo) > 0 {
 								var imgc = Data.Cache.Images
-								xepgChannel.TvgLogo = imgc.Image.GetURL(logo)
+								xepgChannel.TvgLogo = imgc.Image.GetURL(logo, Settings.ForceHttps, Settings.HttpsPort)
 							}
 
 						}
@@ -784,7 +786,7 @@ func createXMLTVFile() (err error) {
 					// Kanäle
 					var channel Channel
 					channel.ID = xepgChannel.XChannelID
-					channel.Icon = Icon{Src: imgc.Image.GetURL(xepgChannel.TvgLogo)}
+					channel.Icon = Icon{Src: imgc.Image.GetURL(xepgChannel.TvgLogo, Settings.ForceHttps, Settings.HttpsPort)}
 					channel.DisplayName = append(channel.DisplayName, DisplayName{Value: xepgChannel.TvgName})
 					channel.Active = xepgChannel.XActive
 					xepgXML.Channel = append(xepgXML.Channel, &channel)
@@ -840,12 +842,14 @@ func getProgramData(xepgChannel XEPGChannelStruct) (xepgXML XMLTV, err error) {
 
 			// Title
 			if len(xmltvProgram.Title) > 0 {
-				xmltvProgram.Title[0].Value = strings.TrimSpace(strings.Map(func(r rune) rune {
-					if r > unicode.MaxASCII {
-						return -1
-					}
-					return r
-				}, xmltvProgram.Title[0].Value))
+				if !Settings.EnableNonAscii {
+					xmltvProgram.Title[0].Value = strings.TrimSpace(strings.Map(func(r rune) rune {
+						if r > unicode.MaxASCII {
+							return -1
+						}
+						return r
+					}, xmltvProgram.Title[0].Value))
+				}
 				program.Title = xmltvProgram.Title
 			}
 
@@ -860,6 +864,12 @@ func getProgramData(xepgChannel XEPGChannelStruct) (xepgXML XMLTV, err error) {
 			// Category (Kategorie)
 			getCategory(program, xmltvProgram, xepgChannel, filters)
 
+			// Sub-Title
+			program.SubTitle = xmltvProgram.SubTitle
+
+			// Description
+			program.Desc = xmltvProgram.Desc
+
 			// Credits : (Credits)
 			program.Credits = xmltvProgram.Credits
 
@@ -873,7 +883,7 @@ func getProgramData(xepgChannel XEPGChannelStruct) (xepgXML XMLTV, err error) {
 			program.Country = xmltvProgram.Country
 
 			// Program icon (Poster / Cover)
-			getPoster(program, xmltvProgram, xepgChannel)
+			getPoster(program, xmltvProgram, xepgChannel, Settings.ForceHttps)
 
 			// Language (Sprache)
 			program.Language = xmltvProgram.Language
@@ -987,7 +997,7 @@ func createDummyProgram(xepgChannel XEPGChannelStruct) (dummyXMLTV XMLTV) {
 			}
 
 			if Settings.XepgReplaceMissingImages {
-				poster.Src = imgc.Image.GetURL(xepgChannel.TvgLogo)
+				poster.Src = imgc.Image.GetURL(xepgChannel.TvgLogo, Settings.ForceHttps, Settings.HttpsPort)
 				epg.Poster = append(epg.Poster, poster)
 			}
 
@@ -1019,16 +1029,6 @@ func getCategory(program *Program, xmltvProgram *Program, xepgChannel XEPGChanne
 
 	}
 
-	for _, filter := range filters {
-		if xepgChannel.GroupTitle == filter.Filter {
-			category := &Category{}
-			category.Value = filter.Category
-			category.Lang = "en"
-			xepgChannel.XCategory = filter.Category
-			program.Category = append(program.Category, category)
-		}
-	}
-
 	if len(xepgChannel.XCategory) > 0 {
 
 		category := &Category{}
@@ -1040,12 +1040,12 @@ func getCategory(program *Program, xmltvProgram *Program, xepgChannel XEPGChanne
 }
 
 // Programm Poster Cover aus der XMLTV Datei laden
-func getPoster(program *Program, xmltvProgram *Program, xepgChannel XEPGChannelStruct) {
+func getPoster(program *Program, xmltvProgram *Program, xepgChannel XEPGChannelStruct, forceHttps bool) {
 
 	var imgc = Data.Cache.Images
 
 	for _, poster := range xmltvProgram.Poster {
-		poster.Src = imgc.Image.GetURL(poster.Src)
+		poster.Src = imgc.Image.GetURL(poster.Src, Settings.ForceHttps, Settings.HttpsPort)
 		program.Poster = append(program.Poster, poster)
 	}
 
@@ -1053,7 +1053,7 @@ func getPoster(program *Program, xmltvProgram *Program, xepgChannel XEPGChannelS
 
 		if len(xmltvProgram.Poster) == 0 {
 			var poster Poster
-			poster.Src = imgc.Image.GetURL(xepgChannel.TvgLogo)
+			poster.Src = imgc.Image.GetURL(xepgChannel.TvgLogo, Settings.ForceHttps, Settings.HttpsPort)
 			program.Poster = append(program.Poster, poster)
 		}
 

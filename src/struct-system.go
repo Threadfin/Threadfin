@@ -181,34 +181,34 @@ type Filter struct {
 
 // XEPGChannelStruct : XEPG Struktur
 type XEPGChannelStruct struct {
-	FileM3UID          string `json:"_file.m3u.id,required"`
-	FileM3UName        string `json:"_file.m3u.name,required"`
-	FileM3UPath        string `json:"_file.m3u.path,required"`
-	GroupTitle         string `json:"group-title,required"`
-	Name               string `json:"name,required"`
-	TvgID              string `json:"tvg-id,required"`
-	TvgLogo            string `json:"tvg-logo,required"`
-	TvgName            string `json:"tvg-name,required"`
-	URL                string `json:"url,required"`
-	UUIDKey            string `json:"_uuid.key,required"`
+	FileM3UID          string `json:"_file.m3u.id"`
+	FileM3UName        string `json:"_file.m3u.name"`
+	FileM3UPath        string `json:"_file.m3u.path"`
+	GroupTitle         string `json:"group-title"`
+	Name               string `json:"name"`
+	TvgID              string `json:"tvg-id"`
+	TvgLogo            string `json:"tvg-logo"`
+	TvgName            string `json:"tvg-name"`
+	URL                string `json:"url"`
+	UUIDKey            string `json:"_uuid.key"`
 	UUIDValue          string `json:"_uuid.value,omitempty"`
-	Values             string `json:"_values,required"`
-	XActive            bool   `json:"x-active,required"`
-	XCategory          string `json:"x-category,required"`
-	XChannelID         string `json:"x-channelID,required"`
-	XEPG               string `json:"x-epg,required"`
-	XGroupTitle        string `json:"x-group-title,required"`
-	XMapping           string `json:"x-mapping,required"`
-	XmltvFile          string `json:"x-xmltv-file,required"`
+	Values             string `json:"_values"`
+	XActive            bool   `json:"x-active"`
+	XCategory          string `json:"x-category"`
+	XChannelID         string `json:"x-channelID"`
+	XEPG               string `json:"x-epg"`
+	XGroupTitle        string `json:"x-group-title"`
+	XMapping           string `json:"x-mapping"`
+	XmltvFile          string `json:"x-xmltv-file"`
 	XPpvExtra          string `json:"x-ppv-extra"`
-	XBackupChannel1    string `json:"x-backup-channel-1,required"`
-	XBackupChannel2    string `json:"x-backup-channel-2,required"`
-	XBackupChannel3    string `json:"x-backup-channel-3,required"`
-	XHideChannel       bool   `json:"x-hide-channel,required"`
-	XName              string `json:"x-name,required"`
-	XUpdateChannelIcon bool   `json:"x-update-channel-icon,required"`
-	XUpdateChannelName bool   `json:"x-update-channel-name,required"`
-	XDescription       string `json:"x-description,required"`
+	XBackupChannel1    string `json:"x-backup-channel-1"`
+	XBackupChannel2    string `json:"x-backup-channel-2"`
+	XBackupChannel3    string `json:"x-backup-channel-3"`
+	XHideChannel       bool   `json:"x-hide-channel"`
+	XName              string `json:"x-name"`
+	XUpdateChannelIcon bool   `json:"x-update-channel-icon"`
+	XUpdateChannelName bool   `json:"x-update-channel-name"`
+	XDescription       string `json:"x-description"`
 	Live               bool   `json:"live"`
 	IsBackupChannel    bool   `json:"is_backup_channel"`
 	BackupChannel1URL  string `json:"backup_channel_1_url"`
@@ -323,6 +323,9 @@ type SettingsStruct struct {
 	XepgReplaceChannelTitle   bool                  `json:"xepg.replace.channel.title"`
 	ThreadfinAutoUpdate       bool                  `json:"ThreadfinAutoUpdate"`
 	StoreBufferInRAM          bool                  `json:"storeBufferInRAM"`
+	ForceHttps                bool                  `json:"forceHttps"`
+	HttpsPort                 int                   `json:"httpsPort"`
+	EnableNonAscii            bool                  `json:"enableNonAscii"`
 }
 
 // LanguageUI : Sprache für das WebUI

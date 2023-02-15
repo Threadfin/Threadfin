@@ -24,34 +24,46 @@ type Cache struct {
 }
 
 type imageFunc struct {
-	GetURL  func(string) string
+	GetURL  func(string, bool, int) string
 	Caching func()
 	Remove  func()
 }
 
 // New : New cahce
-func New(path, chacheURL string, caching bool) (c *Cache, err error) {
+func New(path, cacheURL string, caching bool) (c *Cache, err error) {
 
 	c = &Cache{}
 
 	c.images = make(map[string]string)
 	c.path = path
-	c.cacheURL = chacheURL
+	c.cacheURL = cacheURL
 	c.caching = caching
 	c.Queue = []string{}
 	c.Cache = []string{}
 
 	var queue []string
 
-	c.Image.GetURL = func(src string) (cacheURL string) {
+	c.Image.GetURL = func(src string, force_https bool, https_port int) (cacheURL string) {
 
 		c.Lock()
 		defer c.Unlock()
 
 		src = strings.Trim(src, "\r\n")
 
-		if !c.caching {
+		if !c.caching && !force_https {
 			return src
+		}
+
+		if force_https {
+			u, err := url.Parse(src)
+			if err == nil {
+				u.Scheme = "https"
+				host_split := strings.Split(u.Host, ":")
+				if len(host_split) > 0 {
+					u.Host = host_split[0]
+				}
+				src = fmt.Sprintf("https://%s:%d%s", u.Host, https_port, u.Path)
+			}
 		}
 
 		u, err := url.Parse(src)
