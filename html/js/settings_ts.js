@@ -260,6 +260,28 @@ class SettingsCategory {
                 setting.appendChild(tdLeft);
                 setting.appendChild(tdRight);
                 break;
+            case "epgCategories":
+                var tdLeft = document.createElement("TD");
+                tdLeft.innerHTML = "{{.settings.epgCategories.title}}" + ":";
+                var tdRight = document.createElement("TD");
+                var input = content.createInput("text", "epgCategories", data.toString());
+                input.setAttribute("placeholder", "{{.settings.epgCategories.placeholder}}");
+                input.setAttribute("onchange", "javascript: this.className = 'changed'");
+                tdRight.appendChild(input);
+                setting.appendChild(tdLeft);
+                setting.appendChild(tdRight);
+                break;
+            case "epgCategoriesColors":
+                var tdLeft = document.createElement("TD");
+                tdLeft.innerHTML = "{{.settings.epgCategoriesColors.title}}" + ":";
+                var tdRight = document.createElement("TD");
+                var input = content.createInput("text", "epgCategoriesColors", data.toString());
+                input.setAttribute("placeholder", "{{.settings.epgCategoriesColors.placeholder}}");
+                input.setAttribute("onchange", "javascript: this.className = 'changed'");
+                tdRight.appendChild(input);
+                setting.appendChild(tdLeft);
+                setting.appendChild(tdRight);
+                break;
             case "ThreadfinAutoUpdate":
                 var tdLeft = document.createElement("TD");
                 tdLeft.innerHTML = "{{.settings.ThreadfinAutoUpdate.title}}" + ":";
@@ -411,6 +433,12 @@ class SettingsCategory {
                 break;
             case "enableNonAscii":
                 text = "{{.settings.enableNonAscii.description}}";
+                break;
+            case "epgCategories":
+                text = "{{.settings.epgCategories.description}}";
+                break;
+            case "epgCategoriesColors":
+                text = "{{.settings.epgCategoriesColors.description}}";
                 break;
             case "buffer.timeout":
                 text = "{{.settings.bufferTimeout.description}}";

@@ -58,7 +58,6 @@ func BinaryUpdate() (err error) {
 		// Get latest prerelease tag name
 		if System.Branch == "Beta" {
 			for _, release := range git {
-				log.Println("RELEASE: ", release)
 				if release.Prerelease {
 					latest = release.TagName
 					updater.Response.Version = release.TagName
@@ -78,7 +77,7 @@ func BinaryUpdate() (err error) {
 			}
 		}
 
-		var File = fmt.Sprintf("%s/releases/download/%s/%s_%s_%s?raw=true", System.Update.Git, latest, "Threadfin", System.OS, System.ARCH)
+		var File = fmt.Sprintf("%s/releases/%s/download/%s_%s_%s?raw=true", System.Update.Git, latest, "Threadfin", System.OS, System.ARCH)
 
 		updater.Response.Status = true
 		updater.Response.UpdateBIN = File

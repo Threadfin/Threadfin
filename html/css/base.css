@@ -386,11 +386,8 @@ input[type=button].center {
   color: magenta;
 }
 
-.news,
-.movie,
-.series,
-.sports,
-.kids {
+
+.category {
   border-left: solid 2px
 }
 

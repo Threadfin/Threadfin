@@ -358,9 +358,18 @@ class Content {
                         tr.appendChild(td);
                         // Kanalname
                         var cell = new Cell();
+                        var cats = data[key]["x-category"].split(":");
                         cell.child = true;
                         cell.childType = "P";
-                        cell.className = data[key]["x-category"];
+                        cell.className = "category";
+                        var catColorSettings = SERVER["settings"]["epgCategoriesColors"];
+                        var colors_split = catColorSettings.split("|");
+                        for (var i = 0; i < colors_split.length; i++) {
+                            var catsColor_split = colors_split[i].split(":");
+                            if (catsColor_split[0] == cats[0]) {
+                                cell.classColor = catsColor_split[1];
+                            }
+                        }
                         cell.value = data[key]["x-name"];
                         var td = cell.createCell();
                         td.setAttribute('onclick', 'javascript: openPopUp("mapping", this)');
@@ -471,9 +480,18 @@ class Content {
                         tr.appendChild(td);
                         // Kanalname
                         var cell = new Cell();
+                        var cats = data[key]["x-category"].split(":");
                         cell.child = true;
                         cell.childType = "P";
-                        cell.className = data[key]["x-category"];
+                        cell.className = "category";
+                        var catColorSettings = SERVER["settings"]["epgCategoriesColors"];
+                        var colors_split = catColorSettings.split("|");
+                        for (var i = 0; i < colors_split.length; i++) {
+                            var catsColor_split = colors_split[i].split(":");
+                            if (catsColor_split[0] == cats[0]) {
+                                cell.classColor = catsColor_split[1];
+                            }
+                        }
                         cell.value = data[key]["x-name"];
                         var td = cell.createCell();
                         td.setAttribute('onclick', 'javascript: openPopUp("mapping", this)');
@@ -550,6 +568,9 @@ class Cell {
                     element = document.createElement(this.childType);
                     element.innerHTML = this.value;
                     element.className = this.className;
+                    if (this.classColor) {
+                        element.style.borderColor = this.classColor;
+                    }
                     break;
                 case "INPUT":
                     element = document.createElement(this.childType);
@@ -1291,8 +1312,18 @@ function openPopUp(dataType, element) {
             content.appendRow("{{.filter.startingnumber.title}}", input);
             content.description("{{.filter.startingnumber.description}}");
             var dbKey = "x-category";
-            var text = ["-", "Kids", "News", "Movie", "Series", "Sports"];
-            var values = ["", "kids", "news", "movie", "series", "sports"];
+            var text = ["-"];
+            var values = [""];
+            var epgCategories = SERVER["settings"]["epgCategories"];
+            var categories = epgCategories.split("|");
+            for (i = 0; i <= categories.length; i++) {
+                var cat = categories[i];
+                if (cat) {
+                    var cat_split = cat.split(":");
+                    text.push(cat_split[0]);
+                    values.push(cat_split[1]);
+                }
+            }
             var select = content.createSelect(text, values, data[dbKey], dbKey);
             select.setAttribute("onchange", "javascript: this.className = 'changed'");
             content.appendRow("{{.filter.category.title}}", select);
@@ -1479,8 +1510,18 @@ function openPopUp(dataType, element) {
             content.appendRow("{{.mapping.updateChannelLogo.title}}", input);
             // Erweitern der EPG Kategorie
             var dbKey = "x-category";
-            var text = ["-", "Kids", "News", "Movie", "Series", "Sports"];
-            var values = ["", "kids", "news", "movie", "series", "sports"];
+            var text = ["-"];
+            var values = [""];
+            var epgCategories = SERVER["settings"]["epgCategories"];
+            var categories = epgCategories.split("|");
+            for (i = 0; i <= categories.length; i++) {
+                var cat = categories[i];
+                if (cat) {
+                    var cat_split = cat.split(":");
+                    text.push(cat_split[0]);
+                    values.push(cat_split[1]);
+                }
+            }
             var select = content.createSelect(text, values, data[dbKey], dbKey);
             select.setAttribute("onchange", "javascript: this.className = 'changed'");
             content.appendRow("{{.mapping.epgCategory.title}}", select);
@@ -1944,6 +1985,7 @@ function donePopupData(dataType, idsStr) {
                     input[name] = value;
                     break;
             }
+            console.log("VAL: " + value);
             switch (name) {
                 case "tvg-logo":
                     //(document.getElementById(id).childNodes[2].firstChild as HTMLElement).setAttribute("src", value)
@@ -1955,7 +1997,16 @@ function donePopupData(dataType, idsStr) {
                     document.getElementById(id).childNodes[3].firstChild.innerHTML = value;
                     break;
                 case "x-category":
-                    document.getElementById(id).childNodes[3].firstChild.className = value;
+                    var color = "white";
+                    var catColorSettings = SERVER["settings"]["epgCategoriesColors"];
+                    var colors_split = catColorSettings.split("|");
+                    for (var ii = 0; ii < colors_split.length; ii++) {
+                        var catsColor_split = colors_split[ii].split(":");
+                        if (catsColor_split[0] == value) {
+                            color = catsColor_split[1];
+                        }
+                    }
+                    document.getElementById(id).childNodes[3].firstChild.style.borderColor = color;
                     break;
                 case "x-group-title":
                     document.getElementById(id).childNodes[5].firstChild.innerHTML = value;
