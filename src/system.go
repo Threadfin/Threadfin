@@ -152,6 +152,8 @@ func loadSettings() (settings SettingsStruct, err error) {
 	defaults["forceHttps"] = false
 	defaults["httpsPort"] = 443
 	defaults["enableNonAscii"] = false
+	defaults["epgCategories"] = "Kids:kids|News:news|Movie:movie|Series:series|Sports:sports"
+	defaults["epgCategoriesColors"] = "kids:mediumpurple|news:tomato|movie:royalblue|series:gold|sports:yellowgreen"
 	defaults["tuner"] = 1
 	defaults["update"] = []string{"0000"}
 	defaults["user.agent"] = System.Name

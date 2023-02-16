@@ -445,9 +445,18 @@ class Content {
 
             // Kanalname
             var cell: Cell = new Cell()
+            var cats = data[key]["x-category"].split(":")
             cell.child = true
             cell.childType = "P"
-            cell.className = data[key]["x-category"]
+            cell.className = "category"
+            var catColorSettings = SERVER["settings"]["epgCategoriesColors"]
+            var colors_split = catColorSettings.split("|")
+            for (var i=0; i < colors_split.length; i++) {
+              var catsColor_split = colors_split[i].split(":")
+              if (catsColor_split[0] == cats[0]) {
+                cell.classColor = catsColor_split[1]
+              }
+            }
             cell.value = data[key]["x-name"]
             var td = cell.createCell()
             td.setAttribute('onclick', 'javascript: openPopUp("mapping", this)')
@@ -583,9 +592,18 @@ class Content {
 
             // Kanalname
             var cell: Cell = new Cell()
+            var cats = data[key]["x-category"].split(":")
             cell.child = true
             cell.childType = "P"
-            cell.className = data[key]["x-category"]
+            cell.className = "category"
+            var catColorSettings = SERVER["settings"]["epgCategoriesColors"]
+            var colors_split = catColorSettings.split("|")
+            for (var i=0; i < colors_split.length; i++) {
+              var catsColor_split = colors_split[i].split(":")
+              if (catsColor_split[0] == cats[0]) {
+                cell.classColor = catsColor_split[1]
+              }
+            }
             cell.value = data[key]["x-name"]
             var td = cell.createCell()
             td.setAttribute('onclick', 'javascript: openPopUp("mapping", this)')
@@ -677,6 +695,7 @@ class Cell {
   active: Boolean
   value: any
   className: string
+  classColor: string
   tdClassName: string
   imageURL: string
   onclick: boolean
@@ -694,6 +713,9 @@ class Cell {
           element = document.createElement(this.childType);
           element.innerHTML = this.value
           element.className = this.className
+          if (this.classColor) {
+            element.style.borderColor = this.classColor
+          }
           break
 
         case "INPUT":
@@ -1607,8 +1629,21 @@ function openPopUp(dataType, element) {
       content.description("{{.filter.startingnumber.description}}")
 
       var dbKey: string = "x-category"
-      var text: string[] = ["-", "Kids", "News", "Movie", "Series", "Sports"]
-      var values: string[] = ["", "kids", "news", "movie", "series", "sports"]
+
+      var text: string[] = ["-"]
+      var values: string[] = [""]
+      var epgCategories = SERVER["settings"]["epgCategories"]
+      var categories = epgCategories.split("|")
+      
+      for (i=0; i <= categories.length; i++) {
+        var cat: string = categories[i]
+        if (cat) {
+          var cat_split: string[] = cat.split(":")
+          text.push(cat_split[0])
+          values.push(cat_split[1])
+        }
+      }
+
       var select = content.createSelect(text, values, data[dbKey], dbKey)
       select.setAttribute("onchange", "javascript: this.className = 'changed'")
       content.appendRow("{{.filter.category.title}}", select)
@@ -1831,8 +1866,20 @@ function openPopUp(dataType, element) {
 
       // Erweitern der EPG Kategorie
       var dbKey: string = "x-category"
-      var text: string[] = ["-", "Kids", "News", "Movie", "Series", "Sports"]
-      var values: string[] = ["", "kids", "news", "movie", "series", "sports"]
+      var text: string[] = ["-"]
+      var values: string[] = [""]
+      var epgCategories = SERVER["settings"]["epgCategories"]
+      var categories = epgCategories.split("|")
+      
+      for (i=0; i <= categories.length; i++) {
+        var cat: string = categories[i]
+        if (cat) {
+          var cat_split: string[] = cat.split(":")
+          text.push(cat_split[0])
+          values.push(cat_split[1])
+        }
+      }
+
       var select = content.createSelect(text, values, data[dbKey], dbKey)
       select.setAttribute("onchange", "javascript: this.className = 'changed'")
       content.appendRow("{{.mapping.epgCategory.title}}", select)
@@ -2463,7 +2510,16 @@ function donePopupData(dataType: string, idsStr: string) {
           break
 
         case "x-category":
-          (document.getElementById(id).childNodes[3].firstChild as HTMLElement).className = value
+          var color = "white"
+          var catColorSettings = SERVER["settings"]["epgCategoriesColors"]
+            var colors_split = catColorSettings.split("|")
+            for (var ii=0; ii < colors_split.length; ii++) {
+              var catsColor_split = colors_split[ii].split(":")
+              if (catsColor_split[0] == value) {
+                color = catsColor_split[1]
+              }
+            }
+          (document.getElementById(id).childNodes[3].firstChild as HTMLElement).style.borderColor = color
           break
 
         case "x-group-title":

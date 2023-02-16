@@ -49,6 +49,8 @@ type RequestStruct struct {
 		ForceHttps               *bool     `json:"forceHttps,omitempty"`
 		HttpsPort                *int      `json:"httpsPort,omitempty"`
 		EnableNonAscii           *bool     `json:"enableNonAscii,omitempty"`
+		EpgCategories            *string   `json:"epgCategories,omitempty"`
+		EpgCategoriesColors      *string   `json:"epgCategoriesColors,omitempty"`
 	} `json:"settings,omitempty"`
 
 	// Upload Logo

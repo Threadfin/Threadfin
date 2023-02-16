@@ -326,6 +326,8 @@ type SettingsStruct struct {
 	ForceHttps                bool                  `json:"forceHttps"`
 	HttpsPort                 int                   `json:"httpsPort"`
 	EnableNonAscii            bool                  `json:"enableNonAscii"`
+	EpgCategories             string                `json:"epgCategories"`
+	EpgCategoriesColors       string                `json:"epgCategoriesColors"`
 }
 
 // LanguageUI : Sprache für das WebUI

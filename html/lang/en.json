@@ -434,6 +434,16 @@
       "title": "Enable Non-ASCII",
       "description": "If checked, will allow special non ascii characters in the M3U and EPG. Default is disabled"
     },
+    "epgCategories":
+    {
+      "title": "EPG Categories",
+      "description": "Customize the EPG Categories. The format is key:value|key:value, so News:news|Sports:sports|Movies:movies"
+    },
+    "epgCategoriesColors":
+    {
+      "title": "EPG Categories Colors",
+      "description": "Customize the EPG Category colors. The format is value:color|value:color, so news:tomato|sports:yellowgreen|movies:royalblue"
+    },
     "bufferTimeout": {
       "title": "Timeout for new client connections",
       "description": "The Threadfin buffer waits until new client connections are established. Helpful for fast channel switching. Value in milliseconds.",
