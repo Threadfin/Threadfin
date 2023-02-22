@@ -3,6 +3,7 @@ package src
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"path"
 	"regexp"
 	"sort"
@@ -223,6 +224,18 @@ func buildM3U(groups []string) (m3u string, err error) {
 	for _, channelNumber := range channelNumbers {
 
 		var channel = m3uChannels[channelNumber]
+
+		if Settings.ForceHttps {
+			u, err := url.Parse(channel.URL)
+			if err == nil {
+				u.Scheme = "https"
+				host_split := strings.Split(u.Host, ":")
+				if len(host_split) > 0 {
+					u.Host = host_split[0]
+				}
+				channel.URL = fmt.Sprintf("https://%s:%d%s", u.Host, Settings.HttpsPort, u.Path)
+			}
+		}
 
 		var parameter = fmt.Sprintf(`#EXTINF:0 channelID="%s" tvg-chno="%s" tvg-name="%s" tvg-id="%s" tvg-logo="%s" group-title="%s",%s`+"\n", channel.XEPG, channel.XChannelID, channel.XName, channel.XChannelID, imgc.Image.GetURL(channel.TvgLogo, Settings.ForceHttps, Settings.HttpsPort), channel.XGroupTitle, channel.XName)
 		var stream, err = createStreamingURL("M3U", channel.FileM3UID, channel.XChannelID, channel.XName, channel.URL, channel.BackupChannel1URL, channel.BackupChannel2URL, channel.BackupChannel3URL)

@@ -151,6 +151,7 @@ func loadSettings() (settings SettingsStruct, err error) {
 	defaults["storeBufferInRAM"] = true
 	defaults["forceHttps"] = false
 	defaults["httpsPort"] = 443
+	defaults["httpsThreadfinDomain"] = ""
 	defaults["enableNonAscii"] = false
 	defaults["epgCategories"] = "Kids:kids|News:news|Movie:movie|Series:series|Sports:sports"
 	defaults["epgCategoriesColors"] = "kids:mediumpurple|news:tomato|movie:royalblue|series:gold|sports:yellowgreen"
@@ -340,8 +341,14 @@ func createStreamingURL(streamingType, playlistID, channelNumber, channelName, u
 
 	}
 
-	streamingURL = fmt.Sprintf("%s://%s/stream/%s", serverProtocol, System.Domain, streamInfo.URLid)
+	if Settings.ForceHttps {
+		if Settings.HttpsThreadfinDomain != "" {
+			serverProtocol = "https"
+			System.Domain = Settings.HttpsThreadfinDomain
+		}
+	}
 
+	streamingURL = fmt.Sprintf("%s://%s/stream/%s", serverProtocol, System.Domain, streamInfo.URLid)
 	return
 }
 

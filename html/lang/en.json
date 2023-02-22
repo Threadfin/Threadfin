@@ -429,6 +429,11 @@
       "title": "HTTPS Port",
       "description": "Port to use for forcing https. Default is 443"
     },
+    "httpsThreadfinDomain":
+    {
+      "title": "HTTPS Threadfin Domain",
+      "description": "Rewrite the threadfin ip address in the m3u to use a domain for HTTPS mode. Do NOT include https (ex: somedomain.com)"
+    },
     "enableNonAscii":
     {
       "title": "Enable Non-ASCII",

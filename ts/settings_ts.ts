@@ -314,6 +314,20 @@ class SettingsCategory {
           setting.appendChild(tdRight)
           break
 
+      case "httpsThreadfinDomain":
+          var tdLeft = document.createElement("TD")
+          tdLeft.innerHTML = "{{.settings.httpsThreadfinDomain.title}}" + ":"
+  
+          var tdRight = document.createElement("TD")
+          var input = content.createInput("text", "httpsThreadfinDomain", data.toString())
+          input.setAttribute("placeholder", "{{.settings.httpsThreadfinDomain.placeholder}}")
+          input.setAttribute("onchange", "javascript: this.className = 'changed'")
+          tdRight.appendChild(input)
+          
+          setting.appendChild(tdLeft)
+          setting.appendChild(tdRight)
+          break
+
       case "enableNonAscii":
           var tdLeft = document.createElement("TD")
           tdLeft.innerHTML = "{{.settings.enableNonAscii.title}}" + ":"
@@ -555,6 +569,10 @@ class SettingsCategory {
       case "httpsPort":
         text = "{{.settings.httpsPort.description}}"
         break
+
+      case "httpsThreadfinDomain":
+          text = "{{.settings.httpsThreadfinDomain.description}}"
+          break
 
       case "enableNonAscii":
         text = "{{.settings.enableNonAscii.description}}"
