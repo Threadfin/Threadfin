@@ -57,12 +57,11 @@ func New(path, cacheURL string, caching bool) (c *Cache, err error) {
 		if force_https {
 			u, err := url.Parse(src)
 			if err == nil {
-				u.Scheme = "https"
-				host_split := strings.Split(u.Host, ":")
-				if len(host_split) > 0 {
-					u.Host = host_split[0]
-				}
 				src = fmt.Sprintf("https://%s:%d%s", https_domain, https_port, u.Path)
+			}
+
+			if !c.caching {
+				return src
 			}
 		}
 
@@ -87,6 +86,13 @@ func New(path, cacheURL string, caching bool) (c *Cache, err error) {
 		} else {
 			c.images[filename] = c.cacheURL + filename
 			src = c.cacheURL + filename
+		}
+
+		if force_https {
+			u, err := url.Parse(src)
+			if err == nil {
+				src = fmt.Sprintf("https://%s:%d%s", https_domain, https_port, u.Path)
+			}
 		}
 
 		return src
