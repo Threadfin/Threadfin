@@ -48,6 +48,8 @@ type RequestStruct struct {
 		StoreBufferInRAM         *bool     `json:"storeBufferInRAM,omitempty"`
 		ForceHttps               *bool     `json:"forceHttps,omitempty"`
 		HttpsPort                *int      `json:"httpsPort,omitempty"`
+		HttpsThreadfinDomain     *string   `json:"httpsThreadfinDomain,omitempty"`
+		HttpThreadfinDomain      *string   `json:"httpThreadfinDomain,omitempty"`
 		EnableNonAscii           *bool     `json:"enableNonAscii,omitempty"`
 		EpgCategories            *string   `json:"epgCategories,omitempty"`
 		EpgCategoriesColors      *string   `json:"epgCategoriesColors,omitempty"`

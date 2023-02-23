@@ -348,6 +348,10 @@ input[type=button].center {
   background-color: #00E6FF;
 }
 
+table {
+  width: 100%
+}
+
 .menu-notActive {}
 
 #branch {

@@ -1985,7 +1985,6 @@ function donePopupData(dataType, idsStr) {
                     input[name] = value;
                     break;
             }
-            console.log("VAL: " + value);
             switch (name) {
                 case "tvg-logo":
                     //(document.getElementById(id).childNodes[2].firstChild as HTMLElement).setAttribute("src", value)

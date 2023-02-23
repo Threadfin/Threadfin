@@ -249,6 +249,28 @@ class SettingsCategory {
                 setting.appendChild(tdLeft);
                 setting.appendChild(tdRight);
                 break;
+            case "httpsThreadfinDomain":
+                var tdLeft = document.createElement("TD");
+                tdLeft.innerHTML = "{{.settings.httpsThreadfinDomain.title}}" + ":";
+                var tdRight = document.createElement("TD");
+                var input = content.createInput("text", "httpsThreadfinDomain", data.toString());
+                input.setAttribute("placeholder", "{{.settings.httpsThreadfinDomain.placeholder}}");
+                input.setAttribute("onchange", "javascript: this.className = 'changed'");
+                tdRight.appendChild(input);
+                setting.appendChild(tdLeft);
+                setting.appendChild(tdRight);
+                break;
+            case "httpThreadfinDomain":
+                var tdLeft = document.createElement("TD");
+                tdLeft.innerHTML = "{{.settings.httpThreadfinDomain.title}}" + ":";
+                var tdRight = document.createElement("TD");
+                var input = content.createInput("text", "httpThreadfinDomain", data.toString());
+                input.setAttribute("placeholder", "{{.settings.httpThreadfinDomain.placeholder}}");
+                input.setAttribute("onchange", "javascript: this.className = 'changed'");
+                tdRight.appendChild(input);
+                setting.appendChild(tdLeft);
+                setting.appendChild(tdRight);
+                break;
             case "enableNonAscii":
                 var tdLeft = document.createElement("TD");
                 tdLeft.innerHTML = "{{.settings.enableNonAscii.title}}" + ":";
@@ -430,6 +452,12 @@ class SettingsCategory {
                 break;
             case "httpsPort":
                 text = "{{.settings.httpsPort.description}}";
+                break;
+            case "httpsThreadfinDomain":
+                text = "{{.settings.httpsThreadfinDomain.description}}";
+                break;
+            case "httpThreadfinDomain":
+                text = "{{.settings.httpThreadfinDomain.description}}";
                 break;
             case "enableNonAscii":
                 text = "{{.settings.enableNonAscii.description}}";
