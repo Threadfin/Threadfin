@@ -54,24 +54,6 @@ func New(path, cacheURL string, caching bool) (c *Cache, err error) {
 			return src
 		}
 
-		// if c.caching && http_domain != "" {
-		// 	u, err := url.Parse(src)
-		// 	if err == nil {
-		// 		src = fmt.Sprintf("http://%s%s", http_domain, u.Path)
-		// 	}
-		// }
-
-		// if c.caching && force_https {
-		// 	u, err := url.Parse(src)
-		// 	if err == nil {
-		// 		src = fmt.Sprintf("https://%s:%d%s", https_domain, https_port, u.Path)
-		// 	}
-
-		// 	if !c.caching {
-		// 		return src
-		// 	}
-		// }
-
 		u, err := url.Parse(src)
 
 		if err != nil || len(filepath.Ext(u.Path)) == 0 {
@@ -85,12 +67,12 @@ func New(path, cacheURL string, caching bool) (c *Cache, err error) {
 			if c.caching && force_https {
 				u, err := url.Parse(cacheURL)
 				if err == nil {
-					src = fmt.Sprintf("https://%s:%d%s", https_domain, https_port, u.Path)
+					cacheURL = fmt.Sprintf("https://%s:%d%s", https_domain, https_port, u.Path)
 				}
 			} else if c.caching && http_domain != "" {
 				u, err := url.Parse(cacheURL)
 				if err == nil {
-					src = fmt.Sprintf("http://%s%s", http_domain, u.Path)
+					cacheURL = fmt.Sprintf("http://%s%s", http_domain, u.Path)
 				}
 			}
 			return cacheURL
