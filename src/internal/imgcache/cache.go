@@ -3,7 +3,6 @@ package imgcache
 import (
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -65,7 +64,6 @@ func New(path, cacheURL string, caching bool) (c *Cache, err error) {
 		var filename = fmt.Sprintf("%s%s", strToMD5(src_filtered[0]), filepath.Ext(u.Path))
 
 		if cacheURL, ok := c.images[filename]; ok {
-			log.Println("CACHE URL BEFORE: ", cacheURL)
 			if c.caching && force_https {
 				u, err := url.Parse(cacheURL)
 				if err == nil {
@@ -77,7 +75,6 @@ func New(path, cacheURL string, caching bool) (c *Cache, err error) {
 					cacheURL = fmt.Sprintf("http://%s%s", http_domain, u.Path)
 				}
 			}
-			log.Println("CACHE URL AFTER: ", cacheURL)
 			return cacheURL
 		}
 
