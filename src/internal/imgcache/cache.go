@@ -50,27 +50,27 @@ func New(path, cacheURL string, caching bool) (c *Cache, err error) {
 
 		src = strings.Trim(src, "\r\n")
 
-		if http_domain != "" {
-			u, err := url.Parse(src)
-			if err == nil {
-				src = fmt.Sprintf("http://%s%s", http_domain, u.Path)
-			}
-		}
-
-		if !c.caching && !force_https {
+		if !c.caching {
 			return src
 		}
 
-		if force_https {
-			u, err := url.Parse(src)
-			if err == nil {
-				src = fmt.Sprintf("https://%s:%d%s", https_domain, https_port, u.Path)
-			}
+		// if c.caching && http_domain != "" {
+		// 	u, err := url.Parse(src)
+		// 	if err == nil {
+		// 		src = fmt.Sprintf("http://%s%s", http_domain, u.Path)
+		// 	}
+		// }
 
-			if !c.caching {
-				return src
-			}
-		}
+		// if c.caching && force_https {
+		// 	u, err := url.Parse(src)
+		// 	if err == nil {
+		// 		src = fmt.Sprintf("https://%s:%d%s", https_domain, https_port, u.Path)
+		// 	}
+
+		// 	if !c.caching {
+		// 		return src
+		// 	}
+		// }
 
 		u, err := url.Parse(src)
 
@@ -95,10 +95,15 @@ func New(path, cacheURL string, caching bool) (c *Cache, err error) {
 			src = c.cacheURL + filename
 		}
 
-		if force_https {
+		if c.caching && force_https {
 			u, err := url.Parse(src)
 			if err == nil {
 				src = fmt.Sprintf("https://%s:%d%s", https_domain, https_port, u.Path)
+			}
+		} else if c.caching && http_domain != "" {
+			u, err := url.Parse(src)
+			if err == nil {
+				src = fmt.Sprintf("http://%s%s", http_domain, u.Path)
 			}
 		}
 
