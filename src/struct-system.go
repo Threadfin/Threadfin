@@ -326,6 +326,7 @@ type SettingsStruct struct {
 	ForceHttps                bool                  `json:"forceHttps"`
 	HttpsPort                 int                   `json:"httpsPort"`
 	HttpsThreadfinDomain      string                `json:"httpsThreadfinDomain"`
+	HttpThreadfinDomain       string                `json:"httpThreadfinDomain"`
 	EnableNonAscii            bool                  `json:"enableNonAscii"`
 	EpgCategories             string                `json:"epgCategories"`
 	EpgCategoriesColors       string                `json:"epgCategoriesColors"`

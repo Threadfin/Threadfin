@@ -152,6 +152,7 @@ func loadSettings() (settings SettingsStruct, err error) {
 	defaults["forceHttps"] = false
 	defaults["httpsPort"] = 443
 	defaults["httpsThreadfinDomain"] = ""
+	defaults["httpThreadfinDomain"] = ""
 	defaults["enableNonAscii"] = false
 	defaults["epgCategories"] = "Kids:kids|News:news|Movie:movie|Series:series|Sports:sports"
 	defaults["epgCategoriesColors"] = "kids:mediumpurple|news:tomato|movie:royalblue|series:gold|sports:yellowgreen"

@@ -434,6 +434,11 @@
       "title": "HTTPS Threadfin Domain",
       "description": "Rewrite the threadfin ip address in the m3u to use a domain for HTTPS mode. Do NOT include https (ex: somedomain.com)"
     },
+    "httpThreadfinDomain":
+    {
+      "title": "Threadfin Domain",
+      "description": "Rewrite the threadfin ip address in the m3u to use a domain for HTTP mode. Do NOT include http (ex: somedomain.com)"
+    },
     "enableNonAscii":
     {
       "title": "Enable Non-ASCII",
