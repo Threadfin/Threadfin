@@ -422,22 +422,22 @@
     "forceHttps":
     {
       "title": "Force HTTPS",
-      "description": "If checked, will rewrite M3U and EPG urls to include https protocol as well as https port (default is 443)"
+      "description": "With image caching enabled, if checked, will rewrite M3U and EPG urls to include https protocol as well as https port (default is 443)"
     },
     "httpsPort":
     {
       "title": "HTTPS Port",
-      "description": "Port to use for forcing https. Default is 443"
+      "description": "With image caching enabled, port to use for forcing https. Default is 443"
     },
     "httpsThreadfinDomain":
     {
       "title": "HTTPS Threadfin Domain",
-      "description": "Rewrite the threadfin ip address in the m3u to use a domain for HTTPS mode. Do NOT include https (ex: somedomain.com)"
+      "description": "With image caching enabled, rewrite the threadfin ip address in the m3u to use a domain for HTTPS mode. Do NOT include https (ex: somedomain.com)"
     },
     "httpThreadfinDomain":
     {
       "title": "Threadfin Domain",
-      "description": "Rewrite the threadfin ip address in the m3u to use a domain for HTTP mode. Do NOT include http (ex: somedomain.com)"
+      "description": "With image caching enabled, rewrite the threadfin ip address in the m3u to use a domain for HTTP mode. Do NOT include http (ex: somedomain.com)"
     },
     "enableNonAscii":
     {
