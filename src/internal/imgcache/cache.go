@@ -82,6 +82,17 @@ func New(path, cacheURL string, caching bool) (c *Cache, err error) {
 		var filename = fmt.Sprintf("%s%s", strToMD5(src_filtered[0]), filepath.Ext(u.Path))
 
 		if cacheURL, ok := c.images[filename]; ok {
+			if c.caching && force_https {
+				u, err := url.Parse(cacheURL)
+				if err == nil {
+					src = fmt.Sprintf("https://%s:%d%s", https_domain, https_port, u.Path)
+				}
+			} else if c.caching && http_domain != "" {
+				u, err := url.Parse(cacheURL)
+				if err == nil {
+					src = fmt.Sprintf("http://%s%s", http_domain, u.Path)
+				}
+			}
 			return cacheURL
 		}
 
@@ -93,18 +104,6 @@ func New(path, cacheURL string, caching bool) (c *Cache, err error) {
 		} else {
 			c.images[filename] = c.cacheURL + filename
 			src = c.cacheURL + filename
-		}
-
-		if c.caching && force_https {
-			u, err := url.Parse(src)
-			if err == nil {
-				src = fmt.Sprintf("https://%s:%d%s", https_domain, https_port, u.Path)
-			}
-		} else if c.caching && http_domain != "" {
-			u, err := url.Parse(src)
-			if err == nil {
-				src = fmt.Sprintf("http://%s%s", http_domain, u.Path)
-			}
 		}
 
 		return src
