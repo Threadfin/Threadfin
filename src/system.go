@@ -110,7 +110,7 @@ func loadSettings() (settings SettingsStruct, err error) {
 
 	settingsMap, err := loadJSONFileToMap(System.File.Settings)
 	if err != nil {
-		return SettingsStruct{}, err
+		return
 	}
 
 	// Deafult Werte setzten
