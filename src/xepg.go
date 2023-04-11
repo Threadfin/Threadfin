@@ -939,6 +939,11 @@ func createLiveProgram(xepgChannel XEPGChannelStruct, channelId string) *Program
 		t := &Title{Lang: "en", Value: title_parsed}
 		title = append(title, t)
 		program.Title = title
+
+		desc := []*Desc{}
+		d := &Desc{Lang: "en", Value: title_parsed}
+		desc = append(desc, d)
+		program.Desc = desc
 	}
 	return program
 }
