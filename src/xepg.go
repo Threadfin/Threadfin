@@ -932,14 +932,12 @@ func createLiveProgram(xepgChannel XEPGChannelStruct, channelId string) *Program
 	} else {
 		name = xepgChannel.XName
 	}
+
 	if Settings.XepgReplaceChannelTitle && xepgChannel.XMapping == "PPV" {
 		title := []*Title{}
-		// Strip out channel name
-
 		title_parsed := fmt.Sprintf("%s %s", name, xepgChannel.XPpvExtra)
-		t := &Title{Value: strings.TrimSpace(title_parsed)}
+		t := &Title{Lang: "en", Value: title_parsed}
 		title = append(title, t)
-
 		program.Title = title
 	}
 	return program

@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"log"
 	"net"
 	"os"
 	"os/exec"
@@ -282,7 +281,6 @@ func saveMapToJSONFile(file string, tmpMap interface{}) error {
 }
 
 func loadJSONFileToMap(file string) (tmpMap map[string]interface{}, err error) {
-	log.Println("FILE: ", file)
 	f, err := os.Open(getPlatformFile(file))
 	defer f.Close()
 

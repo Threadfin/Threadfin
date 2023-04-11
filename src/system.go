@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"reflect"
 	"strings"
@@ -172,7 +171,6 @@ func loadSettings() (settings SettingsStruct, err error) {
 			settingsMap[key] = value
 		}
 	}
-	log.Println("SETTINGS MAP: ", settingsMap)
 	err = json.Unmarshal([]byte(mapToJSON(settingsMap)), &settings)
 	if err != nil {
 		return SettingsStruct{}, err
