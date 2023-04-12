@@ -290,8 +290,8 @@ func createXEPGMapping() {
 
 		var dummyChannel = make(map[string]string)
 		if i == "PPV" {
-			dummyChannel["display-name"] = i
-			dummyChannel["id"] = i
+			dummyChannel["display-name"] = "PPV Event"
+			dummyChannel["id"] = "PPV"
 		} else {
 			dummyChannel["display-name"] = i + " Minutes"
 			dummyChannel["id"] = i + "_Minutes"

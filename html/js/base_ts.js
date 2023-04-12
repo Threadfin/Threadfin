@@ -125,6 +125,9 @@ function getObjKeys(obj) {
     }
     return keys;
 }
+function getOwnObjProps(object) {
+    return object ? Object.getOwnPropertyNames(object) : [];
+}
 function getAllSelectedChannels() {
     var channels = new Array();
     if (BULK_EDIT == false) {
