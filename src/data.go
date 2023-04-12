@@ -67,6 +67,7 @@ func updateServerSettings(request RequestStruct) (settings SettingsStruct, err e
 				cacheImages = true
 
 			case "xepg.replace.missing.images":
+			case "xepg.replace.channel.title":
 				createXEPGFiles = true
 
 			case "backup.path":

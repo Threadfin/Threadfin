@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path"
-	"regexp"
 	"runtime"
 	"sort"
 	"strconv"
@@ -291,8 +290,8 @@ func createXEPGMapping() {
 
 		var dummyChannel = make(map[string]string)
 		if i == "PPV" {
-			dummyChannel["display-name"] = i
-			dummyChannel["id"] = i
+			dummyChannel["display-name"] = "PPV Event"
+			dummyChannel["id"] = "PPV"
 		} else {
 			dummyChannel["display-name"] = i + " Minutes"
 			dummyChannel["id"] = i + "_Minutes"
@@ -933,18 +932,18 @@ func createLiveProgram(xepgChannel XEPGChannelStruct, channelId string) *Program
 	} else {
 		name = xepgChannel.XName
 	}
+
 	if Settings.XepgReplaceChannelTitle && xepgChannel.XMapping == "PPV" {
 		title := []*Title{}
-		// Strip out channel name
-		var re = regexp.MustCompile(`(?m)(?i)PPV|EVENT[ ]?-?\d+:?`)
-		ppv_matches := re.FindAllString(name, -1)
-		if len(ppv_matches) > 0 {
-			title_parsed := fmt.Sprintf("%s %s", strings.Replace(name, ppv_matches[0], "", -1), xepgChannel.XPpvExtra)
-			t := &Title{Value: strings.TrimSpace(title_parsed)}
-			title = append(title, t)
+		title_parsed := fmt.Sprintf("%s %s", name, xepgChannel.XPpvExtra)
+		t := &Title{Lang: "en", Value: title_parsed}
+		title = append(title, t)
+		program.Title = title
 
-			program.Title = title
-		}
+		desc := []*Desc{}
+		d := &Desc{Lang: "en", Value: title_parsed}
+		desc = append(desc, d)
+		program.Desc = desc
 	}
 	return program
 }

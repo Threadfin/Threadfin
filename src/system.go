@@ -110,7 +110,7 @@ func loadSettings() (settings SettingsStruct, err error) {
 
 	settingsMap, err := loadJSONFileToMap(System.File.Settings)
 	if err != nil {
-		return
+		return SettingsStruct{}, err
 	}
 
 	// Deafult Werte setzten
@@ -171,10 +171,9 @@ func loadSettings() (settings SettingsStruct, err error) {
 			settingsMap[key] = value
 		}
 	}
-
 	err = json.Unmarshal([]byte(mapToJSON(settingsMap)), &settings)
 	if err != nil {
-		return
+		return SettingsStruct{}, err
 	}
 
 	// Einstellungen von den Flags übernehmen
@@ -201,6 +200,9 @@ func loadSettings() (settings SettingsStruct, err error) {
 	settings.Version = System.DBVersion
 
 	err = saveSettings(settings)
+	if err != nil {
+		return SettingsStruct{}, err
+	}
 
 	// Warung wenn FFmpeg nicht gefunden wurde
 	if len(Settings.FFmpegPath) == 0 && Settings.Buffer == "ffmpeg" {
@@ -211,7 +213,7 @@ func loadSettings() (settings SettingsStruct, err error) {
 		showWarning(2021)
 	}
 
-	return
+	return settings, nil
 }
 
 // Einstellungen speichern (Threadfin)

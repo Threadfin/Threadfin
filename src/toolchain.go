@@ -281,7 +281,6 @@ func saveMapToJSONFile(file string, tmpMap interface{}) error {
 }
 
 func loadJSONFileToMap(file string) (tmpMap map[string]interface{}, err error) {
-
 	f, err := os.Open(getPlatformFile(file))
 	defer f.Close()
 
