@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"path"
 	"runtime"
 	"sort"
@@ -314,7 +315,6 @@ func createXEPGDatabase() (err error) {
 	Data.Cache.Streams.Active = make([]string, 0, System.UnfilteredChannelLimit)
 	Data.XEPG.Channels = make(map[string]interface{}, System.UnfilteredChannelLimit)
 	Settings = SettingsStruct{}
-
 	Data.XEPG.Channels, err = loadJSONFileToMap(System.File.XEPG)
 	if err != nil {
 		ShowError(err, 1004)
@@ -393,8 +393,20 @@ func createXEPGDatabase() (err error) {
 		if err != nil {
 			return
 		}
+		// log.Println("CHANNEL: ", channel)
 		channelHash := generateHashForChannel(channel.FileM3UID, channel.GroupTitle, channel.TvgID, channel.TvgName, channel.UUIDKey, channel.UUIDValue)
 		xepgChannelsValuesMap[channelHash] = channel
+
+		if channel.Name == "FOX" {
+			log.Println("CHAN: ", channel)
+			log.Println("FileM3UID: ", channel.FileM3UID)
+			log.Println("GroupTitle: ", channel.GroupTitle)
+			log.Println("TvgID: ", channel.TvgID)
+			log.Println("TvgName: ", channel.TvgName)
+			log.Println("UUIDKey: ", channel.UUIDKey)
+			log.Println("UUIDValue: ", channel.UUIDValue)
+			log.Println("HASH: ", channelHash)
+		}
 	}
 
 	for _, dsa := range Data.Streams.Active {
@@ -426,7 +438,6 @@ func createXEPGDatabase() (err error) {
 
 			// XEPG Datenbank durchlaufen um nach dem Kanal zu suchen.  Run through the XEPG database to search for the channel (full scan)
 			for _, dxc := range xepgChannelsValuesMap {
-
 				if m3uChannel.FileM3UID == dxc.FileM3UID {
 
 					dxc.FileM3UID = m3uChannel.FileM3UID
@@ -435,7 +446,7 @@ func createXEPGDatabase() (err error) {
 					// Vergleichen des Streams anhand einer UUID in der M3U mit dem Kanal in der Databank.  Compare the stream using a UUID in the M3U with the channel in the database
 					if len(dxc.UUIDValue) > 0 && len(m3uChannel.UUIDValue) > 0 {
 
-						if dxc.UUIDValue == m3uChannel.UUIDValue && dxc.UUIDKey == m3uChannel.UUIDKey {
+						if dxc.UUIDValue == m3uChannel.UUIDValue && dxc.UUIDKey == m3uChannel.UUIDKey && dxc.TvgID == m3uChannel.TvgID {
 
 							channelExists = true
 							channelHasUUID = true
@@ -542,6 +553,10 @@ func createXEPGDatabase() (err error) {
 
 	}
 	showInfo("XEPG:" + "Save DB file")
+	// for id, xchan := range Data.XEPG.Channels {
+	// 	log.Println("CHAN ID: ", id)
+	// 	log.Println("CHANNEL: ", xchan)
+	// }
 	err = saveMapToJSONFile(System.File.XEPG, Data.XEPG.Channels)
 	if err != nil {
 		return
