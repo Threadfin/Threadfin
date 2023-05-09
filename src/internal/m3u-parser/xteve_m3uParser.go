@@ -121,26 +121,18 @@ func MakeInterfaceFromM3U(byteStream []byte) (allChannels []interface{}, err err
 
 		// Nach eindeutiger ID im Stream suchen
 		for key, value := range stream {
-
-			if !strings.Contains(strings.ToLower(key), "tvg-id") {
-
-				if strings.Contains(strings.ToLower(key), "id") {
-
-					if indexOfString(value, uuids) != -1 {
-						log.Println(fmt.Sprintf("Channel: %s - %s = %s ", stream["name"], key, value))
-						break
-					}
-
-					uuids = append(uuids, value)
-
-					stream["_uuid.key"] = key
-					stream["_uuid.value"] = value
+			if strings.Contains(strings.ToLower(key), "tvg-id") {
+				if indexOfString(value, uuids) != -1 {
+					log.Println(fmt.Sprintf("Channel: %s - %s = %s ", stream["name"], key, value))
 					break
-
 				}
 
-			}
+				uuids = append(uuids, value)
 
+				stream["_uuid.key"] = key
+				stream["_uuid.value"] = value
+				break
+			}
 		}
 
 		return
