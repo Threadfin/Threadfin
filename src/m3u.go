@@ -191,7 +191,10 @@ func buildM3U(groups []string) (m3u string, err error) {
 		var xepgChannel XEPGChannelStruct
 		err := json.Unmarshal([]byte(mapToJSON(dxc)), &xepgChannel)
 		if err == nil {
-			if xepgChannel.XActive == true && !xepgChannel.XHideChannel {
+			if xepgChannel.TvgName == "" {
+				xepgChannel.TvgName = xepgChannel.Name
+			}
+			if xepgChannel.XActive && !xepgChannel.XHideChannel {
 				if len(groups) > 0 {
 
 					if indexOfString(xepgChannel.XGroupTitle, groups) == -1 {
@@ -208,7 +211,6 @@ func buildM3U(groups []string) (m3u string, err error) {
 				}
 
 			}
-
 		}
 
 	Done:
