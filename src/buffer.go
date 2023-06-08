@@ -568,7 +568,7 @@ func connectToStreamingServer(streamID int, playlistID string) {
 		var bufferSize = Settings.BufferSize
 		var buffer = make([]byte, 1024*bufferSize*2)
 		var useBackup = false
-		var backupNumber = 0
+		var backupNumber int = 0
 
 		var defaultSegment = func() {
 
