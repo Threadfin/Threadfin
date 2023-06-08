@@ -1937,7 +1937,7 @@ function openPopUp(dataType, element) {
       xmlTvBackup1IdInput.setAttribute('name', dbKey); // Should stay x-mapping as it will be used in donePopupData to make a server request
       xmlTvBackup1IdInput.setAttribute("id", "backup-channel-1");
       xmlTvBackup1IdInput.setAttribute('onchange', `javascript: this.className = 'changed'; checkXmltvChannel('${id}', this, '${xmlFile}');`);
-      xmlTvBackup1IdDatalist.setAttribute('id', 'xmltv-id-picker-datalist');
+      xmlTvBackup1IdDatalist.setAttribute('id', 'xmltv-id-picker-datalist-backup1');
       // sortSelect(xmlTvIdDatalist); // TODO: Better sort before adding
       content.appendRow('{{.mapping.backupChannel1.title}}', xmlTvBackup1IdContainer);
 
@@ -1950,7 +1950,7 @@ function openPopUp(dataType, element) {
       xmlTvBackup2IdInput.setAttribute('name', dbKey); // Should stay x-mapping as it will be used in donePopupData to make a server request
       xmlTvBackup2IdInput.setAttribute("id", "backup-channel-2");
       xmlTvBackup2IdInput.setAttribute('onchange', `javascript: this.className = 'changed'; checkXmltvChannel('${id}', this, '${xmlFile}');`);
-      xmlTvBackup2IdDatalist.setAttribute('id', 'xmltv-id-picker-datalist');
+      xmlTvBackup2IdDatalist.setAttribute('id', 'xmltv-id-picker-datalist-backup2');
       content.appendRow("{{.mapping.backupChannel2.title}}", xmlTvBackup2IdContainer)
 
       var dbKey: string = "x-backup-channel-3"
@@ -1962,7 +1962,7 @@ function openPopUp(dataType, element) {
       xmlTvBackup3IdInput.setAttribute('name', dbKey); // Should stay x-mapping as it will be used in donePopupData to make a server request
       xmlTvBackup3IdInput.setAttribute("id", "backup-channel-3");
       xmlTvBackup3IdInput.setAttribute('onchange', `javascript: this.className = 'changed'; checkXmltvChannel('${id}', this, '${xmlFile}');`);
-      xmlTvBackup3IdDatalist.setAttribute('id', 'xmltv-id-picker-datalist');
+      xmlTvBackup3IdDatalist.setAttribute('id', 'xmltv-id-picker-datalist-backup3');
       content.appendRow("{{.mapping.backupChannel3.title}}", xmlTvBackup3IdContainer)
 
       // Interaktion
@@ -2077,7 +2077,6 @@ class XMLTVFile {
 
       programIds.forEach((programId) => {
         const program: Object = epg[programId];
-        console.log("PROG: ", program)
         if (program.hasOwnProperty('display-name')) {
             const option = document.createElement('option');
             option.setAttribute('value', programId);
@@ -2310,7 +2309,7 @@ function changeChannelLogo(epgMapId: string) {
 
   let logo: string;
 
-  if (updateLogo == true && xmlTvFile != 'xTeVe Dummy') {
+  if (updateLogo == true && xmlTvFile != 'Threadfin Dummy') {
 
     if (SERVER['xepg']['xmltvMap'][xmlTvFile].hasOwnProperty(newXmlTvId)) {
       logo = SERVER['xepg']['xmltvMap'][xmlTvFile][newXmlTvId]['icon'];
