@@ -2,8 +2,6 @@ package m3u
 
 import (
 	"errors"
-	"fmt"
-	"log"
 	"net/url"
 	"regexp"
 	"strings"
@@ -123,7 +121,6 @@ func MakeInterfaceFromM3U(byteStream []byte) (allChannels []interface{}, err err
 		for key, value := range stream {
 			if strings.Contains(strings.ToLower(key), "tvg-id") {
 				if indexOfString(value, uuids) != -1 {
-					log.Println(fmt.Sprintf("Channel: %s - %s = %s ", stream["name"], key, value))
 					break
 				}
 
