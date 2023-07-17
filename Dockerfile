@@ -39,10 +39,14 @@ ENV THREADFIN_BIN=/home/threadfin/bin
 ENV THREADFIN_CONF=/home/threadfin/conf
 ENV THREADFIN_HOME=/home/threadfin
 ENV THREADFIN_TEMP=/tmp/threadfin
+ENV THREADFIN_CACHE=/home/threadfin/cache
 ENV THREADFIN_UID=31337
+ENV THREADFIN_GID=31337
 ENV THREADFIN_USER=threadfin
 ENV THREADFIN_BRANCH=main
 ENV THREADFIN_DEBUG=0
+ENV THREADFIN_PORT=34400
+ENV THREADFIN_LOG=/var/log/threadfin.log
 
 # Add binary to PATH
 ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$THREADFIN_BIN
@@ -83,7 +87,7 @@ RUN mkdir /lib64 && ln -s /lib/libc.musl-x86_64.so.1 /lib64/ld-linux-x86-64.so.2
 VOLUME $THREADFIN_CONF
 VOLUME $THREADFIN_TEMP
 
-EXPOSE 34400
+EXPOSE $THREADFIN_PORT
 
 # Run the Threadfin executable
 ENTRYPOINT ${THREADFIN_BIN}/threadfin -port=${THREADFIN_PORT} -config=${THREADFIN_CONF} -debug=${THREADFIN_DEBUG}
