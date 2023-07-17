@@ -2136,7 +2136,7 @@ function showPreview(element) {
         table.appendChild(caption);
         var tbody = document.createElement("TBODY");
         table.appendChild(tbody);
-        obj.forEach(channel => {
+        obj.slice(0, 1000).forEach(channel => {
             var tr = document.createElement("TR");
             var tdKey = document.createElement("TD");
             var tdVal = document.createElement("TD");
