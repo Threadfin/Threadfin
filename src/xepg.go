@@ -618,7 +618,6 @@ func mapping() (err error) {
 				Data.XEPG.Channels[xepg] = xepgChannel
 
 				for file, xmltvChannels := range Data.XMLTV.Mapping {
-
 					if channel, ok := xmltvChannels.(map[string]interface{})[tvgID]; ok {
 
 						filters := []FilterStruct{}
@@ -848,7 +847,6 @@ func getProgramData(xepgChannel XEPGChannelStruct) (xepgXML XMLTV, err error) {
 	}
 
 	for _, xmltvProgram := range xmltv.Program {
-
 		if xmltvProgram.Channel == channelID {
 			var program = &Program{}
 
@@ -984,11 +982,15 @@ func createDummyProgram(xepgChannel XEPGChannelStruct) (dummyXMLTV XMLTV) {
 
 	showInfo("Create Dummy Guide:" + "Time offset" + offset + " - " + xepgChannel.XName)
 
+	var dummyLength int
+	var err error
 	var dl = strings.Split(xepgChannel.XMapping, "_")
-	dummyLength, err := strconv.Atoi(dl[0])
-	if err != nil {
-		ShowError(err, 000)
-		return
+	if dl[0] != "" {
+		dummyLength, err = strconv.Atoi(dl[0])
+		if err != nil {
+			ShowError(err, 000)
+			return
+		}
 	}
 
 	for d := 0; d < 4; d++ {

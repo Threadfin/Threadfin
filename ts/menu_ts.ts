@@ -1932,7 +1932,7 @@ function openPopUp(dataType, element) {
       var xmltv: XMLTVFile = new XMLTVFile()
       const backup1XmlTvId: string = data[dbKey];
       const [xmlTvBackup1IdContainer, xmlTvBackup1IdInput, xmlTvBackup1IdDatalist] = xmltv.newXmlTvIdPicker(xmlFile, backup1XmlTvId);
-      xmlTvBackup1IdContainer.setAttribute('id', 'xmltv-id-picker-container');
+      xmlTvBackup1IdContainer.setAttribute('id', 'xmltv-id-picker-container-1');
       xmlTvBackup1IdInput.setAttribute('list', 'xmltv-id-picker-datalist');
       xmlTvBackup1IdInput.setAttribute('name', dbKey); // Should stay x-mapping as it will be used in donePopupData to make a server request
       xmlTvBackup1IdInput.setAttribute("id", "backup-channel-1");
@@ -1945,7 +1945,7 @@ function openPopUp(dataType, element) {
       var xmltv: XMLTVFile = new XMLTVFile()
       const backup2XmlTvId: string = data[dbKey];
       const [xmlTvBackup2IdContainer, xmlTvBackup2IdInput, xmlTvBackup2IdDatalist] = xmltv.newXmlTvIdPicker(xmlFile, backup2XmlTvId);
-      xmlTvBackup2IdContainer.setAttribute('id', 'xmltv-id-picker-container');
+      xmlTvBackup2IdContainer.setAttribute('id', 'xmltv-id-picker-container-2');
       xmlTvBackup2IdInput.setAttribute('list', 'xmltv-id-picker-datalist');
       xmlTvBackup2IdInput.setAttribute('name', dbKey); // Should stay x-mapping as it will be used in donePopupData to make a server request
       xmlTvBackup2IdInput.setAttribute("id", "backup-channel-2");
@@ -1957,7 +1957,7 @@ function openPopUp(dataType, element) {
       var xmltv: XMLTVFile = new XMLTVFile()
       const backup3XmlTvId: string = data[dbKey];
       const [xmlTvBackup3IdContainer, xmlTvBackup3IdInput, xmlTvBackup3IdDatalist] = xmltv.newXmlTvIdPicker(xmlFile, backup2XmlTvId);
-      xmlTvBackup3IdContainer.setAttribute('id', 'xmltv-id-picker-container');
+      xmlTvBackup3IdContainer.setAttribute('id', 'xmltv-id-picker-container-3');
       xmlTvBackup3IdInput.setAttribute('list', 'xmltv-id-picker-datalist');
       xmlTvBackup3IdInput.setAttribute('name', dbKey); // Should stay x-mapping as it will be used in donePopupData to make a server request
       xmlTvBackup3IdInput.setAttribute("id", "backup-channel-3");
@@ -2691,7 +2691,7 @@ function showPreview(element: boolean) {
     var tbody = document.createElement("TBODY")
     table.appendChild(tbody)
 
-    obj.forEach(channel => {
+    obj.slice(0, 1000).forEach(channel => {
 
       var tr = document.createElement("TR")
       var tdKey = document.createElement("TD")
