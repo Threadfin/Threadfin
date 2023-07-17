@@ -19,9 +19,7 @@ func MakeInterfaceFromM3U(byteStream []byte) (allChannels []interface{}, err err
 		stream = make(map[string]string)
 		var exceptForParameter = `[a-z-A-Z=]*(".*?")`
 		var exceptForChannelName = `,([^\n]*|,[^\r]*)`
-
 		var lines = strings.Split(strings.Replace(channel, "\r\n", "\n", -1), "\n")
-
 		// Zeilen mit # und leerer Zeilen entfernen
 		for i := len(lines) - 1; i >= 0; i-- {
 
@@ -32,9 +30,7 @@ func MakeInterfaceFromM3U(byteStream []byte) (allChannels []interface{}, err err
 		}
 
 		if len(lines) >= 2 {
-
 			for _, line := range lines {
-
 				_, err := url.ParseRequestURI(line)
 
 				switch err {
@@ -43,19 +39,16 @@ func MakeInterfaceFromM3U(byteStream []byte) (allChannels []interface{}, err err
 					stream["url"] = strings.Trim(line, "\r\n")
 
 				default:
-
 					var value string
 					// Alle Parameter parsen
 					var p = regexp.MustCompile(exceptForParameter)
 					var streamParameter = p.FindAllString(line, -1)
-
 					for _, p := range streamParameter {
 
 						line = strings.Replace(line, p, "", 1)
 
 						p = strings.Replace(p, `"`, "", -1)
 						var parameter = strings.SplitN(p, "=", 2)
-
 						if len(parameter) == 2 {
 
 							// TVG Key als Kleinbuchstaben speichern
@@ -142,15 +135,14 @@ func MakeInterfaceFromM3U(byteStream []byte) (allChannels []interface{}, err err
 	}
 
 	if strings.Contains(content, "#EXTM3U") {
-
+		content = strings.Replace(content, ":-1", "", -1)
+		content = strings.Replace(content, "'", "\"", -1)
 		var channels = strings.Split(content, "#EXTINF")
 
 		channels = append(channels[:0], channels[1:]...)
 
 		for _, channel := range channels {
-
 			var stream = parseMetaData(channel)
-
 			if len(stream) > 0 && stream != nil {
 				allChannels = append(allChannels, stream)
 			}
