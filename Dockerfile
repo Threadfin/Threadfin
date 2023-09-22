@@ -1,9 +1,9 @@
 # First stage. Building a binary
 # -----------------------------------------------------------------------------
-FROM golang:1.18-bullseye AS builder
+FROM golang:1.18-alpine AS builder
 
 # Download the source code
-RUN apt-get install -y git
+RUN apk add --no-cache git
 RUN git clone https://github.com/Threadfin/Threadfin.git /src
 
 WORKDIR /src
