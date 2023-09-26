@@ -57,7 +57,7 @@ RUN apt-get update && apt-get upgrade -y
 RUN apt-get install -y ca-certificates curl ffmpeg vlc tzdata
 
 ENV TZ=America/New_York
-RUN ln -fs /usr/share/zoneinfo/$TZ /etc/localtime && dpkg-reconfigure --frontend noninteractive tzdata
+RUN DEBIAN_FRONTEND=noninteractive ln -fs /usr/share/zoneinfo/$TZ /etc/localtime && dpkg-reconfigure -f noninteractive tzdata
 
 RUN mkdir -p $THREADFIN_BIN
 
