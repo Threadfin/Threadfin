@@ -13,11 +13,10 @@ RUN git pull
 RUN go mod tidy && go mod vendor
 RUN go build threadfin.go
 
-# Second stage. Creating an image
+# Second stage. Creating an image based on NVIDIA support argument
 # -----------------------------------------------------------------------------
-
-# Base image is a latest stable debian
-FROM alpine:latest
+ARG USE_NVIDIA=0
+FROM ${USE_NVIDIA:+nvidia/cuda:11.4.1-base-}alpine:latest
 
 ARG BUILD_DATE
 ARG VCS_REF
