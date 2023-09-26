@@ -16,7 +16,7 @@ RUN go build threadfin.go
 # Second stage. Creating an image
 # -----------------------------------------------------------------------------
 ARG USE_NVIDIA=0
-FROM ${USE_NVIDIA:+nvidia/cuda:11.4.1-base-}ubuntu:latest
+FROM ${USE_NVIDIA:+nvidia/cuda:12.1.1-base-ubuntu22.04}${USE_NVIDIA:-ubuntu:22.04}
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -54,10 +54,9 @@ ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$THREADFIN
 WORKDIR $THREADFIN_HOME
 
 RUN apt-get update && apt-get upgrade -y
-RUN apt-get install -y ca-certificates curl ffmpeg vlc tzdata
+RUN apt-get install -y ca-certificates curl ffmpeg vlc
 
-ENV TZ=America/New_York
-RUN DEBIAN_FRONTEND=noninteractive ln -fs /usr/share/zoneinfo/$TZ /etc/localtime && dpkg-reconfigure -f noninteractive tzdata
+RUN DEBIAN_FRONTEND=noninteractive TZ="America/New_York" apt-get -y install tzdata
 
 RUN mkdir -p $THREADFIN_BIN
 
