@@ -895,9 +895,9 @@ function createLayout() {
                 break;
             case "mapping":
             case "xmltv":
-                if (SERVER["clientInfo"]["epgSource"] == "XEPG") {
-                    menuItems[i].createItem();
-                }
+                // if (SERVER["clientInfo"]["epgSource"] == "XEPG") {
+                menuItems[i].createItem();
+                // }
                 break;
             default:
                 menuItems[i].createItem();
