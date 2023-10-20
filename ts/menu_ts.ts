@@ -1131,9 +1131,7 @@ function createLayout() {
 
       case "mapping":
       case "xmltv":
-        if (SERVER["clientInfo"]["epgSource"] == "XEPG") {
           menuItems[i].createItem()
-        }
         break
 
       default:
