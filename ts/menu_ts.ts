@@ -1954,7 +1954,7 @@ function openPopUp(dataType, element) {
       var dbKey: string = "x-backup-channel-3"
       var xmltv: XMLTVFile = new XMLTVFile()
       const backup3XmlTvId: string = data[dbKey];
-      const [xmlTvBackup3IdContainer, xmlTvBackup3IdInput, xmlTvBackup3IdDatalist] = xmltv.newXmlTvIdPicker(xmlFile, backup2XmlTvId);
+      const [xmlTvBackup3IdContainer, xmlTvBackup3IdInput, xmlTvBackup3IdDatalist] = xmltv.newXmlTvIdPicker(xmlFile, backup3XmlTvId);
       xmlTvBackup3IdContainer.setAttribute('id', 'xmltv-id-picker-container-3');
       xmlTvBackup3IdInput.setAttribute('list', 'xmltv-id-picker-datalist');
       xmlTvBackup3IdInput.setAttribute('name', dbKey); // Should stay x-mapping as it will be used in donePopupData to make a server request
@@ -1962,7 +1962,7 @@ function openPopUp(dataType, element) {
       xmlTvBackup3IdInput.setAttribute('onchange', `javascript: this.className = 'changed'; checkXmltvChannel('${id}', this, '${xmlFile}');`);
       xmlTvBackup3IdDatalist.setAttribute('id', 'xmltv-id-picker-datalist-backup3');
       content.appendRow("{{.mapping.backupChannel3.title}}", xmlTvBackup3IdContainer)
-
+      
       // Interaktion
       content.createInteraction()
 

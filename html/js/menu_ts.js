@@ -1588,7 +1588,7 @@ function openPopUp(dataType, element) {
             var dbKey = "x-backup-channel-3";
             var xmltv = new XMLTVFile();
             const backup3XmlTvId = data[dbKey];
-            const [xmlTvBackup3IdContainer, xmlTvBackup3IdInput, xmlTvBackup3IdDatalist] = xmltv.newXmlTvIdPicker(xmlFile, backup2XmlTvId);
+            const [xmlTvBackup3IdContainer, xmlTvBackup3IdInput, xmlTvBackup3IdDatalist] = xmltv.newXmlTvIdPicker(xmlFile, backup3XmlTvId);
             xmlTvBackup3IdContainer.setAttribute('id', 'xmltv-id-picker-container-3');
             xmlTvBackup3IdInput.setAttribute('list', 'xmltv-id-picker-datalist');
             xmlTvBackup3IdInput.setAttribute('name', dbKey); // Should stay x-mapping as it will be used in donePopupData to make a server request
