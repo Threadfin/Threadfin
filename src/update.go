@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 
@@ -48,7 +48,7 @@ func BinaryUpdate() (err error) {
 			return nil
 		}
 
-		body, _ = ioutil.ReadAll(resp.Body)
+		body, _ = io.ReadAll(resp.Body)
 
 		err = json.Unmarshal(body, &git)
 		if err != nil {
@@ -68,10 +68,11 @@ func BinaryUpdate() (err error) {
 
 		// Latest main tag name
 		if System.Branch == "Main" {
-			latest = "latest"
 			for _, release := range git {
 				if !release.Prerelease {
 					updater.Response.Version = release.TagName
+					latest = release.TagName
+					log.Println("TAG LATEST: ", release.TagName)
 					break
 				}
 			}
