@@ -949,12 +949,14 @@ func createLiveProgram(xepgChannel XEPGChannelStruct, channelId string) *Program
 	re := regexp.MustCompile(`(\d{1,2}[./]\d{1,2})[-\s](\d{1,2}:\d{2}\s*(AM|PM))`)
 	matches := re.FindStringSubmatch(name)
 	layout := "2006.1.2 3:04 PM MST"
-	if strings.Contains(matches[0], "/") {
-		matches[0] = strings.Replace(matches[0], "/", ".", 1)
-		matches[0] = strings.Replace(matches[0], "-", " ", 1)
-		layout = "2006.1.2 3:04PM MST"
-	}
 	if len(matches) > 0 {
+
+		if strings.Contains(matches[0], "/") {
+			matches[0] = strings.Replace(matches[0], "/", ".", 1)
+			matches[0] = strings.Replace(matches[0], "-", " ", 1)
+			layout = "2006.1.2 3:04PM MST"
+		}
+
 		timeString := matches[0]
 		if !regexp.MustCompile(`ET$`).MatchString(timeString) {
 			timeString += " ET"
