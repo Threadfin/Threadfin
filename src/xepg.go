@@ -798,13 +798,17 @@ func createXMLTVFile() (err error) {
 			if xepgChannel.TvgName == "" {
 				xepgChannel.TvgName = xepgChannel.Name
 			}
+			if xepgChannel.XName == "" {
+				xepgChannel.XName = xepgChannel.TvgName
+			}
+
 			if xepgChannel.XActive && !xepgChannel.XHideChannel {
-				if (Settings.XepgReplaceChannelTitle && xepgChannel.XMapping == "PPV") || xepgChannel.TvgName != "" {
+				if (Settings.XepgReplaceChannelTitle && xepgChannel.XMapping == "PPV") || xepgChannel.XName != "" {
 					// Kanäle
 					var channel Channel
 					channel.ID = xepgChannel.XChannelID
 					channel.Icon = Icon{Src: imgc.Image.GetURL(xepgChannel.TvgLogo, Settings.HttpThreadfinDomain, Settings.ForceHttps, Settings.HttpsPort, Settings.HttpsThreadfinDomain)}
-					channel.DisplayName = append(channel.DisplayName, DisplayName{Value: xepgChannel.TvgName})
+					channel.DisplayName = append(channel.DisplayName, DisplayName{Value: xepgChannel.XName})
 					channel.Active = xepgChannel.XActive
 					channel.Live = true
 					xepgXML.Channel = append(xepgXML.Channel, &channel)
