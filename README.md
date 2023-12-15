@@ -71,6 +71,26 @@ You can follow the old xTeVe documentation for now until I update it for Threadf
 ## Docker Image
 [Threadfin](https://hub.docker.com/r/fyb3roptik/threadfin)
 
+* Docker compose example
+
+```
+version: "2.3"
+services:
+  threadfin:
+    image: fyb3roptik/threadfin
+    container_name: threadfin
+    ports:
+      - 34400:34400
+    environment:
+      - PUID=1001
+      - PGID=1001
+      - TZ=America/Los_Angeles
+    volumes:
+      - ./data/conf:/home/threadfin/conf
+      - ./data/temp:/tmp/xteve:rw
+    restart: unless-stopped
+```
+
 ---
 
 ### Threadfin Beta branch
