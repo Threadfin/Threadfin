@@ -909,6 +909,9 @@ func getProgramData(xepgChannel XEPGChannelStruct) (xepgXML XMLTV, err error) {
 			// Language (Sprache)
 			program.Language = xmltvProgram.Language
 
+			// Episodes numbers (Episodennummern)
+			getEpisodeNum(program, xmltvProgram, xepgChannel)
+
 			// Video (Videoparameter)
 			getVideo(program, xmltvProgram, xepgChannel)
 
@@ -1052,6 +1055,10 @@ func createDummyProgram(xepgChannel XEPGChannelStruct) (dummyXMLTV XMLTV) {
 			if Settings.XepgReplaceMissingImages {
 				poster.Src = imgc.Image.GetURL(xepgChannel.TvgLogo, Settings.HttpThreadfinDomain, Settings.ForceHttps, Settings.HttpsPort, Settings.HttpsThreadfinDomain)
 				epg.Poster = append(epg.Poster, poster)
+			}
+
+			if xepgChannel.XCategory != "Movie" {
+				epg.EpisodeNum = append(epg.EpisodeNum, &EpisodeNum{Value: epgStartTime.Format("2006-01-02 15:04:05"), System: "original-air-date"})
 			}
 
 			epg.New = &New{Value: ""}
