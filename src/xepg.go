@@ -608,7 +608,7 @@ func mapping() (err error) {
 		if !xepgChannel.XActive {
 
 			// Werte kann "-" sein, deswegen len < 1
-			if len(xepgChannel.XmltvFile) < 1 && len(xepgChannel.XmltvFile) < 1 {
+			if len(xepgChannel.XmltvFile) < 1 {
 
 				var tvgID = xepgChannel.TvgID
 
@@ -619,7 +619,11 @@ func mapping() (err error) {
 				Data.XEPG.Channels[xepg] = xepgChannel
 
 				for file, xmltvChannels := range Data.XMLTV.Mapping {
-					if channel, ok := xmltvChannels.(map[string]interface{})[tvgID]; ok {
+					channelsMap, ok := xmltvChannels.(map[string]interface{})
+					if !ok {
+						continue
+					}
+					if channel, ok := channelsMap[tvgID]; ok {
 
 						filters := []FilterStruct{}
 						for _, filter := range Settings.Filter {
@@ -637,14 +641,19 @@ func mapping() (err error) {
 							}
 						}
 
-						if channelID, ok := channel.(map[string]interface{})["id"].(string); ok {
+						chmap, okk := channel.(map[string]interface{})
+						if !okk {
+							continue
+						}
+
+						if channelID, ok := chmap["id"].(string); ok {
 
 							xepgChannel.XmltvFile = file
 							xepgChannel.XMapping = channelID
 							xepgChannel.XActive = true
 
 							// Falls in der XMLTV Datei ein Logo existiert, wird dieses verwendet. Falls nicht, dann das Logo aus der M3U Datei
-							if icon, ok := channel.(map[string]interface{})["icon"].(string); ok {
+							if icon, ok := chmap["icon"].(string); ok {
 								if len(icon) > 0 {
 									xepgChannel.TvgLogo = icon
 								}
