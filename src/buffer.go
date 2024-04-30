@@ -1113,7 +1113,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 			}
 
 			if !clientConnection(stream) {
-				terminateProcessGracefully(cmd)
+				cmd.Process.Kill()
 				f.Close()
 				cmd.Wait()
 				return
