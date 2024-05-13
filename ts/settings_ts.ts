@@ -398,6 +398,20 @@ class SettingsCategory {
         setting.appendChild(tdRight)
         break
 
+      case "ssdp":
+        var tdLeft = document.createElement("TD")
+        tdLeft.innerHTML = "{{.settings.ssdp.title}}" + ":"
+
+        var tdRight = document.createElement("TD")
+        var input = content.createCheckbox(settingsKey)
+        input.checked = data
+        input.setAttribute("onchange", "javascript: this.className = 'changed'")
+        tdRight.appendChild(input)
+
+        setting.appendChild(tdLeft)
+        setting.appendChild(tdRight)
+        break
+
       case "api":
         var tdLeft = document.createElement("TD")
         tdLeft.innerHTML = "{{.settings.api.title}}" + ":"
@@ -642,6 +656,10 @@ class SettingsCategory {
 
       case "api":
         text = "{{.settings.api.description}}"
+        break
+
+      case "ssdp":
+        text = "{{.settings.ssdp.description}}"
         break
 
       case "files.update":

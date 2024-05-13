@@ -18,6 +18,7 @@ type RequestStruct struct {
 	// Neue Werte für die Einstellungen (settings.json)
 	Settings struct {
 		API                      *bool     `json:"api,omitempty"`
+		SSDP                     *bool     `json:"ssdp,omitempty"`
 		AuthenticationAPI        *bool     `json:"authentication.api,omitempty"`
 		AuthenticationM3U        *bool     `json:"authentication.m3u,omitempty"`
 		AuthenticationPMS        *bool     `json:"authentication.pms,omitempty"`
@@ -26,7 +27,7 @@ type RequestStruct struct {
 		BackupKeep               *int      `json:"backup.keep,omitempty"`
 		BackupPath               *string   `json:"backup.path,omitempty"`
 		Buffer                   *string   `json:"buffer,omitempty"`
-		BufferSize               *int      `json:"buffer.size.kb, omitempty"`
+		BufferSize               *int      `json:"buffer.size.kb,omitempty"`
 		BufferTimeout            *float64  `json:"buffer.timeout,omitempty"`
 		CacheImages              *bool     `json:"cache.images,omitempty"`
 		EpgSource                *string   `json:"epgSource,omitempty"`

@@ -350,6 +350,10 @@
       "title": "API Interface",
       "description": "Via API interface it is possible to send commands to Threadfin. API documentation is <a href='https://github.com/Threadfin/Threadfin-Documentation/blob/master/en/configuration.md#api'>here</a>"
     },
+    "ssdp": {
+      "title": "SSDP",
+      "description": "SSDP is a network protocol for service discovery. It is used for the automatic detection of Threadfin in the network."
+    },
     "epgSource": {
       "title": "EPG Source",
       "description": "PMS:<br>- Use EPG data from Plex, Emby or Jellyfin <br><br>XEPG:<br>- Use of one or more XMLTV files<br>- Channel management<br>- M3U / XMLTV export (HTTP link for IPTV apps)"
