@@ -189,6 +189,7 @@ type XEPGChannelStruct struct {
 	TvgID              string `json:"tvg-id"`
 	TvgLogo            string `json:"tvg-logo"`
 	TvgName            string `json:"tvg-name"`
+	TvgChno            string `json:"tvg-chno"`
 	URL                string `json:"url"`
 	UUIDKey            string `json:"_uuid.key"`
 	UUIDValue          string `json:"_uuid.value,omitempty"`
@@ -225,6 +226,7 @@ type M3UChannelStructXEPG struct {
 	Name        string `json:"name,required"`
 	TvgID       string `json:"tvg-id,required"`
 	TvgLogo     string `json:"tvg-logo,required"`
+	TvgChno     string `json:"tvg-chno"`
 	TvgName     string `json:"tvg-name,required"`
 	URL         string `json:"url,required"`
 	UUIDKey     string `json:"_uuid.key,required"`
@@ -330,6 +332,9 @@ type SettingsStruct struct {
 	EnableNonAscii            bool                  `json:"enableNonAscii"`
 	EpgCategories             string                `json:"epgCategories"`
 	EpgCategoriesColors       string                `json:"epgCategoriesColors"`
+	Dummy                     bool                  `json:"dummy"`
+	DummyChannel              string                `json:"dummyChannel"`
+	IgnoreFilters             bool                  `json:"ignoreFilters"`
 }
 
 // LanguageUI : Sprache für das WebUI

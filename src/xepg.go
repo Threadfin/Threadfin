@@ -483,6 +483,8 @@ func createXEPGDatabase() (err error) {
 			// Name aktualisieren, anhand des Names wird überprüft ob der Kanal noch in einer Playlist verhanden. Funktion: cleanupXEPG
 			xepgChannel.Name = m3uChannel.Name
 
+			xepgChannel.TvgChno = m3uChannel.TvgChno
+
 			// Kanalname aktualisieren, nur mit Kanal ID's möglich
 			if channelHasUUID == true {
 				if xepgChannel.XUpdateChannelName == true {
@@ -518,7 +520,13 @@ func createXEPGDatabase() (err error) {
 			}
 
 			var xepg = createNewID()
-			var xChannelID = getFreeChannelNumber(firstFreeNumber)
+			var xChannelID string
+
+			if m3uChannel.TvgChno == "" {
+				xChannelID = getFreeChannelNumber(firstFreeNumber)
+			} else {
+				xChannelID = m3uChannel.TvgChno
+			}
 
 			var newChannel XEPGChannelStruct
 			newChannel.FileM3UID = m3uChannel.FileM3UID
@@ -606,7 +614,6 @@ func mapping() (err error) {
 
 		// Automatische Mapping für neue Kanäle. Wird nur ausgeführt, wenn der Kanal deaktiviert ist und keine XMLTV Datei und kein XMLTV Kanal zugeordnet ist.
 		if !xepgChannel.XActive {
-
 			// Werte kann "-" sein, deswegen len < 1
 			if len(xepgChannel.XmltvFile) < 1 {
 
@@ -616,8 +623,9 @@ func mapping() (err error) {
 				xepgChannel.XmltvFile = "-"
 				xepgChannel.XMapping = "-"
 
-				Data.XEPG.Channels[xepg] = xepgChannel
+				xepgChannel.XActive = false
 
+				// Data.XEPG.Channels[xepg] = xepgChannel
 				for file, xmltvChannels := range Data.XMLTV.Mapping {
 					channelsMap, ok := xmltvChannels.(map[string]interface{})
 					if !ok {
@@ -647,7 +655,6 @@ func mapping() (err error) {
 						}
 
 						if channelID, ok := chmap["id"].(string); ok {
-
 							xepgChannel.XmltvFile = file
 							xepgChannel.XMapping = channelID
 							xepgChannel.XActive = true
@@ -668,8 +675,13 @@ func mapping() (err error) {
 
 				}
 
-			}
+				if Settings.Dummy && xepgChannel.XmltvFile == "-" {
+					xepgChannel.XmltvFile = "Threadfin Dummy"
+					xepgChannel.XMapping = "PPV"
 
+					xepgChannel.XActive = true
+				}
+			}
 		}
 
 		// Überprüfen, ob die zugeordneten XMLTV Dateien und Kanäle noch existieren.

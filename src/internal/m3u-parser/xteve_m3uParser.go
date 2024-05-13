@@ -96,10 +96,6 @@ func MakeInterfaceFromM3U(byteStream []byte) (allChannels []interface{}, err err
 						return
 					}
 
-					if stream["group-title"] == "" {
-						return
-					}
-
 					stream["name"] = channelName
 					value = value + channelName
 

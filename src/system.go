@@ -379,19 +379,6 @@ func getStreamInfo(urlID string) (streamInfo StreamInfo, err error) {
 		s.BackupChannel2URL = strings.Trim(s.BackupChannel2URL, "\r\n")
 		s.BackupChannel3URL = strings.Trim(s.BackupChannel3URL, "\r\n")
 
-		if strings.HasSuffix(s.URL, ".m3u") {
-			s.URL += "8"
-		}
-		if strings.HasSuffix(s.BackupChannel1URL, ".m3u") {
-			s.BackupChannel1URL += "8"
-		}
-		if strings.HasSuffix(s.BackupChannel2URL, ".m3u") {
-			s.BackupChannel2URL += "8"
-		}
-		if strings.HasSuffix(s.BackupChannel3URL, ".m3u") {
-			s.BackupChannel3URL += "8"
-		}
-
 		streamInfo = s
 	} else {
 		err = errors.New("streaming error")

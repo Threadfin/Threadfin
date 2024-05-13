@@ -849,7 +849,6 @@ func buildDatabaseDVR() (err error) {
 
 			// Streams analysieren
 			for _, stream := range channels {
-
 				var s = stream.(map[string]string)
 				s["_file.m3u.path"] = i
 				s["_file.m3u.name"] = playlistName
@@ -895,7 +894,12 @@ func buildDatabaseDVR() (err error) {
 
 				// Neuer Filter ab Version 1.3.0
 				var preview string
-				var status = filterThisStream(stream)
+				var status bool
+				if Settings.IgnoreFilters {
+					status = true
+				} else {
+					status = filterThisStream(stream)
+				}
 
 				if name, ok := s["name"]; ok {
 					var group string
