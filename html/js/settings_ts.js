@@ -315,6 +315,51 @@ class SettingsCategory {
                 setting.appendChild(tdLeft);
                 setting.appendChild(tdRight);
                 break;
+            case "ssdp":
+                var tdLeft = document.createElement("TD");
+                tdLeft.innerHTML = "{{.settings.ssdp.title}}" + ":";
+                var tdRight = document.createElement("TD");
+                var input = content.createCheckbox(settingsKey);
+                input.checked = data;
+                input.setAttribute("onchange", "javascript: this.className = 'changed'");
+                tdRight.appendChild(input);
+                setting.appendChild(tdLeft);
+                setting.appendChild(tdRight);
+                break;
+            case "dummy":
+                var tdLeft = document.createElement("TD");
+                tdLeft.innerHTML = "{{.settings.dummy.title}}" + ":";
+                var tdRight = document.createElement("TD");
+                var input = content.createCheckbox(settingsKey);
+                input.checked = data;
+                input.setAttribute("onchange", "javascript: this.className = 'changed'");
+                tdRight.appendChild(input);
+                setting.appendChild(tdLeft);
+                setting.appendChild(tdRight);
+                break;
+            case "dummyChannel":
+                var tdLeft = document.createElement("TD");
+                tdLeft.innerHTML = "{{.settings.dummyChannel.title}}" + ":";
+                var tdRight = document.createElement("TD");
+                var text = ["PPV", "30 Minutes", "60 Minutes", "90 Minutes", "120 Minutes", "180 Minutes", "240 Minutes", "360 Minutes"];
+                var values = ["PPV", "30_Minutes", "60_Minutes", "90_Minutes", "120_Minutes", "180_Minutes", "240_Minutes", "360_Minutes"];
+                var select = content.createSelect(text, values, data, settingsKey);
+                select.setAttribute("onchange", "javascript: this.className = 'changed'");
+                tdRight.appendChild(select);
+                setting.appendChild(tdLeft);
+                setting.appendChild(tdRight);
+                break;
+            case "ignoreFilters":
+                var tdLeft = document.createElement("TD");
+                tdLeft.innerHTML = "{{.settings.ignoreFilters.title}}" + ":";
+                var tdRight = document.createElement("TD");
+                var input = content.createCheckbox(settingsKey);
+                input.checked = data;
+                input.setAttribute("onchange", "javascript: this.className = 'changed'");
+                tdRight.appendChild(input);
+                setting.appendChild(tdLeft);
+                setting.appendChild(tdRight);
+                break;
             case "api":
                 var tdLeft = document.createElement("TD");
                 tdLeft.innerHTML = "{{.settings.api.title}}" + ":";
@@ -497,6 +542,9 @@ class SettingsCategory {
                 break;
             case "api":
                 text = "{{.settings.api.description}}";
+                break;
+            case "ssdp":
+                text = "{{.settings.ssdp.description}}";
                 break;
             case "files.update":
                 text = "{{.settings.filesUpdate.description}}";

@@ -374,13 +374,14 @@ func getStreamInfo(urlID string) (streamInfo StreamInfo, err error) {
 	}
 
 	if s, ok := Data.Cache.StreamingURLS[urlID]; ok {
+		s.URL = strings.Trim(s.URL, "\r\n")
+		s.BackupChannel1URL = strings.Trim(s.BackupChannel1URL, "\r\n")
+		s.BackupChannel2URL = strings.Trim(s.BackupChannel2URL, "\r\n")
+		s.BackupChannel3URL = strings.Trim(s.BackupChannel3URL, "\r\n")
+
 		streamInfo = s
-		streamInfo.URL = strings.Trim(streamInfo.URL, "\r\n")
-		streamInfo.BackupChannel1URL = strings.Trim(streamInfo.BackupChannel1URL, "\r\n")
-		streamInfo.BackupChannel2URL = strings.Trim(streamInfo.BackupChannel2URL, "\r\n")
-		streamInfo.BackupChannel3URL = strings.Trim(streamInfo.BackupChannel3URL, "\r\n")
 	} else {
-		err = errors.New("Streaming error")
+		err = errors.New("streaming error")
 	}
 
 	return

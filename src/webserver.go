@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -130,6 +131,35 @@ func Stream(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		ShowError(err, 1203)
 		httpStatusError(w, r, 404)
+		return
+	}
+
+	if r.Method == "HEAD" {
+		client := &http.Client{}
+		log.Println("URL: ", streamInfo.URL)
+		req, err := http.NewRequest("HEAD", streamInfo.URL, nil)
+		if err != nil {
+			ShowError(err, 1501)
+			httpStatusError(w, r, 500)
+			return
+		}
+
+		resp, err := client.Do(req)
+		if err != nil {
+			ShowError(err, 1502)
+			httpStatusError(w, r, 502) // Bad gateway error
+			return
+		}
+		defer resp.Body.Close()
+
+		// Copy headers from the source HEAD response to the outgoing response
+		log.Println("HEAD response from source: ", resp.Header)
+		for key, values := range resp.Header {
+			for _, value := range values {
+				w.Header().Add(key, value)
+			}
+		}
+
 		return
 	}
 

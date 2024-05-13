@@ -213,9 +213,11 @@ func Init() (err error) {
 	}
 
 	// DLNA Server starten
-	err = SSDP()
-	if err != nil {
-		return
+	if Settings.SSDP {
+		err = SSDP()
+		if err != nil {
+			return
+		}
 	}
 
 	// HTML Datein laden
