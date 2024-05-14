@@ -78,7 +78,7 @@ func BinaryUpdate() (err error) {
 			}
 		}
 
-		var File = fmt.Sprintf("%s/releases/%s/download/%s_%s_%s?raw=true", System.Update.Git, latest, "Threadfin", System.OS, System.ARCH)
+		var File = fmt.Sprintf("%s/releases/download/%s/%s_%s_%s", System.Update.Git, latest, "Threadfin", System.OS, System.ARCH)
 
 		updater.Response.Status = true
 		updater.Response.UpdateBIN = File
