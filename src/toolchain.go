@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"log"
 	"net"
 	"os"
 	"os/exec"
@@ -344,8 +345,9 @@ func resolveHostIP() (err error) {
 		return
 	}
 
-	for _, netInterfaceAddress := range netInterfaceAddresses {
+	log.Println("netInterfaceAddress: ", netInterfaceAddresses)
 
+	for _, netInterfaceAddress := range netInterfaceAddresses {
 		networkIP, ok := netInterfaceAddress.(*net.IPNet)
 		System.IPAddressesList = append(System.IPAddressesList, networkIP.IP.String())
 
@@ -357,7 +359,7 @@ func resolveHostIP() (err error) {
 
 				System.IPAddressesV4 = append(System.IPAddressesV4, ip)
 
-				if !networkIP.IP.IsLoopback() && ip[0:7] != "169.254" {
+				if !networkIP.IP.IsLoopback() && ip[0:7] != "169.254" && !strings.HasSuffix(ip, ".1") {
 					System.IPAddress = ip
 				}
 

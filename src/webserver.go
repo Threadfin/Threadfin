@@ -140,14 +140,14 @@ func Stream(w http.ResponseWriter, r *http.Request) {
 		req, err := http.NewRequest("HEAD", streamInfo.URL, nil)
 		if err != nil {
 			ShowError(err, 1501)
-			httpStatusError(w, r, 500)
+			httpStatusError(w, r, 405)
 			return
 		}
 
 		resp, err := client.Do(req)
 		if err != nil {
 			ShowError(err, 1502)
-			httpStatusError(w, r, 502) // Bad gateway error
+			httpStatusError(w, r, 405)
 			return
 		}
 		defer resp.Body.Close()
