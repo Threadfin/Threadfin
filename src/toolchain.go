@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"log"
 	"net"
 	"os"
 	"os/exec"
@@ -395,6 +396,8 @@ func resolveHostIP() error {
 	if err != nil {
 		return err
 	}
+
+	log.Println("ADDRESSES: ", System.IPAddressesList)
 
 	return nil
 }
