@@ -53,7 +53,6 @@ func StartWebserver() (err error) {
 
 	}
 
-	showHighlight(fmt.Sprintf("SYSTEM IP: %s SYSTEM PORT: %s", System.IPAddress, Settings.Port))
 	if err = http.ListenAndServe(System.IPAddress+":"+port, nil); err != nil {
 		ShowError(err, 1001)
 		return
