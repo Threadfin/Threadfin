@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"log"
 	"net"
 	"os"
 	"os/exec"
@@ -337,62 +336,67 @@ func readStringFromFile(file string) (str string, err error) {
 	return
 }
 
-// Netzwerk
-func resolveHostIP() (err error) {
+func isDockerNetworkInterface(iface net.Interface) bool {
+	ifaceName := iface.Name
+	return strings.HasPrefix(ifaceName, "docker") ||
+		strings.HasPrefix(ifaceName, "br-") ||
+		strings.HasPrefix(ifaceName, "veth") ||
+		strings.HasPrefix(ifaceName, "bridge") ||
+		strings.HasPrefix(ifaceName, "br0")
+}
 
-	netInterfaceAddresses, err := net.InterfaceAddrs()
+// Netzwerk
+func resolveHostIP() error {
+	interfaces, err := net.Interfaces()
 	if err != nil {
-		return
+		return err
 	}
 
-	log.Println("netInterfaceAddress: ", netInterfaceAddresses)
-
-	for _, netInterfaceAddress := range netInterfaceAddresses {
-		networkIP, ok := netInterfaceAddress.(*net.IPNet)
-		System.IPAddressesList = append(System.IPAddressesList, networkIP.IP.String())
-
-		if ok {
-
-			var ip = networkIP.IP.String()
-
-			if networkIP.IP.To4() != nil {
-
-				System.IPAddressesV4 = append(System.IPAddressesV4, ip)
-
-				if !networkIP.IP.IsLoopback() && ip[0:7] != "169.254" && !strings.HasSuffix(ip, ".1") {
-					System.IPAddress = ip
-				}
-
-			} else {
-				System.IPAddressesV6 = append(System.IPAddressesV6, ip)
-			}
-
+	for _, iface := range interfaces {
+		// Skip Docker network interfaces
+		if isDockerNetworkInterface(iface) {
+			continue
 		}
 
+		addrs, err := iface.Addrs()
+		if err != nil {
+			return err
+		}
+
+		for _, addr := range addrs {
+			networkIP, ok := addr.(*net.IPNet)
+			System.IPAddressesList = append(System.IPAddressesList, networkIP.IP.String())
+
+			if ok {
+				ip := networkIP.IP.String()
+
+				if networkIP.IP.To4() != nil {
+					// Skip unwanted IPs
+					if !networkIP.IP.IsLoopback() && !strings.HasPrefix(ip, "169.254") {
+						System.IPAddressesV4 = append(System.IPAddressesV4, ip)
+						System.IPAddress = ip
+					}
+				} else {
+					System.IPAddressesV6 = append(System.IPAddressesV6, ip)
+				}
+			}
+		}
 	}
 
 	if len(System.IPAddress) == 0 {
-
-		switch len(System.IPAddressesV4) {
-
-		case 0:
-			if len(System.IPAddressesV6) > 0 {
-				System.IPAddress = System.IPAddressesV6[0]
-			}
-
-		default:
+		if len(System.IPAddressesV4) > 0 {
 			System.IPAddress = System.IPAddressesV4[0]
-
+		} else if len(System.IPAddressesV6) > 0 {
+			System.IPAddress = System.IPAddressesV6[0]
 		}
-
 	}
 
 	System.Hostname, err = os.Hostname()
 	if err != nil {
-		return
+		return err
 	}
 
-	return
+	return nil
 }
 
 // Sonstiges
