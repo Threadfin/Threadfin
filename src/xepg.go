@@ -73,7 +73,7 @@ func buildXEPG(background bool) {
 
 				showInfo("XEPG:" + fmt.Sprintf("Ready to use 1"))
 
-				if Settings.CacheImages == true && System.ImageCachingInProgress == 0 {
+				if Settings.CacheImages && System.ImageCachingInProgress == 0 {
 
 					go func() {
 
@@ -110,6 +110,8 @@ func buildXEPG(background bool) {
 			createXEPGDatabase()
 			mapping()
 			cleanupXEPG()
+			createXMLTVFile()
+			createM3UFile()
 
 			go func() {
 
@@ -124,14 +126,14 @@ func buildXEPG(background bool) {
 						Data.Cache.Images.Image.Remove()
 						showInfo("Image Caching:Done")
 
+						createXMLTVFile()
+						createM3UFile()
+
 						System.ImageCachingInProgress = 0
 
 					}()
 
 				}
-
-				createXMLTVFile()
-				createM3UFile()
 
 				showInfo("XEPG:" + fmt.Sprintf("Ready to use 2"))
 
@@ -822,7 +824,7 @@ func createXMLTVFile() (err error) {
 			}
 
 			if xepgChannel.XActive && !xepgChannel.XHideChannel {
-				if (Settings.XepgReplaceChannelTitle && xepgChannel.XMapping == "PPV") || (!Settings.XepgReplaceChannelTitle && xepgChannel.XName != "") {
+				if (Settings.XepgReplaceChannelTitle && xepgChannel.XMapping == "PPV") || xepgChannel.XName != "" {
 					// Kanäle
 					var channel Channel
 					channel.ID = xepgChannel.XChannelID
