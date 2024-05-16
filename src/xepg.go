@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"path"
 	"regexp"
 	"runtime"
@@ -808,8 +809,8 @@ func createXMLTVFile() (err error) {
 
 	var tmpProgram = &XMLTV{}
 
-	for _, dxc := range Data.XEPG.Channels {
-
+	for i, dxc := range Data.XEPG.Channels {
+		log.Println("CHANNEL: ", i)
 		var xepgChannel XEPGChannelStruct
 		err := json.Unmarshal([]byte(mapToJSON(dxc)), &xepgChannel)
 		if err == nil {
