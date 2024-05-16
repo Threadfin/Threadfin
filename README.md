@@ -87,7 +87,7 @@ services:
       - TZ=America/Los_Angeles
     volumes:
       - ./data/conf:/home/threadfin/conf
-      - ./data/temp:/tmp/xteve:rw
+      - ./data/temp:/tmp/threadfin:rw
     restart: unless-stopped
 ```
 
