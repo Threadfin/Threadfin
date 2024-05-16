@@ -822,7 +822,7 @@ func createXMLTVFile() (err error) {
 			}
 
 			if xepgChannel.XActive && !xepgChannel.XHideChannel {
-				if (Settings.XepgReplaceChannelTitle && xepgChannel.XMapping == "PPV") || xepgChannel.XName != "" {
+				if (Settings.XepgReplaceChannelTitle && xepgChannel.XMapping == "PPV") || (!Settings.XepgReplaceChannelTitle && xepgChannel.XName != "") {
 					// Kanäle
 					var channel Channel
 					channel.ID = xepgChannel.XChannelID
