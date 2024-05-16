@@ -71,7 +71,7 @@ func buildXEPG(background bool) {
 				createXMLTVFile()
 				createM3UFile()
 
-				showInfo("XEPG:" + fmt.Sprintf("Ready to use 1"))
+				showInfo("XEPG:" + fmt.Sprintf("Ready to use"))
 
 				if Settings.CacheImages && System.ImageCachingInProgress == 0 {
 
@@ -135,7 +135,7 @@ func buildXEPG(background bool) {
 
 				}
 
-				showInfo("XEPG:" + fmt.Sprintf("Ready to use 2"))
+				showInfo("XEPG:" + fmt.Sprintf("Ready to use"))
 
 				System.ScanInProgress = 0
 
@@ -180,7 +180,7 @@ func updateXEPG(background bool) {
 
 				createXMLTVFile()
 				createM3UFile()
-				showInfo("XEPG:" + fmt.Sprintf("Ready to use 3"))
+				showInfo("XEPG:" + fmt.Sprintf("Ready to use"))
 
 				System.ScanInProgress = 0
 
@@ -811,8 +811,7 @@ func createXMLTVFile() (err error) {
 
 	var tmpProgram = &XMLTV{}
 
-	for i, dxc := range Data.XEPG.Channels {
-		log.Println("CHANNEL: ", i)
+	for _, dxc := range Data.XEPG.Channels {
 		var xepgChannel XEPGChannelStruct
 		err := json.Unmarshal([]byte(mapToJSON(dxc)), &xepgChannel)
 		if err == nil {
