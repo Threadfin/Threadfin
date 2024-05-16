@@ -839,6 +839,8 @@ func createXMLTVFile() (err error) {
 					xepgXML.Program = append(xepgXML.Program, tmpProgram.Program...)
 				}
 			}
+		} else {
+			log.Println("ERROR: ", err)
 		}
 	}
 
