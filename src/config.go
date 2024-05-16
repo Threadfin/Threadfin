@@ -265,7 +265,7 @@ func StartSystem(updateProviderFiles bool) (err error) {
 		return
 	}
 
-	buildXEPG(false)
+	buildXEPG(true)
 
 	return
 }

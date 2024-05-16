@@ -53,7 +53,7 @@ func StartWebserver() (err error) {
 
 	}
 
-	if err = http.ListenAndServe("0.0.0.0:"+port, nil); err != nil {
+	if err = http.ListenAndServe(System.IPAddress+":"+port, nil); err != nil {
 		ShowError(err, 1001)
 		return
 	}
@@ -286,6 +286,17 @@ func Threadfin(w http.ResponseWriter, r *http.Request) {
 
 		requestType = "m3u"
 		groupTitle = r.URL.Query().Get("group-title")
+
+		m3uFilePath := System.Folder.Data + "threadfin.m3u"
+
+		// Check if the m3u file exists
+		if _, err := os.Stat(m3uFilePath); err == nil {
+			log.Println("Serving existing m3u file")
+			http.ServeFile(w, r, m3uFilePath)
+			return
+		}
+
+		log.Println("M3U file does not exist, building new one")
 
 		if System.Dev == false {
 			// false: Dateiname wird im Header gesetzt

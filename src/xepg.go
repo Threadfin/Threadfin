@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"path"
 	"regexp"
 	"runtime"
@@ -72,7 +73,7 @@ func buildXEPG(background bool) {
 
 				showInfo("XEPG:" + fmt.Sprintf("Ready to use"))
 
-				if Settings.CacheImages == true && System.ImageCachingInProgress == 0 {
+				if Settings.CacheImages && System.ImageCachingInProgress == 0 {
 
 					go func() {
 
@@ -109,13 +110,12 @@ func buildXEPG(background bool) {
 			createXEPGDatabase()
 			mapping()
 			cleanupXEPG()
+			createXMLTVFile()
+			createM3UFile()
 
 			go func() {
 
-				createXMLTVFile()
-				createM3UFile()
-
-				if Settings.CacheImages == true && System.ImageCachingInProgress == 0 {
+				if Settings.CacheImages && System.ImageCachingInProgress == 0 {
 
 					go func() {
 
@@ -803,7 +803,7 @@ func createXMLTVFile() (err error) {
 
 	xepgXML.Generator = System.Name
 
-	if System.Branch == "master" {
+	if System.Branch == "main" {
 		xepgXML.Source = fmt.Sprintf("%s - %s", System.Name, System.Version)
 	} else {
 		xepgXML.Source = fmt.Sprintf("%s - %s.%s", System.Name, System.Version, System.Build)
@@ -812,7 +812,6 @@ func createXMLTVFile() (err error) {
 	var tmpProgram = &XMLTV{}
 
 	for _, dxc := range Data.XEPG.Channels {
-
 		var xepgChannel XEPGChannelStruct
 		err := json.Unmarshal([]byte(mapToJSON(dxc)), &xepgChannel)
 		if err == nil {
@@ -841,6 +840,8 @@ func createXMLTVFile() (err error) {
 					xepgXML.Program = append(xepgXML.Program, tmpProgram.Program...)
 				}
 			}
+		} else {
+			log.Println("ERROR: ", err)
 		}
 	}
 
