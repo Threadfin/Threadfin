@@ -284,10 +284,20 @@ func Threadfin(w http.ResponseWriter, r *http.Request) {
 
 	// M3U Datei
 	if strings.Contains(path, "m3u/") {
-		log.Println("I GOT HEREEEEEEE")
 
 		requestType = "m3u"
 		groupTitle = r.URL.Query().Get("group-title")
+
+		m3uFilePath := System.Folder.Data + "threadfin.m3u"
+
+		// Check if the m3u file exists
+		if _, err := os.Stat(m3uFilePath); err == nil {
+			log.Println("Serving existing m3u file")
+			http.ServeFile(w, r, m3uFilePath)
+			return
+		}
+
+		log.Println("M3U file does not exist, building new one")
 
 		if System.Dev == false {
 			// false: Dateiname wird im Header gesetzt
