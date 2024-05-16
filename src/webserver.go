@@ -284,6 +284,7 @@ func Threadfin(w http.ResponseWriter, r *http.Request) {
 
 	// M3U Datei
 	if strings.Contains(path, "m3u/") {
+		log.Println("I GOT HEREEEEEEE")
 
 		requestType = "m3u"
 		groupTitle = r.URL.Query().Get("group-title")
