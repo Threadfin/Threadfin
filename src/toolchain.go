@@ -397,7 +397,7 @@ func resolveHostIP() error {
 		return err
 	}
 
-	log.Println("ADDRESSES: ", System.IPAddressesList)
+	log.Println("ADDRESSES: ", System.IPAddressesV4)
 
 	return nil
 }
