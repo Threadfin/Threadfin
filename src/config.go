@@ -197,7 +197,11 @@ func Init() (err error) {
 	showInfo(fmt.Sprintf("Git Branch:%s [%s]", System.Branch, System.GitHub.User))
 
 	// Domainnamen setzten
-	setGlobalDomain(fmt.Sprintf("%s:%s", System.IPAddress, Settings.Port))
+	if Settings.HttpThreadfinDomain != "" {
+		setGlobalDomain(fmt.Sprintf("%s:%s", Settings.HttpThreadfinDomain, Settings.Port))
+	} else {
+		setGlobalDomain(fmt.Sprintf("%s:%s", System.IPAddress, Settings.Port))
+	}
 
 	System.URLBase = fmt.Sprintf("%s://%s:%s", System.ServerProtocol.WEB, System.IPAddress, Settings.Port)
 
