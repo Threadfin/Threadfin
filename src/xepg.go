@@ -112,9 +112,6 @@ func buildXEPG(background bool) {
 
 			go func() {
 
-				createXMLTVFile()
-				createM3UFile()
-
 				if Settings.CacheImages == true && System.ImageCachingInProgress == 0 {
 
 					go func() {
@@ -126,14 +123,14 @@ func buildXEPG(background bool) {
 						Data.Cache.Images.Image.Remove()
 						showInfo("Image Caching:Done")
 
-						createXMLTVFile()
-						createM3UFile()
-
 						System.ImageCachingInProgress = 0
 
 					}()
 
 				}
+
+				createXMLTVFile()
+				createM3UFile()
 
 				showInfo("XEPG:" + fmt.Sprintf("Ready to use 2"))
 
