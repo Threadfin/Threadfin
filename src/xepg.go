@@ -112,7 +112,7 @@ func buildXEPG(background bool) {
 
 			go func() {
 
-				if Settings.CacheImages == true && System.ImageCachingInProgress == 0 {
+				if Settings.CacheImages && System.ImageCachingInProgress == 0 {
 
 					go func() {
 
@@ -800,7 +800,7 @@ func createXMLTVFile() (err error) {
 
 	xepgXML.Generator = System.Name
 
-	if System.Branch == "master" {
+	if System.Branch == "main" {
 		xepgXML.Source = fmt.Sprintf("%s - %s", System.Name, System.Version)
 	} else {
 		xepgXML.Source = fmt.Sprintf("%s - %s.%s", System.Name, System.Version, System.Build)
