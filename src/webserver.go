@@ -53,7 +53,7 @@ func StartWebserver() (err error) {
 
 	}
 
-	if err = http.ListenAndServe(":"+port, nil); err != nil {
+	if err = http.ListenAndServe("0.0.0.0:"+port, nil); err != nil {
 		ShowError(err, 1001)
 		return
 	}
