@@ -336,15 +336,6 @@ func readStringFromFile(file string) (str string, err error) {
 	return
 }
 
-func isDockerNetworkInterface(iface net.Interface) bool {
-	ifaceName := iface.Name
-	return strings.HasPrefix(ifaceName, "docker") ||
-		strings.HasPrefix(ifaceName, "br-") ||
-		strings.HasPrefix(ifaceName, "veth") ||
-		strings.HasPrefix(ifaceName, "bridge") ||
-		strings.HasPrefix(ifaceName, "br0")
-}
-
 // Netzwerk
 func resolveHostIP() error {
 	interfaces, err := net.Interfaces()
@@ -353,11 +344,6 @@ func resolveHostIP() error {
 	}
 
 	for _, iface := range interfaces {
-		// Skip Docker network interfaces
-		if isDockerNetworkInterface(iface) {
-			continue
-		}
-
 		addrs, err := iface.Addrs()
 		if err != nil {
 			return err
@@ -372,7 +358,7 @@ func resolveHostIP() error {
 
 				if networkIP.IP.To4() != nil {
 					// Skip unwanted IPs
-					if !networkIP.IP.IsLoopback() && !strings.HasPrefix(ip, "169.254") {
+					if !strings.HasPrefix(ip, "169.254") {
 						System.IPAddressesV4 = append(System.IPAddressesV4, ip)
 						System.IPAddress = ip
 					}
