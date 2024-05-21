@@ -984,8 +984,6 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 			switch bufferType {
 			case "FFMPEG":
 				args = []string{"-http_proxy", Settings.HttpProxy}
-			case "VLC":
-				args = []string{"--http_proxy", Settings.HttpProxy}
 			}
 		}
 
