@@ -964,6 +964,9 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 		showInfo("Streaming URL:" + url)
 
 		var tmpFile = fmt.Sprintf("%s%d.ts", tmpFolder, tmpSegment)
+		if strings.Contains(options, "mux=hls") {
+			tmpFile = fmt.Sprintf("%s%d.m3u8", tmpFolder, tmpSegment)
+		}
 
 		f, err := bufferVFS.Create(tmpFile)
 		f.Close()
@@ -1008,6 +1011,9 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 						args = append(args, fmt.Sprintf(":http-user-agent=%s", Settings.UserAgent))
 					}
 
+				} else if a == "[CHANNEL_ID]" {
+					a = strings.Replace(a, "[CHANNEL_ID]", strconv.Itoa(streamID), -1)
+					args = append(args, a)
 				} else {
 					args = append(args, a)
 				}
