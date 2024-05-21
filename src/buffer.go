@@ -965,7 +965,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 
 		var tmpFile = fmt.Sprintf("%s%d.ts", tmpFolder, tmpSegment)
 		if strings.Contains(options, "mux=hls") {
-			tmpFile = fmt.Sprintf("%s%d.m3u8", tmpFolder, tmpSegment)
+			tmpFile = fmt.Sprintf("http://%s:34404/stream.m3u8", System.Domain)
 		}
 
 		f, err := bufferVFS.Create(tmpFile)
