@@ -164,6 +164,9 @@ func loadSettings() (settings SettingsStruct, err error) {
 	defaults["udpxy"] = ""
 	defaults["version"] = System.DBVersion
 	defaults["ThreadfinAutoUpdate"] = true
+	if isRunningInContainer() {
+		defaults["ThreadfinAutoUpdate"] = false
+	}
 	defaults["temp.path"] = System.Folder.Temp
 
 	// Default Werte setzen
@@ -385,4 +388,11 @@ func getStreamInfo(urlID string) (streamInfo StreamInfo, err error) {
 	}
 
 	return
+}
+
+func isRunningInContainer() bool {
+	if _, err := os.Stat("/.dockerenv"); err != nil {
+		return false
+	}
+	return true
 }
