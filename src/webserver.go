@@ -269,12 +269,7 @@ func Stream(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(resp.StatusCode)
 
 		// Copy the response body
-		_, err = io.Copy(w, resp.Body)
-		if err != nil {
-			http.Error(w, "Failed to copy response body", http.StatusInternalServerError)
-		}
-
-		http.Redirect(w, r, streamInfo.URL, 302)
+		io.Copy(w, resp.Body)
 
 		showInfo("Streaming Info:URL was passed to the client.")
 		showInfo("Streaming Info:Threadfin is no longer involved, the client connects directly to the streaming server.")

@@ -964,15 +964,12 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 		showInfo("Streaming URL:" + url)
 
 		var tmpFile = fmt.Sprintf("%s%d.ts", tmpFolder, tmpSegment)
-		if strings.Contains(options, "mux=hls") {
-			tmpFile = fmt.Sprintf("http://%s:34404/stream.m3u8", System.Domain)
-		} else {
-			f, err := bufferVFS.Create(tmpFile)
-			f.Close()
-			if err != nil {
-				addErrorToStream(err)
-				return
-			}
+
+		f, err := bufferVFS.Create(tmpFile)
+		f.Close()
+		if err != nil {
+			addErrorToStream(err)
+			return
 		}
 
 		//args = strings.Replace(args, "[USER-AGENT]", Settings.UserAgent, -1)
@@ -984,6 +981,8 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 			switch bufferType {
 			case "FFMPEG":
 				args = []string{"-http_proxy", Settings.HttpProxy}
+			case "VLC":
+				// args = []string{"--http-proxy", Settings.HttpProxy}
 			}
 		}
 
@@ -1009,9 +1008,6 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 						args = append(args, fmt.Sprintf(":http-user-agent=%s", Settings.UserAgent))
 					}
 
-				} else if a == "[CHANNEL_ID]" {
-					a = strings.Replace(a, "[CHANNEL_ID]", strconv.Itoa(streamID), -1)
-					args = append(args, a)
 				} else {
 					args = append(args, a)
 				}
@@ -1073,7 +1069,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 
 		}()
 
-		f, err := bufferVFS.OpenFile(tmpFile, os.O_APPEND|os.O_WRONLY, 0600)
+		f, err = bufferVFS.OpenFile(tmpFile, os.O_APPEND|os.O_WRONLY, 0600)
 		if err != nil {
 			panic(err)
 		}
@@ -1167,9 +1163,6 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 				}
 
 				tmpFile = fmt.Sprintf("%s%d.ts", tmpFolder, tmpSegment)
-				if strings.Contains(options, "mux=hls") {
-					tmpFile = fmt.Sprintf("http://%s:34404/stream.m3u8", System.Domain)
-				}
 
 				fileSize = 0
 
