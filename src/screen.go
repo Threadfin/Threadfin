@@ -324,6 +324,8 @@ func getErrMsg(errCode int) (errMsg string) {
 	case 2021:
 		errMsg = fmt.Sprintf("VLC binary was not found. Check the VLC path binary in the Threadfin settings.")
 
+	case 2098:
+		errMsg = fmt.Sprintf("Updates are disabled in the settings")
 	case 2099:
 		errMsg = fmt.Sprintf("Updates have been disabled by the developer")
 

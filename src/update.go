@@ -18,8 +18,13 @@ import (
 // BinaryUpdate : Binary Update Prozess. Git Branch master und beta wird von GitHub geladen.
 func BinaryUpdate() (err error) {
 
-	if System.GitHub.Update == false {
+	if !System.GitHub.Update {
 		showWarning(2099)
+		return
+	}
+
+	if !Settings.ThreadfinAutoUpdate {
+		showWarning(2098)
 		return
 	}
 
