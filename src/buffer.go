@@ -966,13 +966,13 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 		var tmpFile = fmt.Sprintf("%s%d.ts", tmpFolder, tmpSegment)
 		if strings.Contains(options, "mux=hls") {
 			tmpFile = fmt.Sprintf("http://%s:34404/stream.m3u8", System.Domain)
-		}
-
-		f, err := bufferVFS.Create(tmpFile)
-		f.Close()
-		if err != nil {
-			addErrorToStream(err)
-			return
+		} else {
+			f, err := bufferVFS.Create(tmpFile)
+			f.Close()
+			if err != nil {
+				addErrorToStream(err)
+				return
+			}
 		}
 
 		//args = strings.Replace(args, "[USER-AGENT]", Settings.UserAgent, -1)
@@ -1073,7 +1073,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 
 		}()
 
-		f, err = bufferVFS.OpenFile(tmpFile, os.O_APPEND|os.O_WRONLY, 0600)
+		f, err := bufferVFS.OpenFile(tmpFile, os.O_APPEND|os.O_WRONLY, 0600)
 		if err != nil {
 			panic(err)
 		}
@@ -1167,6 +1167,9 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 				}
 
 				tmpFile = fmt.Sprintf("%s%d.ts", tmpFolder, tmpSegment)
+				if strings.Contains(options, "mux=hls") {
+					tmpFile = fmt.Sprintf("http://%s:34404/stream.m3u8", System.Domain)
+				}
 
 				fileSize = 0
 
