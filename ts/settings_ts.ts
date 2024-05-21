@@ -571,6 +571,21 @@ class SettingsCategory {
         setting.appendChild(tdRight)
         break
 
+      case "httpProxy":
+
+        var tdLeft = document.createElement("TD");
+        tdLeft.innerHTML = "{{.settings.httpProxy.title}}" + ":"
+
+        var tdRight = document.createElement("TD")
+        var input = content.createInput("text", "httpProxy", data)
+        input.setAttribute("placeholder", "{{.settings.httpProxy.placeholder}}")
+        input.setAttribute("onchange", "javascript: this.className = 'changed'")
+        tdRight.appendChild(input)
+
+        setting.appendChild(tdLeft)
+        setting.appendChild(tdRight)
+        break
+
     }
 
     return setting

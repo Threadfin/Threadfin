@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -227,6 +228,52 @@ func Stream(w http.ResponseWriter, r *http.Request) {
 	case "-":
 		showInfo("Streaming URL:" + streamInfo.URL)
 		w.Header().Set("Access-Control-Allow-Origin", "*")
+
+		httpClient := &http.Client{}
+		if Settings.HttpProxy != "" {
+			proxyURL, err := url.Parse(fmt.Sprintf("http://%s", Settings.HttpProxy))
+			if err != nil {
+				log.Fatalf("Failed to parse proxy URL: %v", err)
+			}
+
+			transport := &http.Transport{
+				Proxy: http.ProxyURL(proxyURL),
+			}
+
+			httpClient = &http.Client{
+				Transport: transport,
+			}
+		}
+
+		// Create a new request to the target URL
+		req, err := http.NewRequest("GET", streamInfo.URL, nil)
+		if err != nil {
+			http.Error(w, "Failed to create request", http.StatusInternalServerError)
+			return
+		}
+
+		// Perform the request
+		resp, err := httpClient.Do(req)
+		if err != nil {
+			http.Error(w, "Failed to perform request", http.StatusInternalServerError)
+			return
+		}
+		defer resp.Body.Close()
+
+		// Copy the response headers and status code
+		for key, values := range resp.Header {
+			for _, value := range values {
+				w.Header().Add(key, value)
+			}
+		}
+		w.WriteHeader(resp.StatusCode)
+
+		// Copy the response body
+		_, err = io.Copy(w, resp.Body)
+		if err != nil {
+			http.Error(w, "Failed to copy response body", http.StatusInternalServerError)
+		}
+
 		http.Redirect(w, r, streamInfo.URL, 302)
 
 		showInfo("Streaming Info:URL was passed to the client.")

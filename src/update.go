@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 
 	up2date "threadfin/src/internal/up2date/client"
 
@@ -47,7 +48,23 @@ func BinaryUpdate() (err error) {
 
 		var git []*GithubReleaseInfo
 
-		resp, err := http.Get(releaseInfo)
+		httpClient := &http.Client{}
+		if Settings.HttpProxy != "" {
+			proxyURL, err := url.Parse(fmt.Sprintf("http://%s", Settings.HttpProxy))
+			if err != nil {
+				log.Fatalf("Failed to parse proxy URL: %v", err)
+			}
+
+			transport := &http.Transport{
+				Proxy: http.ProxyURL(proxyURL),
+			}
+
+			httpClient = &http.Client{
+				Transport: transport,
+			}
+		}
+
+		resp, err := httpClient.Get(releaseInfo)
 		if err != nil {
 			ShowError(err, 6003)
 			return nil

@@ -335,6 +335,7 @@ type SettingsStruct struct {
 	Dummy                     bool                  `json:"dummy"`
 	DummyChannel              string                `json:"dummyChannel"`
 	IgnoreFilters             bool                  `json:"ignoreFilters"`
+	HttpProxy                 string                `json:"httpProxy"`
 }
 
 // LanguageUI : Sprache für das WebUI

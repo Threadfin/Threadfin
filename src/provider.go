@@ -2,7 +2,8 @@ package src
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -282,7 +283,23 @@ func downloadFileFromServer(providerURL string) (filename string, body []byte, e
 		return
 	}
 
-	resp, err := http.Get(providerURL)
+	httpClient := &http.Client{}
+	if Settings.HttpProxy != "" {
+		proxyURL, err := url.Parse(fmt.Sprintf("http://%s", Settings.HttpProxy))
+		if err != nil {
+			log.Fatalf("Failed to parse proxy URL: %v", err)
+		}
+
+		transport := &http.Transport{
+			Proxy: http.ProxyURL(proxyURL),
+		}
+
+		httpClient = &http.Client{
+			Transport: transport,
+		}
+	}
+
+	resp, err := httpClient.Get(providerURL)
 	if err != nil {
 		return
 	}
@@ -314,7 +331,7 @@ func downloadFileFromServer(providerURL string) (filename string, body []byte, e
 
 	}
 
-	body, err = ioutil.ReadAll(resp.Body)
+	body, err = io.ReadAll(resp.Body)
 	if err != nil {
 		return
 	}

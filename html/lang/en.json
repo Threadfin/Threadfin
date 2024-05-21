@@ -406,6 +406,11 @@
       "description": "The address of your UDPxy server. If set, and the channel URLs in the m3u is multicast, Threadfin will rewrite it so that it is accessed via the UDPxy service.",
       "placeholder": "host:port"
     },
+    "httpProxy": {
+      "title": "HTTP Proxy address",
+      "description": "The address of your HTTP Proxy server. If set, Threadfin will use this proxy for all requests.",
+      "placeholder": "host:port"
+    },
     "ffmpegPath": {
       "title": "FFmpeg Binary Path",
       "description": "Path to FFmpeg binary.",

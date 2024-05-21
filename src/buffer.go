@@ -977,6 +977,15 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 		// User-Agent setzen
 		var args []string
 
+		if Settings.HttpProxy != "" {
+			switch bufferType {
+			case "FFMPEG":
+				args = []string{"-http_proxy", Settings.HttpProxy}
+			case "VLC":
+				args = []string{"--http-proxy", Settings.HttpProxy}
+			}
+		}
+
 		for i, a := range strings.Split(options, " ") {
 
 			switch bufferType {
