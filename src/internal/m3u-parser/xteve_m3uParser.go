@@ -17,7 +17,7 @@ func MakeInterfaceFromM3U(byteStream []byte) (allChannels []interface{}, err err
 	var parseMetaData = func(channel string) (stream map[string]string) {
 
 		stream = make(map[string]string)
-		var exceptForParameter = `[a-z-A-Z=]*(".*?")`
+		var exceptForParameter = `[a-z-A-Z&=]*(".*?")`
 		var exceptForChannelName = `,([^\n]*|,[^\r]*)`
 		var lines = strings.Split(strings.Replace(channel, "\r\n", "\n", -1), "\n")
 		// Zeilen mit # und leerer Zeilen entfernen
