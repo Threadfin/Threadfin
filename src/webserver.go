@@ -37,23 +37,28 @@ func StartWebserver() (err error) {
 
 	//http.HandleFunc("/auto/", Auto)
 
-	showInfo("DVR IP:" + System.IPAddress + ":" + Settings.Port)
+	ipAddress := System.IPAddress
+	if Settings.HttpThreadfinDomain != "" {
+		ipAddress = Settings.HttpThreadfinDomain
+	}
+
+	showInfo("DVR IP:" + ipAddress + ":" + Settings.Port)
 
 	var ips = len(System.IPAddressesV4) + len(System.IPAddressesV6) - 1
 	switch ips {
 
 	case 0:
-		showHighlight(fmt.Sprintf("Web Interface:%s://%s:%s/web/", System.ServerProtocol.WEB, System.IPAddress, Settings.Port))
+		showHighlight(fmt.Sprintf("Web Interface:%s://%s:%s/web/", System.ServerProtocol.WEB, ipAddress, Settings.Port))
 
 	case 1:
-		showHighlight(fmt.Sprintf("Web Interface:%s://%s:%s/web/ | Threadfin is also available via the other %d IP.", System.ServerProtocol.WEB, System.IPAddress, Settings.Port, ips))
+		showHighlight(fmt.Sprintf("Web Interface:%s://%s:%s/web/ | Threadfin is also available via the other %d IP.", System.ServerProtocol.WEB, ipAddress, Settings.Port, ips))
 
 	default:
-		showHighlight(fmt.Sprintf("Web Interface:%s://%s:%s/web/ | Threadfin is also available via the other %d IP's.", System.ServerProtocol.WEB, System.IPAddress, Settings.Port, len(System.IPAddressesV4)+len(System.IPAddressesV6)-1))
+		showHighlight(fmt.Sprintf("Web Interface:%s://%s:%s/web/ | Threadfin is also available via the other %d IP's.", System.ServerProtocol.WEB, ipAddress, Settings.Port, len(System.IPAddressesV4)+len(System.IPAddressesV6)-1))
 
 	}
 
-	if err = http.ListenAndServe(System.IPAddress+":"+port, nil); err != nil {
+	if err = http.ListenAndServe(ipAddress+":"+port, nil); err != nil {
 		ShowError(err, 1001)
 		return
 	}
