@@ -3,3 +3,5 @@ threadfin
 vendor/
 .DS_Store
 threadfin.exe
+binaries/
+create_binaries.bat
