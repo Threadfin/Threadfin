@@ -71,7 +71,7 @@ func buildXEPG(background bool) {
 				createXMLTVFile()
 				createM3UFile()
 
-				showInfo("XEPG:" + fmt.Sprintf("Ready to use"))
+				showInfo("XEPG:" + "Ready to use")
 
 				if Settings.CacheImages && System.ImageCachingInProgress == 0 {
 
@@ -135,7 +135,7 @@ func buildXEPG(background bool) {
 
 				}
 
-				showInfo("XEPG:" + fmt.Sprintf("Ready to use"))
+				showInfo("XEPG:" + "Ready to use")
 
 				System.ScanInProgress = 0
 
@@ -180,7 +180,7 @@ func updateXEPG(background bool) {
 
 				createXMLTVFile()
 				createM3UFile()
-				showInfo("XEPG:" + fmt.Sprintf("Ready to use"))
+				showInfo("XEPG:" + "Ready to use")
 
 				System.ScanInProgress = 0
 
@@ -200,8 +200,6 @@ func updateXEPG(background bool) {
 	// Cache löschen
 	//Data.Cache.XMLTV = nil //make(map[string]XMLTV)
 	//Data.Cache.XMLTV = make(map[string]XMLTV)
-
-	return
 }
 
 // Mapping Menü für die XMLTV Dateien erstellen
@@ -273,11 +271,11 @@ func createXEPGMapping() {
 		}
 
 		Data.XMLTV.Mapping = tmpMap
-		tmpMap = make(map[string]interface{})
+		//tmpMap = make(map[string]interface{})
 
 	} else {
 
-		if System.ConfigurationWizard == false {
+		if !System.ConfigurationWizard {
 			showWarning(1007)
 		}
 
@@ -304,8 +302,6 @@ func createXEPGMapping() {
 	}
 
 	Data.XMLTV.Mapping["Threadfin Dummy"] = dummy
-
-	return
 }
 
 // XEPG Datenbank erstellen / aktualisieren
@@ -486,14 +482,14 @@ func createXEPGDatabase() (err error) {
 			xepgChannel.TvgChno = m3uChannel.TvgChno
 
 			// Kanalname aktualisieren, nur mit Kanal ID's möglich
-			if channelHasUUID == true {
-				if xepgChannel.XUpdateChannelName == true {
+			if channelHasUUID {
+				if xepgChannel.XUpdateChannelName {
 					xepgChannel.XName = m3uChannel.Name
 				}
 			}
 
 			// Kanallogo aktualisieren. Wird bei vorhandenem Logo in der XMLTV Datei wieder überschrieben
-			if xepgChannel.XUpdateChannelIcon == true {
+			if xepgChannel.XUpdateChannelIcon {
 				var imgc = Data.Cache.Images
 				xepgChannel.TvgLogo = imgc.Image.GetURL(m3uChannel.TvgLogo, Settings.HttpThreadfinDomain, Settings.Port, Settings.ForceHttps, Settings.HttpsPort, Settings.HttpsThreadfinDomain)
 			}
@@ -736,7 +732,7 @@ func mapping() (err error) {
 
 					var fileID = strings.TrimSuffix(getFilenameFromPath(file), path.Ext(getFilenameFromPath(file)))
 
-					ShowError(fmt.Errorf("Missing XMLTV file: %s", getProviderParameter(fileID, "xmltv", "name")), 0)
+					ShowError(fmt.Errorf("missing XMLTV file: %s", getProviderParameter(fileID, "xmltv", "name")), 0)
 					showWarning(2301)
 					// xepgChannel.XActive = false
 
@@ -1136,7 +1132,6 @@ func getPoster(program *Program, xmltvProgram *Program, xepgChannel XEPGChannelS
 		}
 
 	}
-
 }
 
 // Episodensystem übernehmen, falls keins vorhanden ist und eine Kategorie im Mapping eingestellt wurden, wird eine Episode erstellt
@@ -1160,8 +1155,6 @@ func getEpisodeNum(program *Program, xmltvProgram *Program, xepgChannel XEPGChan
 		}
 
 	}
-
-	return
 }
 
 // Videoparameter erstellen (createXMLTVFile)
@@ -1186,8 +1179,6 @@ func getVideo(program *Program, xmltvProgram *Program, xepgChannel XEPGChannelSt
 	}
 
 	program.Video = video
-
-	return
 }
 
 // Lokale Provider XMLTV Datei laden
@@ -1206,7 +1197,7 @@ func getLocalXMLTV(file string, xmltv *XMLTV) (err error) {
 		// Lokale XML Datei existiert nicht im Ordner: data
 		if err != nil {
 			ShowError(err, 1004)
-			err = errors.New("Local copy of the file no longer exists")
+			err = errors.New("local copy of the file no longer exists")
 			return err
 		}
 
@@ -1235,8 +1226,6 @@ func createM3UFile() {
 	}
 
 	saveMapToJSONFile(System.File.URLS, Data.Cache.StreamingURLS)
-
-	return
 }
 
 // XEPG Datenbank bereinigen
@@ -1254,7 +1243,7 @@ func cleanupXEPG() {
 		sourceIDs = append(sourceIDs, source)
 	}
 
-	showInfo("XEPG:" + fmt.Sprintf("Cleanup database"))
+	showInfo("XEPG: Cleanup database")
 	Data.XEPG.XEPGCount = 0
 
 	for id, dxc := range Data.XEPG.Channels {
@@ -1270,7 +1259,7 @@ func cleanupXEPG() {
 			if indexOfString(xepgChannel.Name+xepgChannel.FileM3UID, Data.Cache.Streams.Active) == -1 {
 				delete(Data.XEPG.Channels, id)
 			} else {
-				if xepgChannel.XActive == true && !xepgChannel.XHideChannel {
+				if xepgChannel.XActive && !xepgChannel.XHideChannel {
 					Data.XEPG.XEPGCount++
 				}
 			}
@@ -1294,14 +1283,12 @@ func cleanupXEPG() {
 	if len(Data.Streams.Active) > 0 && Data.XEPG.XEPGCount == 0 {
 		showWarning(2005)
 	}
-
-	return
 }
 
 // Streaming URL für die Channels App generieren
 func getStreamByChannelID(channelID string) (playlistID, streamURL string, err error) {
 
-	err = errors.New("Channel not found")
+	err = errors.New("channel not found")
 
 	for _, dxc := range Data.XEPG.Channels {
 

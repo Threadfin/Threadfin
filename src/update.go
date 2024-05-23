@@ -107,7 +107,7 @@ func BinaryUpdate() (err error) {
 		err = up2date.GetVersion()
 		if err != nil {
 
-			debug = fmt.Sprintf(err.Error())
+			debug = fmt.Sprint(err.Error())
 			showDebug(debug, 1)
 
 			return nil
@@ -302,25 +302,26 @@ func convertToNewFilter(oldFilter []interface{}) (newFilterMap map[int]interface
 func setValueForUUID() (err error) {
 
 	xepg, err := loadJSONFileToMap(System.File.XEPG)
+	if err == nil {
 
-	for _, c := range xepg {
+		for _, c := range xepg {
 
-		var xepgChannel = c.(map[string]interface{})
+			var xepgChannel = c.(map[string]interface{})
 
-		if uuidKey, ok := xepgChannel["_uuid.key"].(string); ok {
+			if uuidKey, ok := xepgChannel["_uuid.key"].(string); ok {
 
-			if value, ok := xepgChannel[uuidKey].(string); ok {
+				if value, ok := xepgChannel[uuidKey].(string); ok {
 
-				if len(value) > 0 {
-					xepgChannel["_uuid.value"] = value
+					if len(value) > 0 {
+						xepgChannel["_uuid.value"] = value
+					}
+
 				}
 
 			}
 
 		}
-
 	}
-
 	err = saveMapToJSONFile(System.File.XEPG, xepg)
 
 	return

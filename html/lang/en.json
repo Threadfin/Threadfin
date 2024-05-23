@@ -337,6 +337,7 @@
     "category": {
       "general": "General",
       "files": "Files",
+      "network": "Network",
       "streaming": "Streaming",
       "backup": "Backup",
       "authentication": "Authentication"
@@ -434,6 +435,11 @@
     {
       "title": "Store buffer in RAM",
       "description": "If checked, write buffer to RAM instead of writing to disk"
+    },
+    "listeningIp" :
+    {
+      "title": "Listening IPs",
+      "description": "Enter the listening IPs seprated by an ';' for example: 127.0.0.1;192.168.2.1"
     },
     "forceHttps":
     {

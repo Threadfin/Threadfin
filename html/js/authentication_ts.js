@@ -30,3 +30,4 @@ function login() {
     console.log(data);
     form.submit();
 }
+//# sourceMappingURL=authentication_ts.js.map

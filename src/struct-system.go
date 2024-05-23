@@ -325,6 +325,7 @@ type SettingsStruct struct {
 	XepgReplaceChannelTitle   bool                  `json:"xepg.replace.channel.title"`
 	ThreadfinAutoUpdate       bool                  `json:"ThreadfinAutoUpdate"`
 	StoreBufferInRAM          bool                  `json:"storeBufferInRAM"`
+	ListeningIp               string                `json:"listeningIp"`
 	ForceHttps                bool                  `json:"forceHttps"`
 	HttpsPort                 int                   `json:"httpsPort"`
 	HttpsThreadfinDomain      string                `json:"httpsThreadfinDomain"`

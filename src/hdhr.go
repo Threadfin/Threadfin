@@ -154,7 +154,7 @@ func getLineup() (jsonContent []byte, err error) {
 				return
 			}
 
-			if xepgChannel.XActive == true && !xepgChannel.XHideChannel {
+			if xepgChannel.XActive && !xepgChannel.XHideChannel {
 				var stream LineupStream
 				stream.GuideName = xepgChannel.XName
 				stream.GuideNumber = xepgChannel.XChannelID

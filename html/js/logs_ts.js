@@ -37,3 +37,4 @@ function resetLogs() {
     var server = new Server(cmd);
     server.request(data);
 }
+//# sourceMappingURL=logs_ts.js.map

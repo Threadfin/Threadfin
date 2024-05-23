@@ -152,7 +152,7 @@ func getProviderData(fileType, fileID string) (err error) {
 		}
 
 		// Wenn eine ID vorhanden ist und nicht mit der aus der Datanbank übereinstimmt, wird die Aktualisierung übersprungen (goto)
-		if len(fileID) > 0 && newProvider == false {
+		if len(fileID) > 0 && !newProvider {
 			if dataID != fileID {
 				goto Done
 			}
@@ -204,7 +204,7 @@ func getProviderData(fileType, fileID string) (err error) {
 			ShowError(err, 000)
 			var downloadErr = err
 
-			if newProvider == false {
+			if !newProvider {
 
 				// Prüfen ob ältere Datei vorhanden ist
 				var file = System.Folder.Data + dataID + fileExtension
@@ -236,7 +236,7 @@ func getProviderData(fileType, fileID string) (err error) {
 		}
 
 		// Berechnen der Fehlerquote
-		if newProvider == false {
+		if !newProvider {
 
 			if value, ok := dataMap[dataID].(map[string]interface{}); ok {
 

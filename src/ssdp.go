@@ -13,7 +13,7 @@ import (
 // SSDP : SSPD / DLNA Server
 func SSDP() (err error) {
 
-  if Settings.SSDP == false || System.Flag.Info == true {
+  if !Settings.SSDP || System.Flag.Info {
     return
   }
 
@@ -23,7 +23,7 @@ func SSDP() (err error) {
   signal.Notify(quit, os.Interrupt)
 
   ad, err := ssdp.Advertise(
-    fmt.Sprintf("upnp:rootdevice"),                           // send as "ST"
+    "upnp:rootdevice",                           // send as "ST"
     fmt.Sprintf("uuid:%s::upnp:rootdevice", System.DeviceID), // send as "USN"
     fmt.Sprintf("%s/device.xml", System.URLBase),             // send as "LOCATION"
     System.AppName, // send as "SERVER"
@@ -40,14 +40,14 @@ func SSDP() (err error) {
 
   go func(adv *ssdp.Advertiser) {
 
-    aliveTick := time.Tick(300 * time.Second)
+    aliveTick := time.NewTicker(300 * time.Second)
 
   loop:
     for {
 
       select {
 
-      case <-aliveTick:
+      case <- aliveTick.C:
         err = adv.Alive()
         if err != nil {
           ShowError(err, 0)

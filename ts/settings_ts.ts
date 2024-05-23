@@ -145,6 +145,20 @@ class SettingsCategory {
         setting.appendChild(tdRight)
         break
 
+        case "listeningIp":
+          var tdLeft = document.createElement("TD")
+          tdLeft.innerHTML = "{{.settings.listeningIp.title}}" + ":"
+  
+          var tdRight = document.createElement("TD")
+          var input = content.createInput("text", "listeningIp", data)
+          input.setAttribute("placeholder", "{{.settings.listeningIp.placeholder}}")
+          input.setAttribute("onchange", "javascript: this.className = 'changed'")
+          tdRight.appendChild(input)
+  
+          setting.appendChild(tdLeft)
+          setting.appendChild(tdRight)
+          break
+
       // Checkboxen
       case "authentication.web":
         var tdLeft = document.createElement("TD")
@@ -608,6 +622,10 @@ class SettingsCategory {
 
       case "ThreadfinAutoUpdate":
         text = "{{.settings.ThreadfinAutoUpdate.description}}"
+        break
+
+      case "listeningIp":
+        text = "{{.settings.listeningIp.description}}"
         break
 
       case "backup.keep":

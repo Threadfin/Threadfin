@@ -7,8 +7,20 @@
             "type": "go",
             "request": "launch",
             "mode": "auto",
-            "program": "${fileDirname}",
+            "program": "${workspaceFolder}",
             "args": ["-dev"]
-        }
+        },
+        {
+            "preLaunchTask": "Build",
+            "type": "msedge",
+            "request": "launch",
+            "outFiles": [
+                "${workspaceFolder}/html/**/*.(m|c|)js",
+                "!**/node_modules/**"
+            ],
+            "name": "Launch Edge against localhost",
+            "url": "http://192.168.137.1:34400/web/",
+            "webRoot": "${workspaceFolder}/html/"
+          }
     ]
 }

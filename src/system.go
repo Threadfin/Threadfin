@@ -14,7 +14,7 @@ import (
 // Entwicklerinfos anzeigen
 func showDevInfo() {
 
-	if System.Dev == true {
+	if System.Dev {
 
 		fmt.Print("\033[31m")
 		fmt.Println("* * * * * D E V   M O D E * * * * *")
@@ -25,8 +25,6 @@ func showDevInfo() {
 		fmt.Println()
 
 	}
-
-	return
 }
 
 // Alle Systemordner erstellen
@@ -150,6 +148,7 @@ func loadSettings() (settings SettingsStruct, err error) {
 	defaults["port"] = "34400"
 	defaults["ssdp"] = true
 	defaults["storeBufferInRAM"] = true
+	defaults["listeningIp"]= ""
 	defaults["forceHttps"] = false
 	defaults["httpsPort"] = 443
 	defaults["httpsThreadfinDomain"] = ""
@@ -244,7 +243,7 @@ func saveSettings(settings SettingsStruct) (err error) {
 
 	Settings = settings
 
-	if System.Dev == true {
+	if System.Dev {
 		Settings.UUID = "2019-01-DEV-Threadfin!"
 	}
 
@@ -284,8 +283,6 @@ func setGlobalDomain(domain string) {
 		System.Addresses.M3U = getErrMsg(2106)
 		System.Addresses.XML = getErrMsg(2106)
 	}
-
-	return
 }
 
 // UUID generieren
@@ -306,8 +303,6 @@ func setDeviceID() {
 	default:
 		System.DeviceID = fmt.Sprintf("%s:%d", id, Settings.Tuner)
 	}
-
-	return
 }
 
 // Provider Streaming-URL zu Threadfin Streaming-URL konvertieren

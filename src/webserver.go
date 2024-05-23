@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -39,20 +40,51 @@ func StartWebserver() (err error) {
 
 	showInfo("DVR IP:" + System.IPAddress + ":" + Settings.Port)
 
-	for _, ip := range System.IPAddressesV4 {
-		showHighlight(fmt.Sprintf("Web Intreface:%s://%s:%s/web/", System.ServerProtocol.WEB, ip, Settings.Port))
+	
+	regexIpV4, _ := regexp.Compile(`(?:\d{1,3}\.){3}\d{1,3}`)
+	regexIpV6, _ := regexp.Compile(`(?:[A-Fa-f0-9]{0,4}:){3,7}[a-fA-F0-9]{1,4}`)
+	var customIps []string
+	var customIpsV4 = regexIpV4.FindAllString(Settings.ListeningIp, -1)
+	var customIpsV6 = regexIpV6.FindAllString(Settings.ListeningIp, -1)
+	if customIpsV4 != nil || customIpsV6 != nil {
+		customIps=make([]string, len(customIpsV4)+ len(customIpsV6))
+		copy(customIps, customIpsV4)
+		copy(customIps[len(customIpsV4):], customIpsV6)
 	}
+	
+	if customIps != nil {
+		showHighlight("Webserver is restricted to listen to this address(es):")
+		for _, ip := range customIps {
+			showHighlight(fmt.Sprintf("Web Intreface:%s://%s:%s/web/", System.ServerProtocol.WEB, ip, Settings.Port))
+		}
+	} else {
+		for _, ip := range System.IPAddressesV4 {
+			showHighlight(fmt.Sprintf("Web Intreface:%s://%s:%s/web/", System.ServerProtocol.WEB, ip, Settings.Port))
+		}
 
-	for _, ip := range System.IPAddressesV6 {
-		showHighlight(fmt.Sprintf("Web Intreface:%s://%s:%s/web/", System.ServerProtocol.WEB, ip, Settings.Port))
+		for _, ip := range System.IPAddressesV6 {
+			showHighlight(fmt.Sprintf("Web Intreface:%s://%s:%s/web/", System.ServerProtocol.WEB, ip, Settings.Port))
+		}
 	}
-
 	if err = http.ListenAndServe(":"+port, nil); err != nil {
 		ShowError(err, 1001)
 		return
 	}
-
 	return
+}
+
+func checkForRestriction(w http.ResponseWriter, r *http.Request) error{
+	if Settings.ListeningIp == "" {
+		return nil
+	} else {	
+		for _, ip := range strings.Split(Settings.ListeningIp, ";") {
+			if strings.Split(r.RemoteAddr, ":")[0] == ip {
+				return nil
+			}
+		} 
+		httpStatusError(w, http.StatusForbidden)
+		return errors.New("not listening to this IP: " + strings.Split(r.RemoteAddr, ":")[0])
+	}
 }
 
 // Index : Web Server /
@@ -62,6 +94,12 @@ func Index(w http.ResponseWriter, r *http.Request) {
 	var response []byte
 	var path = r.URL.Path
 	var debug string
+
+	err = checkForRestriction(w, r)
+	if err != nil {
+		ShowError(err, 7001)
+		return
+	}
 
 	if Settings.HttpThreadfinDomain != "" {
 		setGlobalDomain(fmt.Sprintf("%s:%s", Settings.HttpThreadfinDomain, Settings.Port))
@@ -83,12 +121,12 @@ func Index(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 
 	case "/lineup.json":
-		if Settings.AuthenticationPMS == true {
+		if Settings.AuthenticationPMS {
 
 			_, err := basicAuth(r, "authentication.pms")
 			if err != nil {
 				ShowError(err, 000)
-				httpStatusError(w, r, 403)
+				httpStatusError(w, http.StatusForbidden)
 				return
 			}
 
@@ -114,13 +152,19 @@ func Index(w http.ResponseWriter, r *http.Request) {
 
 	}
 
-	httpStatusError(w, r, 500)
-
-	return
+	httpStatusError(w, http.StatusInternalServerError)
 }
 
 // Stream : Web Server /stream/
 func Stream(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	err = checkForRestriction(w, r)
+	if err != nil {
+		ShowError(err, 7001)
+		return
+	}
 
 	var path = strings.Replace(r.RequestURI, "/stream/", "", 1)
 	//var stream = strings.SplitN(path, "-", 2)
@@ -128,7 +172,7 @@ func Stream(w http.ResponseWriter, r *http.Request) {
 	streamInfo, err := getStreamInfo(path)
 	if err != nil {
 		ShowError(err, 1203)
-		httpStatusError(w, r, 404)
+		httpStatusError(w, http.StatusNotFound)
 		return
 	}
 
@@ -138,14 +182,14 @@ func Stream(w http.ResponseWriter, r *http.Request) {
 		req, err := http.NewRequest("HEAD", streamInfo.URL, nil)
 		if err != nil {
 			ShowError(err, 1501)
-			httpStatusError(w, r, 405)
+			httpStatusError(w, http.StatusMethodNotAllowed)
 			return
 		}
 
 		resp, err := client.Do(req)
 		if err != nil {
 			ShowError(err, 1502)
-			httpStatusError(w, r, 405)
+			httpStatusError(w, http.StatusMethodNotAllowed)
 			return
 		}
 		defer resp.Body.Close()
@@ -185,12 +229,12 @@ func Stream(w http.ResponseWriter, r *http.Request) {
 		showInfo(fmt.Sprintf("Buffer:false [%s]", Settings.Buffer))
 
 	case "threadfin":
-		if strings.Index(streamInfo.URL, "rtsp://") != -1 || strings.Index(streamInfo.URL, "rtp://") != -1 {
+		if strings.Contains(streamInfo.URL, "rtsp://") || strings.Contains(streamInfo.URL, "rtp://") {
 			err = errors.New("RTSP and RTP streams are not supported")
 			ShowError(err, 2004)
 
 			showInfo("Streaming URL:" + streamInfo.URL)
-			http.Redirect(w, r, streamInfo.URL, 302)
+			http.Redirect(w, r, streamInfo.URL, http.StatusFound)
 
 			showInfo("Streaming Info:URL was passed to the client")
 			return
@@ -216,7 +260,7 @@ func Stream(w http.ResponseWriter, r *http.Request) {
 	case "-":
 		showInfo("Streaming URL:" + streamInfo.URL)
 		w.Header().Set("Access-Control-Allow-Origin", "*")
-		http.Redirect(w, r, streamInfo.URL, 302)
+		http.Redirect(w, r, streamInfo.URL, http.StatusFound)
 
 		showInfo("Streaming Info:URL was passed to the client.")
 		showInfo("Streaming Info:Threadfin is no longer involved, the client connects directly to the streaming server.")
@@ -225,12 +269,16 @@ func Stream(w http.ResponseWriter, r *http.Request) {
 		bufferingStream(streamInfo.PlaylistID, streamInfo.URL, streamInfo.BackupChannel1URL, streamInfo.BackupChannel2URL, streamInfo.BackupChannel3URL, streamInfo.Name, w, r)
 
 	}
-
-	return
 }
 
 // Auto : HDHR routing (wird derzeit nicht benutzt)
 func Auto(w http.ResponseWriter, r *http.Request) {
+
+	var err = checkForRestriction(w, r)
+	if err != nil {
+		ShowError(err, 7001)
+		return
+	}
 
 	var channelID = strings.Replace(r.RequestURI, "/auto/v", "", 1)
 	fmt.Println(channelID)
@@ -250,8 +298,6 @@ func Auto(w http.ResponseWriter, r *http.Request) {
 			httpStatusError(w, r, 423)
 		}
 	*/
-
-	return
 }
 
 // Threadfin : Web Server /xmltv/ und /m3u/
@@ -261,6 +307,12 @@ func Threadfin(w http.ResponseWriter, r *http.Request) {
 	var err error
 	var path = strings.TrimPrefix(r.URL.Path, "/")
 	var groups = []string{}
+
+	err = checkForRestriction(w, r)
+	if err != nil {
+		ShowError(err, 7001)
+		return
+	}
 
 	if Settings.HttpThreadfinDomain != "" {
 		setGlobalDomain(fmt.Sprintf("%s:%s", Settings.HttpThreadfinDomain, Settings.Port))
@@ -277,7 +329,7 @@ func Threadfin(w http.ResponseWriter, r *http.Request) {
 
 		content, err = readStringFromFile(file)
 		if err != nil {
-			httpStatusError(w, r, 404)
+			httpStatusError(w, http.StatusNotFound)
 			return
 		}
 
@@ -300,7 +352,7 @@ func Threadfin(w http.ResponseWriter, r *http.Request) {
 
 		log.Println("M3U file does not exist, building new one")
 
-		if System.Dev == false {
+		if !System.Dev {
 			// false: Dateiname wird im Header gesetzt
 			// true: M3U wird direkt im Browser angezeigt
 			w.Header().Set("Content-Disposition", "attachment; filename="+getFilenameFromPath(path))
@@ -321,7 +373,7 @@ func Threadfin(w http.ResponseWriter, r *http.Request) {
 	err = urlAuth(r, requestType)
 	if err != nil {
 		ShowError(err, 000)
-		httpStatusError(w, r, 403)
+		httpStatusError(w, http.StatusForbidden)
 		return
 	}
 
@@ -331,23 +383,25 @@ func Threadfin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", contentType)
-
-	if err == nil {
-		w.Write([]byte(content))
-	}
-
-	return
+	w.Write([]byte(content))
 }
 
 // Images : Image Cache /images/
 func Images(w http.ResponseWriter, r *http.Request) {
 
+	var err error
 	var path = strings.TrimPrefix(r.URL.Path, "/")
 	var filePath = System.Folder.ImagesCache + getFilenameFromPath(path)
 
+	err = checkForRestriction(w, r)
+	if err != nil {
+		ShowError(err, 7001)
+		return
+	}
+
 	content, err := readByteFromFile(filePath)
 	if err != nil {
-		httpStatusError(w, r, 404)
+		httpStatusError(w, http.StatusNotFound)
 		return
 	}
 
@@ -355,19 +409,24 @@ func Images(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Length", fmt.Sprintf("%d", len(content)))
 	w.WriteHeader(200)
 	w.Write(content)
-
-	return
 }
 
 // DataImages : Image Pfad für Logos / Bilder die hochgeladen wurden /data_images/
 func DataImages(w http.ResponseWriter, r *http.Request) {
 
+	var err error
 	var path = strings.TrimPrefix(r.URL.Path, "/")
 	var filePath = System.Folder.ImagesUpload + getFilenameFromPath(path)
 
+	err = checkForRestriction(w, r)
+	if err != nil {
+		ShowError(err, 7001)
+		return
+	}
+
 	content, err := readByteFromFile(filePath)
 	if err != nil {
-		httpStatusError(w, r, 404)
+		httpStatusError(w, http.StatusNotFound)
 		return
 	}
 
@@ -375,16 +434,21 @@ func DataImages(w http.ResponseWriter, r *http.Request) {
 	w.Header().Add("Content-Length", fmt.Sprintf("%d", len(content)))
 	w.WriteHeader(200)
 	w.Write(content)
-
-	return
 }
 
 // WS : Web Sockets /ws/
 func WS(w http.ResponseWriter, r *http.Request) {
 
+	var err error
 	var request RequestStruct
 	var response ResponseStruct
 	response.Status = true
+
+	err = checkForRestriction(w, r)
+	if err != nil {
+		ShowError(err, 7001)
+		return
+	}
 
 	var newToken string
 
@@ -416,7 +480,7 @@ func WS(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if System.ConfigurationWizard == false {
+		if !System.ConfigurationWizard {
 
 			switch Settings.AuthenticationWEB {
 
@@ -465,7 +529,6 @@ func WS(w http.ResponseWriter, r *http.Request) {
 				ShowError(err, 1022)
 			} else {
 				return
-				break
 			}
 			return
 
@@ -481,7 +544,7 @@ func WS(w http.ResponseWriter, r *http.Request) {
 
 				response.OpenMenu = strconv.Itoa(indexOfString("settings", System.WEB.Menu))
 
-				if Settings.AuthenticationWEB == true && authenticationUpdate == false {
+				if Settings.AuthenticationWEB && !authenticationUpdate {
 					response.Reload = true
 				}
 
@@ -635,7 +698,7 @@ func WS(w http.ResponseWriter, r *http.Request) {
 
 			var requestMap = make(map[string]interface{}) // Debug
 			_ = requestMap
-			if System.Dev == true {
+			if System.Dev {
 				fmt.Println(mapToJSON(requestMap))
 			}
 
@@ -648,7 +711,7 @@ func WS(w http.ResponseWriter, r *http.Request) {
 		}
 
 		response = setDefaultResponseData(response, true)
-		if System.ConfigurationWizard == true {
+		if System.ConfigurationWizard {
 			response.ConfigurationWizard = System.ConfigurationWizard
 		}
 
@@ -659,8 +722,6 @@ func WS(w http.ResponseWriter, r *http.Request) {
 		}
 
 	}
-
-	return
 }
 
 // Web : Web Server /web/
@@ -674,13 +735,19 @@ func Web(w http.ResponseWriter, r *http.Request) {
 
 	var language LanguageUI
 
+	err = checkForRestriction(w, r)
+	if err != nil {
+		ShowError(err, 7001)
+		return
+	}
+
 	if Settings.HttpThreadfinDomain != "" {
 		setGlobalDomain(fmt.Sprintf("%s:%s", Settings.HttpThreadfinDomain, Settings.Port))
 	} else {
 		setGlobalDomain(r.Host)
 	}
 
-	if System.Dev == true {
+	if System.Dev {
 
 		lang, err = loadJSONFileToMap(fmt.Sprintf("html/lang/%s.json", Settings.Language))
 		if err != nil {
@@ -741,12 +808,12 @@ func Web(w http.ResponseWriter, r *http.Request) {
 
 					var token, err = createFirstUserForAuthentication(username, password)
 					if err != nil {
-						httpStatusError(w, r, 429)
+						httpStatusError(w, http.StatusTooManyRequests)
 						return
 					}
 					// Redirect, damit die Daten aus dem Browser gelöscht werden.
 					w = authentication.SetCookieToken(w, token)
-					http.Redirect(w, r, "/web", 301)
+					http.Redirect(w, r, "/web", http.StatusMovedPermanently)
 					return
 
 				}
@@ -762,11 +829,11 @@ func Web(w http.ResponseWriter, r *http.Request) {
 					}
 
 					w = authentication.SetCookieToken(w, token)
-					http.Redirect(w, r, "/web", 301) // Redirect, damit die Daten aus dem Browser gelöscht werden.
+					http.Redirect(w, r, "/web", http.StatusMovedPermanently) // Redirect, damit die Daten aus dem Browser gelöscht werden.
 
 				} else {
 					w = authentication.SetCookieToken(w, "-")
-					http.Redirect(w, r, "/web", 301) // Redirect, damit die Daten aus dem Browser gelöscht werden.
+					http.Redirect(w, r, "/web", http.StatusMovedPermanently) // Redirect, damit die Daten aus dem Browser gelöscht werden.
 				}
 
 				return
@@ -791,11 +858,11 @@ func Web(w http.ResponseWriter, r *http.Request) {
 			allUserData, err := authentication.GetAllUserData()
 			if err != nil {
 				ShowError(err, 000)
-				httpStatusError(w, r, 403)
+				httpStatusError(w, http.StatusForbidden)
 				return
 			}
 
-			if len(allUserData) == 0 && Settings.AuthenticationWEB == true {
+			if len(allUserData) == 0 && Settings.AuthenticationWEB {
 				file = requestFile + "create-first-user.html"
 			}
 
@@ -803,9 +870,9 @@ func Web(w http.ResponseWriter, r *http.Request) {
 
 		requestFile = file
 
-		if value, ok := webUI[requestFile]; ok {
+		if _, ok := webUI[requestFile]; ok {
 
-			content = GetHTMLString(value.(string))
+			// content = GetHTMLString(value.(string))
 
 			if contentType == "text/plain" {
 				w.Header().Set("Content-Disposition", "attachment; filename="+getFilenameFromPath(requestFile))
@@ -813,7 +880,7 @@ func Web(w http.ResponseWriter, r *http.Request) {
 
 		} else {
 
-			httpStatusError(w, r, 404)
+			httpStatusError(w, http.StatusNotFound)
 			return
 		}
 
@@ -829,13 +896,13 @@ func Web(w http.ResponseWriter, r *http.Request) {
 		}
 
 	} else {
-		httpStatusError(w, r, 404)
+		httpStatusError(w, http.StatusNotFound)
 		return
 	}
 
 	contentType = getContentType(requestFile)
 
-	if System.Dev == true {
+	if System.Dev {
 		// Lokale Webserver Dateien werden geladen, nur für die Entwicklung
 		content, _ = readStringFromFile(requestFile)
 	}
@@ -915,39 +982,37 @@ func API(w http.ResponseWriter, r *http.Request) {
 		response.Status = false
 		response.Error = err.Error()
 		w.Write([]byte(mapToJSON(response)))
-		return
-
 	}
 
 	response.Status = true
 
-	if Settings.API == false {
-		httpStatusError(w, r, 423)
+	if !Settings.API {
+		httpStatusError(w, http.StatusLocked)
 		return
 	}
 
 	if r.Method == "GET" {
-		httpStatusError(w, r, 404)
+		httpStatusError(w, http.StatusNotFound)
 		return
 	}
 
 	b, err := ioutil.ReadAll(r.Body)
 	defer r.Body.Close()
 	if err != nil {
-		httpStatusError(w, r, 400)
+		httpStatusError(w, http.StatusBadRequest)
 		return
 
 	}
 
 	err = json.Unmarshal(b, &request)
 	if err != nil {
-		httpStatusError(w, r, 400)
+		httpStatusError(w, http.StatusBadRequest)
 		return
 	}
 
 	w.Header().Set("content-type", "application/json")
 
-	if Settings.AuthenticationAPI == true {
+	if Settings.AuthenticationAPI {
 		var token string
 		switch len(request.Token) {
 		case 0:
@@ -959,7 +1024,7 @@ func API(w http.ResponseWriter, r *http.Request) {
 				}
 
 			} else {
-				err = errors.New("Login incorrect")
+				err = errors.New("login incorrect")
 				if err != nil {
 					responseAPIError(err)
 					return
@@ -1043,8 +1108,6 @@ func API(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Write([]byte(mapToJSON(response)))
-
-	return
 }
 
 // Download : Datei Download
@@ -1062,7 +1125,6 @@ func Download(w http.ResponseWriter, r *http.Request) {
 
 	os.RemoveAll(System.Folder.Temp + getFilenameFromPath(path))
 	w.Write([]byte(content))
-	return
 }
 
 func setDefaultResponseData(response ResponseStruct, data bool) (defaults ResponseStruct) {
@@ -1086,7 +1148,7 @@ func setDefaultResponseData(response ResponseStruct, data bool) (defaults Respon
 	switch System.Branch {
 
 	case "master":
-		defaults.ClientInfo.Version = fmt.Sprintf("%s", System.Version)
+		defaults.ClientInfo.Version =System.Version
 
 	default:
 		defaults.ClientInfo.Version = fmt.Sprintf("%s (%s)", System.Version, System.Build)
@@ -1094,7 +1156,7 @@ func setDefaultResponseData(response ResponseStruct, data bool) (defaults Respon
 
 	}
 
-	if data == true {
+	if data {
 
 		defaults.Users, _ = authentication.GetAllUserData()
 		//defaults.DVR = System.DVRAddress
@@ -1201,9 +1263,8 @@ func disablePPV(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(200)
 }
 
-func httpStatusError(w http.ResponseWriter, r *http.Request, httpStatusCode int) {
+func httpStatusError(w http.ResponseWriter, httpStatusCode int) {
 	http.Error(w, fmt.Sprintf("%s [%d]", http.StatusText(httpStatusCode), httpStatusCode), httpStatusCode)
-	return
 }
 
 func getContentType(filename string) (contentType string) {

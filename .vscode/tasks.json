@@ -9,6 +9,18 @@
 			],
 			"group": "build",
 			"label": "tsc build"
+		},
+		{
+			"type": "go",
+			"command": "build",
+			"label": "go build"
+		},
+		{
+			"label": "Build",
+			"dependsOn" : [
+				"tsc build",
+				"go build"
+			]
 		}
 	]
 }

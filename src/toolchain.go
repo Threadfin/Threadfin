@@ -112,8 +112,8 @@ func checkFile(filename string) (err error) {
 	switch mode := fi.Mode(); {
 	case mode.IsDir():
 		err = fmt.Errorf("%s: %s", file, getErrMsg(1072))
-	case mode.IsRegular():
-		break
+	//case mode.IsRegular():
+	//	break
 	}
 
 	return
@@ -282,16 +282,15 @@ func saveMapToJSONFile(file string, tmpMap interface{}) error {
 
 func loadJSONFileToMap(file string) (tmpMap map[string]interface{}, err error) {
 	f, err := os.Open(getPlatformFile(file))
-	defer f.Close()
+	if err == nil {
+		defer f.Close()
+	}
 
 	content, err := io.ReadAll(f)
 
 	if err == nil {
 		err = json.Unmarshal([]byte(content), &tmpMap)
 	}
-
-	f.Close()
-
 	return
 }
 
@@ -299,11 +298,11 @@ func loadJSONFileToMap(file string) (tmpMap map[string]interface{}, err error) {
 func readByteFromFile(file string) (content []byte, err error) {
 
 	f, err := os.Open(getPlatformFile(file))
-	defer f.Close()
+	if err == nil {
+		defer f.Close()
+	}
 
 	content, err = io.ReadAll(f)
-	f.Close()
-
 	return
 }
 

@@ -77,7 +77,7 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 		err := checkVFSFolder(playlist.Folder, bufferVFS)
 		if err != nil {
 			ShowError(err, 000)
-			httpStatusError(w, r, 404)
+			httpStatusError(w, http.StatusNotFound)
 			return
 		}
 
@@ -1257,8 +1257,6 @@ func debugRequest(req *http.Request) {
 
 	debug = "Request:* * * * * * END HTTP(S) REQUEST * * * * * *"
 	showDebug(debug, debugLevel)
-
-	return
 }
 
 func debugResponse(resp *http.Response) {
@@ -1302,8 +1300,6 @@ func debugResponse(resp *http.Response) {
 
 	debug = "Pesponse:* * * * * * END RESPONSE * * * * * * "
 	showDebug(debug, debugLevel)
-
-	return
 }
 
 func terminateProcessGracefully(cmd *exec.Cmd) {

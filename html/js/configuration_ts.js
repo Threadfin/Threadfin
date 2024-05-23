@@ -128,3 +128,4 @@ configurationWizard.push(new WizardItem("tuner", "{{.wizard.tuner.title}}"));
 configurationWizard.push(new WizardItem("epgSource", "{{.wizard.epgSource.title}}"));
 configurationWizard.push(new WizardItem("m3u", "{{.wizard.m3u.title}}"));
 configurationWizard.push(new WizardItem("xmltv", "{{.wizard.xmltv.title}}"));
+//# sourceMappingURL=configuration_ts.js.map

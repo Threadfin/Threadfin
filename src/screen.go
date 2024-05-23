@@ -12,7 +12,7 @@ import (
 
 func showInfo(str string) {
 
-	if System.Flag.Info == true {
+	if System.Flag.Info {
 		return
 	}
 
@@ -38,8 +38,6 @@ func showInfo(str string) {
 		logCleanUp()
 
 	}
-
-	return
 }
 
 func showDebug(str string, level int) {
@@ -72,8 +70,6 @@ func showDebug(str string, level int) {
 		mutex.Unlock()
 
 	}
-
-	return
 }
 
 func showHighlight(str string) {
@@ -110,8 +106,6 @@ func showHighlight(str string) {
 	}
 
 	addNotification(notification)
-
-	return
 }
 
 func showWarning(errCode int) {
@@ -126,8 +120,6 @@ func showWarning(errCode int) {
 	WebScreenLog.Log = append(WebScreenLog.Log, time.Now().Format("2006-01-02 15:04:05")+" "+logMsg)
 	WebScreenLog.Warnings++
 	mutex.Unlock()
-
-	return
 }
 
 // ShowError : Zeigt die Fehlermeldungen in der Konsole
@@ -144,8 +136,6 @@ func ShowError(err error, errCode int) {
 	WebScreenLog.Log = append(WebScreenLog.Log, time.Now().Format("2006-01-02 15:04:05")+" "+logMsg)
 	WebScreenLog.Errors++
 	mutex.Unlock()
-
-	return
 }
 
 func printLogOnScreen(logMsg string, logType string) {
@@ -216,8 +206,6 @@ func logCleanUp() {
 	}
 
 	WebScreenLog.Log = logs
-
-	return
 }
 
 // Fehlercodes
@@ -230,79 +218,83 @@ func getErrMsg(errCode int) (errMsg string) {
 
 	// Errors
 	case 1001:
-		errMsg = fmt.Sprintf("Web server could not be started.")
+		errMsg = "Web server could not be started."
 	case 1002:
-		errMsg = fmt.Sprintf("No local IP address found.")
+		errMsg = "No local IP address found."
 	case 1003:
-		errMsg = fmt.Sprintf("Invalid xml")
+		errMsg = "Invalid xml"
 	case 1004:
-		errMsg = fmt.Sprintf("File not found")
+		errMsg = "File not found"
 	case 1005:
-		errMsg = fmt.Sprintf("Invalid M3U file, an extended M3U file is required.")
+		errMsg = "Invalid M3U file, an extended M3U file is required."
 	case 1006:
-		errMsg = fmt.Sprintf("No playlist!")
+		errMsg = "No playlist!"
 	case 1007:
-		errMsg = fmt.Sprintf("XEPG requires an XMLTV file.")
+		errMsg = "XEPG requires an XMLTV file."
 	case 1010:
-		errMsg = fmt.Sprintf("Invalid file compression")
+		errMsg = "Invalid file compression"
 	case 1011:
 		errMsg = fmt.Sprintf("Data is corrupt or unavailable, %s now uses an older version of this file", System.Name)
 	case 1012:
-		errMsg = fmt.Sprintf("Invalid formatting of the time")
+		errMsg = "Invalid formatting of the time"
 	case 1013:
 		errMsg = fmt.Sprintf("Invalid settings file (settings.json), file must be at least version %s", System.Compatibility)
 	case 1014:
-		errMsg = fmt.Sprintf("Invalid filter rule")
+		errMsg = "Invalid filter rule"
+	case 1015:
+		errMsg = "Invalid file permissions for config folder"
+	case 1016:
+		errMsg = "Invalid file permissions for temp folder"
 
 	case 1020:
-		errMsg = fmt.Sprintf("Data could not be saved, invalid keyword")
+		errMsg = "Data could not be saved, invalid keyword"
 
 	// Datenbank Update
 	case 1030:
 		errMsg = fmt.Sprintf("Invalid settings file (%s)", System.File.Settings)
 	case 1031:
-		errMsg = fmt.Sprintf("Database error. The database version of your settings is not compatible with this version.")
+		errMsg = "Database error. The database version of your settings is not compatible with this version."
 
 	// M3U Parser
 	case 1050:
-		errMsg = fmt.Sprintf("Invalid duration specification in the M3U8 playlist.")
+		errMsg = "Invalid duration specification in the M3U8 playlist."
 
 	case 1060:
-		errMsg = fmt.Sprintf("Invalid characters found in the tvg parameters, streams with invalid parameters were skipped.")
+		errMsg = "Invalid characters found in the tvg parameters, streams with invalid parameters were skipped."
 
 	// Dateisystem
 	case 1070:
-		errMsg = fmt.Sprintf("Folder could not be created.")
+		errMsg = "Folder could not be created."
 	case 1071:
-		errMsg = fmt.Sprintf("File could not be created")
+		errMsg = "File could not be created"
 	case 1072:
-		errMsg = fmt.Sprintf("File not found")
+		errMsg = "File not found"
 
 	// Backup
 	case 1090:
-		errMsg = fmt.Sprintf("Automatic backup failed")
+		errMsg = "Automatic backup failed"
 
 	// Websockets
 	case 1100:
-		errMsg = fmt.Sprintf("WebUI build error")
+		errMsg = "WebUI build error"
 	case 1101:
-		errMsg = fmt.Sprintf("WebUI request error")
+		errMsg = "WebUI request error"
 	case 1102:
-		errMsg = fmt.Sprintf("WebUI response error")
+		errMsg = "WebUI response error"
 
 	// PMS Guide Numbers
 	case 1200:
-		errMsg = fmt.Sprintf("Could not create file")
+		errMsg = "Could not create file"
 
 	// Stream URL Fehler
 	case 1201:
-		errMsg = fmt.Sprintf("Plex stream error")
+		errMsg = "Plex stream error"
 	case 1202:
-		errMsg = fmt.Sprintf("Steaming URL could not be found in any playlist")
+		errMsg = "Steaming URL could not be found in any playlist"
 	case 1203:
-		errMsg = fmt.Sprintf("Steaming URL could not be found in any playlist")
+		errMsg = "Steaming URL could not be found in any playlist"
 	case 1204:
-		errMsg = fmt.Sprintf("Streaming was stopped by third party transcoder (FFmpeg / VLC)")
+		errMsg = "Streaming was stopped by third party transcoder (FFmpeg / VLC)"
 
 	// Warnings
 	case 2000:
@@ -310,90 +302,94 @@ func getErrMsg(errCode int) (errMsg string) {
 	case 2001:
 		errMsg = fmt.Sprintf("%s has loaded more than %d streams. Use the filter to reduce the number of streams.", System.Name, System.UnfilteredChannelLimit)
 	case 2002:
-		errMsg = fmt.Sprintf("PMS can not play m3u8 streams")
+		errMsg = "PMS can not play m3u8 streams"
 	case 2003:
-		errMsg = fmt.Sprintf("PMS can not play streams over RTSP.")
+		errMsg = "PMS can not play streams over RTSP."
 	case 2004:
-		errMsg = fmt.Sprintf("Buffer is disabled for this stream.")
+		errMsg = "Buffer is disabled for this stream."
 	case 2005:
-		errMsg = fmt.Sprintf("There are no channels mapped, use the mapping menu to assign EPG data to the channels.")
+		errMsg = "There are no channels mapped, use the mapping menu to assign EPG data to the channels."
 	case 2010:
-		errMsg = fmt.Sprintf("No valid streaming URL")
+		errMsg = "No valid streaming URL"
 	case 2020:
-		errMsg = fmt.Sprintf("FFmpeg binary was not found. Check the FFmpeg binary path in the Threadfin settings.")
+		errMsg = "FFmpeg binary was not found. Check the FFmpeg binary path in the Threadfin settings."
 	case 2021:
-		errMsg = fmt.Sprintf("VLC binary was not found. Check the VLC path binary in the Threadfin settings.")
+		errMsg = "VLC binary was not found. Check the VLC path binary in the Threadfin settings."
 
 	case 2098:
-		errMsg = fmt.Sprintf("Updates are disabled in the settings")
+		errMsg = "Updates are disabled in the settings"
 	case 2099:
-		errMsg = fmt.Sprintf("Updates have been disabled by the developer")
+		errMsg = "Updates have been disabled by the developer"
 
 	// Tuner
 	case 2105:
 		errMsg = fmt.Sprintf("The number of tuners has changed, you have to delete " + System.Name + " in Plex / Emby HDHR and set it up again.")
 	case 2106:
-		errMsg = fmt.Sprintf("This function is only available with XEPG as EPG source")
+		errMsg = "This function is only available with XEPG as EPG source"
 
 	case 2110:
-		errMsg = fmt.Sprintf("Don't run this as Root!")
+		errMsg = "Don't run this as Root!"
 
 	case 2300:
-		errMsg = fmt.Sprintf("No channel logo found in the XMLTV or M3U file.")
+		errMsg = "No channel logo found in the XMLTV or M3U file."
 	case 2301:
-		errMsg = fmt.Sprintf("XMLTV file no longer available, channel has been deactivated.")
+		errMsg = "XMLTV file no longer available, channel has been deactivated."
 	case 2302:
-		errMsg = fmt.Sprintf("Channel ID in the XMLTV file has changed. Channel has been deactivated.")
+		errMsg = "Channel ID in the XMLTV file has changed. Channel has been deactivated."
 
 	// Benutzerauthentifizierung
 	case 3000:
-		errMsg = fmt.Sprintf("Database for user authentication could not be initialized.")
+		errMsg = "Database for user authentication could not be initialized."
 	case 3001:
-		errMsg = fmt.Sprintf("The user has no authorization to load the channels.")
+		errMsg = "The user has no authorization to load the channels."
 
 	// Buffer
 	case 4000:
-		errMsg = fmt.Sprintf("Connection to streaming source was interrupted.")
+		errMsg = "Connection to streaming source was interrupted."
 	case 4001:
-		errMsg = fmt.Sprintf("Too many errors connecting to the provider. Streaming is canceled.")
+		errMsg = "Too many errors connecting to the provider. Streaming is canceled."
 	case 4002:
-		errMsg = fmt.Sprintf("New URL for the redirect to the streaming server is missing")
+		errMsg = "New URL for the redirect to the streaming server is missing"
 	case 4003:
-		errMsg = fmt.Sprintf("Server sends an incompatible content-type")
+		errMsg = "Server sends an incompatible content-type"
 	case 4004:
-		errMsg = fmt.Sprintf("This error message comes from the provider")
+		errMsg = "This error message comes from the provider"
 	case 4005:
-		errMsg = fmt.Sprintf("Temporary buffer files could not be deleted")
+		errMsg = "Temporary buffer files could not be deleted"
 	case 4006:
-		errMsg = fmt.Sprintf("Server connection timeout")
+		errMsg = "Server connection timeout"
 	case 4007:
-		errMsg = fmt.Sprintf("Old temporary buffer file could not be deleted")
+		errMsg = "Old temporary buffer file could not be deleted"
 
 	// Buffer (M3U8)
 	case 4050:
-		errMsg = fmt.Sprintf("Invalid M3U8 file")
+		errMsg = "Invalid M3U8 file"
 	case 4051:
-		errMsg = fmt.Sprintf("#EXTM3U header is missing")
+		errMsg = "#EXTM3U header is missing"
 
 	// Caching
 	case 4100:
-		errMsg = fmt.Sprintf("Unknown content type for downloaded image")
+		errMsg = "Unknown content type for downloaded image"
 	case 4101:
-		errMsg = fmt.Sprintf("Invalid URL, original URL is used for this image")
+		errMsg = "Invalid URL, original URL is used for this image"
 
 	// API
 	case 5000:
-		errMsg = fmt.Sprintf("Invalid API command")
+		errMsg = "Invalid API command"
 
 	// Update Server
 	case 6001:
-		errMsg = fmt.Sprintf("Ivalid key")
+		errMsg = "Ivalid key"
 	case 6002:
-		errMsg = fmt.Sprintf("Update failed")
+		errMsg = "Update failed"
 	case 6003:
-		errMsg = fmt.Sprintf("Update server not available")
+		errMsg = "Update server not available"
 	case 6004:
-		errMsg = fmt.Sprintf("Threadfin update available")
+		errMsg = "Threadfin update available"
+
+	// Webserver
+	case 7001:
+		errMsg = "Trying to access Webserver through restricted IP"
 
 	default:
 		errMsg = fmt.Sprintf("Unknown error / warning (%d)", errCode)

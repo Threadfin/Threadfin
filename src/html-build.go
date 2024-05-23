@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 )
 
 var htmlFolder string
@@ -71,7 +72,7 @@ func createMapFromFiles(folder string) string {
 	var content string
 
 	for key := range blankMap {
-		var newKey = key
+		var newKey = strings.ReplaceAll(key, "\\", "/")
 		content += `  ` + mapName + `["` + newKey + `"` + `] = "` + blankMap[key].(string) + `"` + "\n"
 	}
 
@@ -80,7 +81,7 @@ func createMapFromFiles(folder string) string {
 
 func readFilesToMap(path string, info os.FileInfo, err error) error {
 
-	if info.IsDir() == false {
+	if !info.IsDir() {
 		var base64Str = fileToBase64(getLocalPath(path))
 		blankMap[path] = base64Str
 	}
