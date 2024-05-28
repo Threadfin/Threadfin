@@ -327,6 +327,7 @@ type SettingsStruct struct {
 	StoreBufferInRAM          bool                  `json:"storeBufferInRAM"`
 	ForceHttps                bool                  `json:"forceHttps"`
 	HttpsPort                 int                   `json:"httpsPort"`
+	BindIpAddress             string                `json:"bindIpAddress"`
 	HttpsThreadfinDomain      string                `json:"httpsThreadfinDomain"`
 	HttpThreadfinDomain       string                `json:"httpThreadfinDomain"`
 	EnableNonAscii            bool                  `json:"enableNonAscii"`

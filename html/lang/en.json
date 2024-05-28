@@ -450,9 +450,14 @@
       "title": "HTTPS Threadfin Domain",
       "description": "With image caching enabled, rewrite the threadfin ip address in the m3u to use a domain for HTTPS mode. Do NOT include https (ex: somedomain.com)"
     },
+    "bindIpAddress":
+    {
+      "title": "Bind IP Address for WebUI/API",
+      "description": "This will explicity set the bind ip address instead of trying to assume it. This is useful for systems with multiple network interfaces."
+    },
     "httpThreadfinDomain":
     {
-      "title": "Threadfin Domain",
+      "title": "HTTP Threadfin Domain",
       "description": "With image caching enabled, rewrite the threadfin ip address in the m3u to use a domain for HTTP mode. Do NOT include http (ex: somedomain.com)"
     },
     "enableNonAscii":

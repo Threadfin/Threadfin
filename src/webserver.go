@@ -38,8 +38,8 @@ func StartWebserver() (err error) {
 	//http.HandleFunc("/auto/", Auto)
 
 	ipAddress := System.IPAddress
-	if Settings.HttpThreadfinDomain != "" {
-		ipAddress = Settings.HttpThreadfinDomain
+	if Settings.BindIpAddress != "" {
+		ipAddress = Settings.BindIpAddress
 	}
 
 	showInfo("DVR IP:" + ipAddress + ":" + Settings.Port)

@@ -51,6 +51,7 @@ type RequestStruct struct {
 		HttpsPort                *int      `json:"httpsPort,omitempty"`
 		HttpsThreadfinDomain     *string   `json:"httpsThreadfinDomain,omitempty"`
 		HttpThreadfinDomain      *string   `json:"httpThreadfinDomain,omitempty"`
+		BindIpAddress            *string   `json:"bindIpAddress,omitempty"`
 		EnableNonAscii           *bool     `json:"enableNonAscii,omitempty"`
 		EpgCategories            *string   `json:"epgCategories,omitempty"`
 		EpgCategoriesColors      *string   `json:"epgCategoriesColors,omitempty"`

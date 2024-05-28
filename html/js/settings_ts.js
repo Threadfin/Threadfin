@@ -260,6 +260,17 @@ class SettingsCategory {
                 setting.appendChild(tdLeft);
                 setting.appendChild(tdRight);
                 break;
+            case "bindIpAddress":
+                var tdLeft = document.createElement("TD");
+                tdLeft.innerHTML = "{{.settings.bindIpAddress.title}}" + ":";
+                var tdRight = document.createElement("TD");
+                var input = content.createInput("text", "bindIpAddress", data.toString());
+                input.setAttribute("placeholder", "{{.settings.bindIpAddress.placeholder}}");
+                input.setAttribute("onchange", "javascript: this.className = 'changed'");
+                tdRight.appendChild(input);
+                setting.appendChild(tdLeft);
+                setting.appendChild(tdRight);
+                break;
             case "httpThreadfinDomain":
                 var tdLeft = document.createElement("TD");
                 tdLeft.innerHTML = "{{.settings.httpThreadfinDomain.title}}" + ":";
@@ -500,6 +511,9 @@ class SettingsCategory {
                 break;
             case "httpsThreadfinDomain":
                 text = "{{.settings.httpsThreadfinDomain.description}}";
+                break;
+            case "bindIpAddress":
+                text = "{{.settings.bindIpAddress.description}}";
                 break;
             case "httpThreadfinDomain":
                 text = "{{.settings.httpThreadfinDomain.description}}";
