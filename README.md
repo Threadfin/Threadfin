@@ -8,8 +8,11 @@
 
 You can follow the old xTeVe documentation for now until I update it for Threadfin. Documentation for setup and configuration is [here](https://github.com/xteve-project/xTeVe-Documentation/blob/master/en/configuration.md).
 
-#### Donation
+### Donation
 [Github Sponsor](https://github.com/sponsors/Fyb3roptik)
+
+### Support
+- [Discord](https://discord.gg/CNaSkER2zD)
 
 ## Requirements
 ### Plex
