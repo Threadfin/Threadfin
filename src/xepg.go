@@ -359,8 +359,8 @@ func createXEPGDatabase() (err error) {
 		}
 	}
 
-	var generateHashForChannel = func(m3uID string, groupTitle string, tvgID string, tvgName string, uuidKey string, uuidValue string) string {
-		hash := md5.Sum([]byte(m3uID + groupTitle + tvgID + tvgName + uuidKey + uuidValue))
+	var generateHashForChannel = func(m3uID string, groupTitle string, tvgID string, uuidKey string, uuidValue string) string {
+		hash := md5.Sum([]byte(m3uID + groupTitle + tvgID + uuidKey + uuidValue))
 		return hex.EncodeToString(hash[:])
 	}
 
