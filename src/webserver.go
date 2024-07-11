@@ -303,15 +303,17 @@ func Threadfin(w http.ResponseWriter, r *http.Request) {
 		m3uFilePath := System.Folder.Data + "threadfin.m3u"
 
 		// Check if the m3u file exists
-		if _, err := os.Stat(m3uFilePath); err == nil {
-			log.Println("Serving existing m3u file")
-			http.ServeFile(w, r, m3uFilePath)
-			return
+		if groupTitle == "" {
+			if _, err := os.Stat(m3uFilePath); err == nil {
+				log.Println("Serving existing m3u file")
+				http.ServeFile(w, r, m3uFilePath)
+				return
+			}
 		}
 
 		log.Println("M3U file does not exist, building new one")
 
-		if System.Dev == false {
+		if !System.Dev {
 			// false: Dateiname wird im Header gesetzt
 			// true: M3U wird direkt im Browser angezeigt
 			w.Header().Set("Content-Disposition", "attachment; filename="+getFilenameFromPath(path))
@@ -346,8 +348,6 @@ func Threadfin(w http.ResponseWriter, r *http.Request) {
 	if err == nil {
 		w.Write([]byte(content))
 	}
-
-	return
 }
 
 // Images : Image Cache /images/

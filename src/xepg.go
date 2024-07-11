@@ -596,17 +596,17 @@ func mapping() (err error) {
 				}
 
 				backup_channel1 := strings.Trim(xepgChannel.XBackupChannel1, " ")
-				if m3uChannel.TvgID == backup_channel1 {
+				if m3uChannel.TvgName == backup_channel1 {
 					xepgChannel.BackupChannel1URL = m3uChannel.URL
 				}
 
 				backup_channel2 := strings.Trim(xepgChannel.XBackupChannel2, " ")
-				if m3uChannel.TvgID == backup_channel2 {
+				if m3uChannel.TvgName == backup_channel2 {
 					xepgChannel.BackupChannel2URL = m3uChannel.URL
 				}
 
 				backup_channel3 := strings.Trim(xepgChannel.XBackupChannel3, " ")
-				if m3uChannel.TvgID == backup_channel3 {
+				if m3uChannel.TvgName == backup_channel3 {
 					xepgChannel.BackupChannel3URL = m3uChannel.URL
 				}
 			}

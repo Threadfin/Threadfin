@@ -1929,38 +1929,38 @@ function openPopUp(dataType, element) {
       var dbKey: string = "x-backup-channel-1"
       var xmltv: XMLTVFile = new XMLTVFile()
       const backup1XmlTvId: string = data[dbKey];
-      const [xmlTvBackup1IdContainer, xmlTvBackup1IdInput, xmlTvBackup1IdDatalist] = xmltv.newXmlTvIdPicker(xmlFile, backup1XmlTvId);
-      xmlTvBackup1IdContainer.setAttribute('id', 'xmltv-id-picker-container-1');
-      xmlTvBackup1IdInput.setAttribute('list', 'xmltv-id-picker-datalist');
+      const [xmlTvBackup1IdContainer, xmlTvBackup1IdInput, xmlTvBackup1IdDatalist] = xmltv.newM3uPicker(xmlFile, backup1XmlTvId);
+      xmlTvBackup1IdContainer.setAttribute('id', 'm3u-id-picker-container-1');
+      xmlTvBackup1IdInput.setAttribute('list', 'm3u-id-picker-datalist');
       xmlTvBackup1IdInput.setAttribute('name', dbKey); // Should stay x-mapping as it will be used in donePopupData to make a server request
       xmlTvBackup1IdInput.setAttribute("id", "backup-channel-1");
       xmlTvBackup1IdInput.setAttribute('onchange', `javascript: this.className = 'changed'; checkXmltvChannel('${id}', this, '${xmlFile}');`);
-      xmlTvBackup1IdDatalist.setAttribute('id', 'xmltv-id-picker-datalist-backup1');
+      xmlTvBackup1IdDatalist.setAttribute('id', 'm3u-id-picker-datalist');
       // sortSelect(xmlTvIdDatalist); // TODO: Better sort before adding
       content.appendRow('{{.mapping.backupChannel1.title}}', xmlTvBackup1IdContainer);
 
       var dbKey: string = "x-backup-channel-2"
       var xmltv: XMLTVFile = new XMLTVFile()
       const backup2XmlTvId: string = data[dbKey];
-      const [xmlTvBackup2IdContainer, xmlTvBackup2IdInput, xmlTvBackup2IdDatalist] = xmltv.newXmlTvIdPicker(xmlFile, backup2XmlTvId);
+      const [xmlTvBackup2IdContainer, xmlTvBackup2IdInput, xmlTvBackup2IdDatalist] = xmltv.newM3uPicker(xmlFile, backup2XmlTvId);
       xmlTvBackup2IdContainer.setAttribute('id', 'xmltv-id-picker-container-2');
-      xmlTvBackup2IdInput.setAttribute('list', 'xmltv-id-picker-datalist');
+      xmlTvBackup2IdInput.setAttribute('list', 'm3u-id-picker-datalist');
       xmlTvBackup2IdInput.setAttribute('name', dbKey); // Should stay x-mapping as it will be used in donePopupData to make a server request
       xmlTvBackup2IdInput.setAttribute("id", "backup-channel-2");
       xmlTvBackup2IdInput.setAttribute('onchange', `javascript: this.className = 'changed'; checkXmltvChannel('${id}', this, '${xmlFile}');`);
-      xmlTvBackup2IdDatalist.setAttribute('id', 'xmltv-id-picker-datalist-backup2');
+      xmlTvBackup2IdDatalist.setAttribute('id', 'm3u-id-picker-datalist');
       content.appendRow("{{.mapping.backupChannel2.title}}", xmlTvBackup2IdContainer)
 
       var dbKey: string = "x-backup-channel-3"
       var xmltv: XMLTVFile = new XMLTVFile()
       const backup3XmlTvId: string = data[dbKey];
-      const [xmlTvBackup3IdContainer, xmlTvBackup3IdInput, xmlTvBackup3IdDatalist] = xmltv.newXmlTvIdPicker(xmlFile, backup3XmlTvId);
+      const [xmlTvBackup3IdContainer, xmlTvBackup3IdInput, xmlTvBackup3IdDatalist] = xmltv.newM3uPicker(xmlFile, backup3XmlTvId);
       xmlTvBackup3IdContainer.setAttribute('id', 'xmltv-id-picker-container-3');
-      xmlTvBackup3IdInput.setAttribute('list', 'xmltv-id-picker-datalist');
+      xmlTvBackup3IdInput.setAttribute('list', 'm3u-id-picker-datalist');
       xmlTvBackup3IdInput.setAttribute('name', dbKey); // Should stay x-mapping as it will be used in donePopupData to make a server request
       xmlTvBackup3IdInput.setAttribute("id", "backup-channel-3");
       xmlTvBackup3IdInput.setAttribute('onchange', `javascript: this.className = 'changed'; checkXmltvChannel('${id}', this, '${xmlFile}');`);
-      xmlTvBackup3IdDatalist.setAttribute('id', 'xmltv-id-picker-datalist-backup3');
+      xmlTvBackup3IdDatalist.setAttribute('id', 'm3u-id-picker-datalist');
       content.appendRow("{{.mapping.backupChannel3.title}}", xmlTvBackup3IdContainer)
       
       // Interaktion
@@ -2083,6 +2083,63 @@ class XMLTVFile {
         } else {
           const option = document.createElement('option');
           option.setAttribute('value', programId);
+          option.innerText = '-';
+          datalist.appendChild(option);
+        }
+      });
+    }
+
+    container.appendChild(datalist);
+
+    return [container, input, datalist];
+  }
+
+  newM3uPicker(xmlTvFile: string, currentXmlTvId: string): [HTMLDivElement, HTMLInputElement, HTMLDataListElement] {
+    const container = document.createElement('div');
+    const input = document.createElement('input');
+    input.setAttribute('type', 'text');
+
+    // Initially, set value to '-' if input is empty
+    input.value = (currentXmlTvId) ? currentXmlTvId : '-';
+
+    // When input is focused, remove '-' from it
+    input.addEventListener('focus', (evt) => {
+      const target = evt.target as HTMLInputElement;
+      target.value = (target.value === '-') ? '' : target.value;
+    });
+
+    // When input lose focus or take a value, if it's empty, set value to '-'
+    input.addEventListener('blur', setFallbackValue);
+    input.addEventListener('change', setFallbackValue);
+    function setFallbackValue(evt: Event) {
+      const target = evt.target as HTMLInputElement;
+      target.value = (target.value) ? target.value : '-';
+    }
+
+    container.appendChild(input);
+
+    const datalist = document.createElement('datalist');
+
+    const option = document.createElement('option');
+    option.setAttribute('value', '-');
+    option.innerText = '-';
+    datalist.appendChild(option);
+
+    const m3u: Object = SERVER['xepg']['epgMapping'];
+
+    if (m3u) {
+      const programIds = getOwnObjProps(m3u);
+
+      programIds.forEach((programId) => {
+        const chanel: Object = m3u[programId];
+        if (chanel.hasOwnProperty('tvg-name')) {
+            const option = document.createElement('option');
+            option.setAttribute('value', chanel["tvg-name"]);
+            option.innerText = programId;
+            datalist.appendChild(option);
+        } else {
+          const option = document.createElement('option');
+          option.setAttribute('value', chanel["tvg-name"]);
           option.innerText = '-';
           datalist.appendChild(option);
         }
