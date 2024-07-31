@@ -314,56 +314,55 @@ func setDeviceID() {
 // Provider Streaming-URL zu Threadfin Streaming-URL konvertieren
 func createStreamingURL(streamingType, playlistID, channelNumber, channelName, channelUrl string, backup_url_1 string, backup_url_2 string, backup_url_3 string) (streamingURL string, err error) {
 
-	// var streamInfo StreamInfo
-	// var serverProtocol string
+	var streamInfo StreamInfo
+	var serverProtocol string
 
-	// if len(Data.Cache.StreamingURLS) == 0 {
-	// 	Data.Cache.StreamingURLS = make(map[string]StreamInfo)
-	// }
+	if len(Data.Cache.StreamingURLS) == 0 {
+		Data.Cache.StreamingURLS = make(map[string]StreamInfo)
+	}
 
-	// var urlID = getMD5(fmt.Sprintf("%s-%s", playlistID, url))
-
-	// if s, ok := Data.Cache.StreamingURLS[urlID]; ok {
-	// 	streamInfo = s
-
-	// } else {
-	// 	streamInfo.URL = url
-	// 	streamInfo.BackupChannel1URL = backup_url_1
-	// 	streamInfo.BackupChannel2URL = backup_url_2
-	// 	streamInfo.BackupChannel3URL = backup_url_3
-	// 	streamInfo.Name = channelName
-	// 	streamInfo.PlaylistID = playlistID
-	// 	streamInfo.ChannelNumber = channelNumber
-	// 	streamInfo.URLid = urlID
-
-	// 	Data.Cache.StreamingURLS[urlID] = streamInfo
-
-	// }
-
-	// switch streamingType {
-
-	// case "DVR":
-	// 	serverProtocol = System.ServerProtocol.DVR
-
-	// case "M3U":
-	// 	serverProtocol = System.ServerProtocol.M3U
-
-	// }
-
-	// if Settings.ForceHttps {
-	// 	if Settings.HttpsThreadfinDomain != "" {
-	// 		serverProtocol = "https"
-	// 		System.Domain = Settings.HttpsThreadfinDomain
-	// 	}
-	// }
-
-	// streamingURL = fmt.Sprintf("%s://%s/stream/%s", serverProtocol, System.Domain, streamInfo.URLid)
-
-	// remove query params
 	parsedURL, err := url.Parse(channelUrl)
 	parsedURL.RawQuery = ""
 
-	streamingURL = parsedURL.String()
+	channelUrl = parsedURL.String()
+
+	var urlID = getMD5(fmt.Sprintf("%s-%s", playlistID, channelUrl))
+
+	if s, ok := Data.Cache.StreamingURLS[urlID]; ok {
+		streamInfo = s
+
+	} else {
+		streamInfo.URL = channelUrl
+		streamInfo.BackupChannel1URL = backup_url_1
+		streamInfo.BackupChannel2URL = backup_url_2
+		streamInfo.BackupChannel3URL = backup_url_3
+		streamInfo.Name = channelName
+		streamInfo.PlaylistID = playlistID
+		streamInfo.ChannelNumber = channelNumber
+		streamInfo.URLid = urlID
+
+		Data.Cache.StreamingURLS[urlID] = streamInfo
+
+	}
+
+	switch streamingType {
+
+	case "DVR":
+		serverProtocol = System.ServerProtocol.DVR
+
+	case "M3U":
+		serverProtocol = System.ServerProtocol.M3U
+
+	}
+
+	if Settings.ForceHttps {
+		if Settings.HttpsThreadfinDomain != "" {
+			serverProtocol = "https"
+			System.Domain = Settings.HttpsThreadfinDomain
+		}
+	}
+
+	streamingURL = fmt.Sprintf("%s://%s/stream/%s", serverProtocol, System.Domain, streamInfo.URLid)
 	return
 }
 
