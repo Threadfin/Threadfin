@@ -313,48 +313,48 @@ func setDeviceID() {
 // Provider Streaming-URL zu Threadfin Streaming-URL konvertieren
 func createStreamingURL(streamingType, playlistID, channelNumber, channelName, url string, backup_url_1 string, backup_url_2 string, backup_url_3 string) (streamingURL string, err error) {
 
-	var streamInfo StreamInfo
-	var serverProtocol string
+	// var streamInfo StreamInfo
+	// var serverProtocol string
 
-	if len(Data.Cache.StreamingURLS) == 0 {
-		Data.Cache.StreamingURLS = make(map[string]StreamInfo)
-	}
+	// if len(Data.Cache.StreamingURLS) == 0 {
+	// 	Data.Cache.StreamingURLS = make(map[string]StreamInfo)
+	// }
 
-	var urlID = getMD5(fmt.Sprintf("%s-%s", playlistID, url))
+	// var urlID = getMD5(fmt.Sprintf("%s-%s", playlistID, url))
 
-	if s, ok := Data.Cache.StreamingURLS[urlID]; ok {
-		streamInfo = s
+	// if s, ok := Data.Cache.StreamingURLS[urlID]; ok {
+	// 	streamInfo = s
 
-	} else {
-		streamInfo.URL = url
-		streamInfo.BackupChannel1URL = backup_url_1
-		streamInfo.BackupChannel2URL = backup_url_2
-		streamInfo.BackupChannel3URL = backup_url_3
-		streamInfo.Name = channelName
-		streamInfo.PlaylistID = playlistID
-		streamInfo.ChannelNumber = channelNumber
-		streamInfo.URLid = urlID
+	// } else {
+	// 	streamInfo.URL = url
+	// 	streamInfo.BackupChannel1URL = backup_url_1
+	// 	streamInfo.BackupChannel2URL = backup_url_2
+	// 	streamInfo.BackupChannel3URL = backup_url_3
+	// 	streamInfo.Name = channelName
+	// 	streamInfo.PlaylistID = playlistID
+	// 	streamInfo.ChannelNumber = channelNumber
+	// 	streamInfo.URLid = urlID
 
-		Data.Cache.StreamingURLS[urlID] = streamInfo
+	// 	Data.Cache.StreamingURLS[urlID] = streamInfo
 
-	}
+	// }
 
-	switch streamingType {
+	// switch streamingType {
 
-	case "DVR":
-		serverProtocol = System.ServerProtocol.DVR
+	// case "DVR":
+	// 	serverProtocol = System.ServerProtocol.DVR
 
-	case "M3U":
-		serverProtocol = System.ServerProtocol.M3U
+	// case "M3U":
+	// 	serverProtocol = System.ServerProtocol.M3U
 
-	}
+	// }
 
-	if Settings.ForceHttps {
-		if Settings.HttpsThreadfinDomain != "" {
-			serverProtocol = "https"
-			System.Domain = Settings.HttpsThreadfinDomain
-		}
-	}
+	// if Settings.ForceHttps {
+	// 	if Settings.HttpsThreadfinDomain != "" {
+	// 		serverProtocol = "https"
+	// 		System.Domain = Settings.HttpsThreadfinDomain
+	// 	}
+	// }
 
 	// streamingURL = fmt.Sprintf("%s://%s/stream/%s", serverProtocol, System.Domain, streamInfo.URLid)
 	streamingURL = url
