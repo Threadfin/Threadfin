@@ -243,9 +243,9 @@ func buildM3U(groups []string) (m3u string, err error) {
 					u.Host = host_split[0]
 				}
 				if u.RawQuery != "" {
-					channel.URL = fmt.Sprintf("https://%s:%d%s?%s", u.Host, Settings.HttpsPort, u.Path, u.RawQuery)
+					// channel.URL = fmt.Sprintf("https://%s:%d%s?%s", u.Host, Settings.HttpsPort, u.Path, u.RawQuery)
 				} else {
-					channel.URL = fmt.Sprintf("https://%s:%d%s", u.Host, Settings.HttpsPort, u.Path)
+					// channel.URL = fmt.Sprintf("https://%s:%d%s", u.Host, Settings.HttpsPort, u.Path)
 				}
 			}
 		}
