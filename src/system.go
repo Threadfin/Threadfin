@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"net/url"
 	"os"
 	"reflect"
 	"strings"
@@ -311,7 +312,7 @@ func setDeviceID() {
 }
 
 // Provider Streaming-URL zu Threadfin Streaming-URL konvertieren
-func createStreamingURL(streamingType, playlistID, channelNumber, channelName, url string, backup_url_1 string, backup_url_2 string, backup_url_3 string) (streamingURL string, err error) {
+func createStreamingURL(streamingType, playlistID, channelNumber, channelName, channelUrl string, backup_url_1 string, backup_url_2 string, backup_url_3 string) (streamingURL string, err error) {
 
 	// var streamInfo StreamInfo
 	// var serverProtocol string
@@ -357,7 +358,12 @@ func createStreamingURL(streamingType, playlistID, channelNumber, channelName, u
 	// }
 
 	// streamingURL = fmt.Sprintf("%s://%s/stream/%s", serverProtocol, System.Domain, streamInfo.URLid)
-	streamingURL = url
+
+	// remove query params
+	parsedURL, err := url.Parse(channelUrl)
+	parsedURL.RawQuery = ""
+
+	streamingURL = parsedURL.String()
 	return
 }
 
