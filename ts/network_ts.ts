@@ -98,6 +98,9 @@ class Server {
           if (document.getElementById("content_log")) {
             showLogs(false)
           }
+          if (document.getElementById("client-connection-information")) {
+            document.getElementById("client-connection-information").innerHTML = "Client Connections: " + response["clientInfo"]["activeClients"] + " / " + response["clientInfo"]["totalClients"]
+          }
           return
           break;
 

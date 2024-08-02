@@ -1100,12 +1100,17 @@ function createLayout() {
   // Client Info
   var obj = SERVER["clientInfo"]
   var keys = getObjKeys(obj);
+  console.log("KEYS: ", keys)
   for (var i = 0; i < keys.length; i++) {
 
     if (document.getElementById(keys[i])) {
       (<HTMLInputElement>document.getElementById(keys[i])).value = obj[keys[i]];
     }
 
+  }
+
+  if (document.getElementById("client-connection-information")) {
+    document.getElementById("client-connection-information").innerHTML = "Client Connections: " + SERVER["clientInfo"]["activeClients"] + " / " + SERVER["clientInfo"]["totalClients"]
   }
 
   if (!document.getElementById("main-menu")) {
