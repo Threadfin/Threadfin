@@ -1110,7 +1110,13 @@ function createLayout() {
   }
 
   if (document.getElementById("client-connection-information")) {
-    document.getElementById("client-connection-information").innerHTML = "Client Connections: " + SERVER["clientInfo"]["activeClients"] + " / " + SERVER["clientInfo"]["totalClients"]
+    let activeClass = "text-primary"
+    if (SERVER["clientInfo"]["activeClients"] / SERVER["clientInfo"]["totalClients"] >= 0.6 && SERVER["clientInfo"]["activeClients"] / SERVER["clientInfo"]["totalClients"] < 0.8) {
+      activeClass = "text-warning"
+    } else if (SERVER["clientInfo"]["activeClients"] / SERVER["clientInfo"]["totalClients"] >= 0.8) {
+      activeClass = "text-danger"
+    }
+    document.getElementById("client-connection-information").innerHTML = "Client Connections: <span class='" + activeClass + "'>" + SERVER["clientInfo"]["activeClients"] + " / " + SERVER["clientInfo"]["totalClients"] + "</span>"
   }
 
   if (!document.getElementById("main-menu")) {

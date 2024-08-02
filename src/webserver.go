@@ -1092,7 +1092,7 @@ func setDefaultResponseData(response ResponseStruct, data bool) (defaults Respon
 	defaults.ClientInfo.Errors = WebScreenLog.Errors
 	defaults.ClientInfo.Warnings = WebScreenLog.Warnings
 	defaults.ClientInfo.ActiveClients = getActiveClientCount()
-	defaults.ClientInfo.TotalClients = 5
+	defaults.ClientInfo.TotalClients = Settings.Tuner
 	defaults.Notification = System.Notification
 	defaults.Log = WebScreenLog
 

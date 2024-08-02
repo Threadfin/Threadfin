@@ -6,9 +6,11 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -40,13 +42,13 @@ var GitHub = GitHubStruct{Branch: "Main", User: "Threadfin", Repo: "Threadfin", 
 const Name = "Threadfin"
 
 // Version : Version, die Build Nummer wird in der main func geparst.
-const Version = "1.1.16"
+const Version = "1.1.17"
 
 // DBVersion : Datanbank Version
 const DBVersion = "0.5.0"
 
 // APIVersion : API Version
-const APIVersion = "1.1.16"
+const APIVersion = "1.1.17"
 
 var homeDirectory = fmt.Sprintf("%s%s.%s%s", src.GetUserHomeDirectory(), string(os.PathSeparator), strings.ToLower(Name), string(os.PathSeparator))
 var samplePath = fmt.Sprintf("%spath%sto%sthreadfin%s", string(os.PathSeparator), string(os.PathSeparator), string(os.PathSeparator), string(os.PathSeparator))
@@ -145,6 +147,28 @@ func main() {
 		system.Flag.Port = *port
 	}
 
+	// kill all ffmpeg and VLC processess
+	cmdFindFFmpeg := "pgrep -f 'ffmpeg.*title=Threadfin'"
+	cmdFindVLC := "pgrep -f 'cvlc.*meta-title=Threadfin'"
+
+	// Execute the commands
+	ffmpegPIDs, _ := getPIDs(cmdFindFFmpeg)
+
+	vlcPIDs, _ := getPIDs(cmdFindVLC)
+
+	// Combine PIDs into one slice
+	allPIDs := append(ffmpegPIDs, vlcPIDs...)
+
+	// Kill all the processes by PID
+	for _, pid := range allPIDs {
+		err := killProcess(pid)
+		if err != nil {
+			fmt.Printf("Error killing process %s: %v", pid, err)
+		} else {
+			fmt.Printf("Successfully killed process %s", pid)
+		}
+	}
+
 	// Branch
 	system.Flag.Branch = *gitBranch
 	if len(system.Flag.Branch) > 0 {
@@ -211,4 +235,22 @@ func main() {
 		os.Exit(0)
 	}
 
+}
+
+func getPIDs(command string) ([]string, error) {
+	var out bytes.Buffer
+	cmd := exec.Command("bash", "-c", command)
+	cmd.Stdout = &out
+	err := cmd.Run()
+	if err != nil {
+		return nil, err
+	}
+	pids := strings.Fields(out.String())
+	return pids, nil
+}
+
+// killProcess kills a process by its PID
+func killProcess(pid string) error {
+	cmd := exec.Command("kill", "-9", pid)
+	return cmd.Run()
 }
