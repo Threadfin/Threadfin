@@ -110,7 +110,7 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 		streamID = createStreamID(playlist.Streams)
 
 		client.Connection = 1
-		activeClientCount += 1
+		activeClientCount = 1
 		if activePlaylistCount == 0 {
 			activePlaylistCount = 1
 		}
@@ -143,8 +143,7 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 				streamID = id
 				newStream = false
 				client.Connection += 1
-				activeClientCount = activeClientCount + 1
-				activePlaylistCount += 1
+				activeClientCount += 1
 
 				//playlist.Streams[streamID] = stream
 				playlist.Clients[streamID] = client
@@ -204,6 +203,7 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 			client = ThisClient{}
 
 			streamID = createStreamID(playlist.Streams)
+			activePlaylistCount += 1
 
 			client.Connection = 1
 			stream.URL = streamingURL
