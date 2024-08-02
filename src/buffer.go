@@ -27,6 +27,9 @@ import (
 	"github.com/avfs/avfs/vfs/osfs"
 )
 
+var activeClientCount int
+var activePlaylistCount int
+
 func createStreamID(stream map[int]ThisStream) (streamID int) {
 
 	var debug string
@@ -48,18 +51,11 @@ func createStreamID(stream map[int]ThisStream) (streamID int) {
 }
 
 func getActiveClientCount() (count int) {
+	return activeClientCount
+}
 
-	count = 0
-
-	BufferClients.Range(func(key, value interface{}) bool {
-
-		var clients = value.(ClientConnection)
-		count = count + clients.Connection
-
-		return true
-	})
-
-	return
+func getActivePlaylistCount() (count int) {
+	return activePlaylistCount
 }
 
 func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStreamingURL2, backupStreamingURL3, channelName string, w http.ResponseWriter, r *http.Request) {
@@ -79,7 +75,7 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 	w.Header().Set("Connection", "close")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 
-	// Überprüfen ob die Playlist schon verwendet wird
+	// Check whether the playlist is already in use
 	if p, ok := BufferInformation.Load(playlistID); !ok {
 
 		var playlistType string
@@ -114,6 +110,10 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 		streamID = createStreamID(playlist.Streams)
 
 		client.Connection = 1
+		activeClientCount += 1
+		if activePlaylistCount == 0 {
+			activePlaylistCount = 1
+		}
 		stream.URL = streamingURL
 		stream.BackupChannel1URL = backupStreamingURL1
 		stream.BackupChannel2URL = backupStreamingURL2
@@ -142,7 +142,9 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 
 				streamID = id
 				newStream = false
-				client.Connection++
+				client.Connection += 1
+				activeClientCount = activeClientCount + 1
+				activePlaylistCount += 1
 
 				//playlist.Streams[streamID] = stream
 				playlist.Clients[streamID] = client
@@ -156,7 +158,7 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 				if c, ok := BufferClients.Load(playlistID + stream.MD5); ok {
 
 					var clients = c.(ClientConnection)
-					clients.Connection = clients.Connection + 1
+					log.Println("CLIENTS: ", clients)
 					showInfo(fmt.Sprintf("Streaming Status:Channel: %s (Clients: %d)", stream.ChannelName, clients.Connection))
 
 					BufferClients.Store(playlistID+stream.MD5, clients)
@@ -500,12 +502,14 @@ func killClientConnection(streamID int, playlistID string, force bool) {
 
 				var clients = c.(ClientConnection)
 				clients.Connection = clients.Connection - 1
+				activeClientCount = activeClientCount - 1
 				BufferClients.Store(playlistID+stream.MD5, clients)
 
 				showInfo("Streaming Status:Client has terminated the connection")
 				showInfo(fmt.Sprintf("Streaming Status:Channel: %s (Clients: %d)", stream.ChannelName, clients.Connection))
 
 				if clients.Connection <= 0 {
+					activePlaylistCount = activePlaylistCount - 1
 					BufferClients.Delete(playlistID + stream.MD5)
 					delete(playlist.Streams, streamID)
 					delete(playlist.Clients, streamID)

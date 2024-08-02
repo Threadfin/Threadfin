@@ -85,21 +85,23 @@ type RequestStruct struct {
 // ResponseStruct : Antworten an den Client (WEB)
 type ResponseStruct struct {
 	ClientInfo struct {
-		ARCH          string `json:"arch"`
-		Branch        string `json:"branch,omitempty"`
-		DVR           string `json:"DVR"`
-		EpgSource     string `json:"epgSource"`
-		Errors        int    `json:"errors"`
-		M3U           string `json:"m3u-url,required"`
-		OS            string `json:"os"`
-		Streams       string `json:"streams"`
-		ActiveClients int    `json:"activeClients"`
-		TotalClients  int    `json:"totalClients"`
-		UUID          string `json:"uuid"`
-		Version       string `json:"version"`
-		Warnings      int    `json:"warnings"`
-		XEPGCount     int64  `json:"xepg"`
-		XML           string `json:"xepg-url,required"`
+		ARCH           string `json:"arch"`
+		Branch         string `json:"branch,omitempty"`
+		DVR            string `json:"DVR"`
+		EpgSource      string `json:"epgSource"`
+		Errors         int    `json:"errors"`
+		M3U            string `json:"m3u-url,required"`
+		OS             string `json:"os"`
+		Streams        string `json:"streams"`
+		ActiveClients  int    `json:"activeClients"`
+		TotalClients   int    `json:"totalClients"`
+		ActivePlaylist int    `json:"activePlaylist"`
+		TotalPlaylist  int    `json:"totalPlaylist"`
+		UUID           string `json:"uuid"`
+		Version        string `json:"version"`
+		Warnings       int    `json:"warnings"`
+		XEPGCount      int64  `json:"xepg"`
+		XML            string `json:"xepg-url,required"`
 	} `json:"clientInfo,omitempty"`
 
 	Data struct {
