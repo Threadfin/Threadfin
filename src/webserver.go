@@ -1091,6 +1091,8 @@ func setDefaultResponseData(response ResponseStruct, data bool) (defaults Respon
 	defaults.ClientInfo.UUID = Settings.UUID
 	defaults.ClientInfo.Errors = WebScreenLog.Errors
 	defaults.ClientInfo.Warnings = WebScreenLog.Warnings
+	defaults.ClientInfo.ActiveClients = getActiveClientCount()
+	defaults.ClientInfo.TotalClients = 5
 	defaults.Notification = System.Notification
 	defaults.Log = WebScreenLog
 

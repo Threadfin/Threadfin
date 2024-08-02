@@ -47,6 +47,21 @@ func createStreamID(stream map[int]ThisStream) (streamID int) {
 	return
 }
 
+func getActiveClientCount() (count int) {
+
+	count = 0
+
+	BufferClients.Range(func(key, value interface{}) bool {
+
+		var clients = value.(ClientConnection)
+		count = count + clients.Connection
+
+		return true
+	})
+
+	return
+}
+
 func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStreamingURL2, backupStreamingURL3, channelName string, w http.ResponseWriter, r *http.Request) {
 
 	time.Sleep(time.Duration(Settings.BufferTimeout) * time.Millisecond)
