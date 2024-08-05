@@ -1847,8 +1847,7 @@ function openPopUp(dataType, element) {
         input.setAttribute("readonly", "true")
       }
       content.appendRow("{{.mapping.channelName.title}}", input)
-
-      content.description(data["name"])
+      content.description("<span class='text-danger'>" + data["tvg-id"] + "</span> <span class='text-primary'>(" + data["x-epg"] + ")</span>")
 
       // Beschreibung 
       var dbKey: string = "x-description"
