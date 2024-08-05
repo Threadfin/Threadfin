@@ -848,7 +848,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 			}
 
 		}
-
+		showInfo("BUFFER ARGS: " + strings.Join(args, " "))
 		var cmd = exec.Command(path, args...)
 
 		debug = fmt.Sprintf("%s:%s %s", bufferType, path, args)
