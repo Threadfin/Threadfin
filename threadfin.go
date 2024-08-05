@@ -42,13 +42,13 @@ var GitHub = GitHubStruct{Branch: "Main", User: "Threadfin", Repo: "Threadfin", 
 const Name = "Threadfin"
 
 // Version : Version, die Build Nummer wird in der main func geparst.
-const Version = "1.1.18"
+const Version = "1.1.19"
 
 // DBVersion : Datanbank Version
 const DBVersion = "0.5.0"
 
 // APIVersion : API Version
-const APIVersion = "1.1.18"
+const APIVersion = "1.1.19"
 
 var homeDirectory = fmt.Sprintf("%s%s.%s%s", src.GetUserHomeDirectory(), string(os.PathSeparator), strings.ToLower(Name), string(os.PathSeparator))
 var samplePath = fmt.Sprintf("%spath%sto%sthreadfin%s", string(os.PathSeparator), string(os.PathSeparator), string(os.PathSeparator), string(os.PathSeparator))
@@ -152,16 +152,11 @@ func main() {
 	}
 
 	// kill all ffmpeg and VLC processess
-	cmdFindFFmpeg := "pgrep -f 'ffmpeg.*title=Threadfin'"
 	cmdFindVLC := "pgrep -f 'cvlc.*meta-title=Threadfin'"
-
-	// Execute the commands
-	ffmpegPIDs, _ := getPIDs(cmdFindFFmpeg)
-
 	vlcPIDs, _ := getPIDs(cmdFindVLC)
 
 	// Combine PIDs into one slice
-	allPIDs := append(ffmpegPIDs, vlcPIDs...)
+	allPIDs := vlcPIDs
 
 	// Kill all the processes by PID
 	for _, pid := range allPIDs {
