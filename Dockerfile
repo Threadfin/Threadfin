@@ -46,6 +46,7 @@ ENV THREADFIN_BRANCH=main
 ENV THREADFIN_DEBUG=0
 ENV THREADFIN_PORT=34400
 ENV THREADFIN_LOG=/var/log/threadfin.log
+ENV THREADFIN_BIND_IP_ADDRESS=0.0.0.0
 
 # Add binary to PATH
 ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$THREADFIN_BIN
@@ -83,4 +84,4 @@ VOLUME $THREADFIN_TEMP
 EXPOSE $THREADFIN_PORT
 
 # Run the Threadfin executable
-ENTRYPOINT ${THREADFIN_BIN}/threadfin -port=${THREADFIN_PORT} -config=${THREADFIN_CONF} -debug=${THREADFIN_DEBUG}
+ENTRYPOINT ${THREADFIN_BIN}/threadfin -port=${THREADFIN_PORT} -bind=${THREADFIN_BIND_IP_ADDRESS} -config=${THREADFIN_CONF} -debug=${THREADFIN_DEBUG}

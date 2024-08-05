@@ -1100,6 +1100,7 @@ function createLayout() {
   // Client Info
   var obj = SERVER["clientInfo"]
   var keys = getObjKeys(obj);
+  console.log("KEYS: ", keys)
   for (var i = 0; i < keys.length; i++) {
 
     if (document.getElementById(keys[i])) {
@@ -1108,13 +1109,33 @@ function createLayout() {
 
   }
 
+  if (document.getElementById("playlist-connection-information")) {
+    let activeClass = "text-primary"
+    if (SERVER["clientInfo"]["activePlaylist"] / SERVER["clientInfo"]["totalPlaylist"] >= 0.6 && SERVER["clientInfo"]["activePlaylist"] / SERVER["clientInfo"]["totalPlaylist"] < 0.8) {
+      activeClass = "text-warning"
+    } else if (SERVER["clientInfo"]["activePlaylist"] / SERVER["clientInfo"]["totalPlaylist"] >= 0.8) {
+      activeClass = "text-danger"
+    }
+    document.getElementById("playlist-connection-information").innerHTML = "Playlist Connections: <span class='" + activeClass + "'>" + SERVER["clientInfo"]["activePlaylist"] + " / " + SERVER["clientInfo"]["totalPlaylist"] + "</span>"
+  }
+
+  if (document.getElementById("client-connection-information")) {
+    let activeClass = "text-primary"
+    if (SERVER["clientInfo"]["activeClients"] / SERVER["clientInfo"]["totalClients"] >= 0.6 && SERVER["clientInfo"]["activeClients"] / SERVER["clientInfo"]["totalClients"] < 0.8) {
+      activeClass = "text-warning"
+    } else if (SERVER["clientInfo"]["activeClients"] / SERVER["clientInfo"]["totalClients"] >= 0.8) {
+      activeClass = "text-danger"
+    }
+    document.getElementById("client-connection-information").innerHTML = "Client Connections: <span class='" + activeClass + "'>" + SERVER["clientInfo"]["activeClients"] + " / " + SERVER["clientInfo"]["totalClients"] + "</span>"
+  }
+
   if (!document.getElementById("main-menu")) {
     return
   }
 
 
 
-  // Menü erstellen
+  // Create menu
   document.getElementById("main-menu").innerHTML = ""
   for (let i = 0; i < menuItems.length; i++) {
 
@@ -1826,8 +1847,7 @@ function openPopUp(dataType, element) {
         input.setAttribute("readonly", "true")
       }
       content.appendRow("{{.mapping.channelName.title}}", input)
-
-      content.description(data["name"])
+      content.description("<span class='text-danger'>" + data["tvg-id"] + "</span> <span class='text-primary'>(" + data["x-epg"] + ")</span>")
 
       // Beschreibung 
       var dbKey: string = "x-description"

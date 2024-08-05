@@ -98,6 +98,15 @@ class Server {
           if (document.getElementById("content_log")) {
             showLogs(false)
           }
+          if (document.getElementById("client-connection-information")) {
+            let activeClass = "text-primary"
+            if (response["clientInfo"]["activeClients"] / response["clientInfo"]["totalClients"] >= 0.6 && response["clientInfo"]["activeClients"] / response["clientInfo"]["totalClients"] < 0.8) {
+              activeClass = "text-warning"
+            } else if (response["clientInfo"]["activeClients"] / response["clientInfo"]["totalClients"] >= 0.8) {
+              activeClass = "text-danger"
+            }
+            document.getElementById("client-connection-information").innerHTML = "Client Connections: <span class='" + activeClass + "'>" + response["clientInfo"]["activeClients"] + " / " + response["clientInfo"]["totalClients"] + "</span>"
+          }
           return
           break;
 
