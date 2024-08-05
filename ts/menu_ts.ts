@@ -1135,7 +1135,7 @@ function createLayout() {
 
 
 
-  // Menü erstellen
+  // Create menu
   document.getElementById("main-menu").innerHTML = ""
   for (let i = 0; i < menuItems.length; i++) {
 

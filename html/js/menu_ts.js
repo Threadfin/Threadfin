@@ -903,7 +903,7 @@ function createLayout() {
     if (!document.getElementById("main-menu")) {
         return;
     }
-    // Menü erstellen
+    // Create menu
     document.getElementById("main-menu").innerHTML = "";
     for (let i = 0; i < menuItems.length; i++) {
         menuItems[i].id = i;
