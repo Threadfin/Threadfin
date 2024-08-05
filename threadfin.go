@@ -65,6 +65,7 @@ var h = flag.Bool("h", false, ": Show help")
 
 // Aktiviert den Entwicklungsmodus. Für den Webserver werden dann die lokalen Dateien verwendet.
 var dev = flag.Bool("dev", false, ": Activates the developer mode, the source code must be available. The local files for the web interface are used.")
+var bindIpAddress = flag.String("bind", "", ": Bind IP address")
 
 func main() {
 
@@ -79,6 +80,9 @@ func main() {
 	system.GitHub = GitHub
 	system.Name = Name
 	system.Version = strings.Join(build[0:len(build)-1], ".")
+	if bindIpAddress != nil && len(*bindIpAddress) > 0 {
+		system.IPAddress = *bindIpAddress
+	}
 
 	// Panic !!!
 	defer func() {
