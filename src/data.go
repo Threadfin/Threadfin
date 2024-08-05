@@ -435,7 +435,6 @@ func saveFilter(request RequestStruct) (settings SettingsStruct, err error) {
 
 	filterMap = Settings.Filter
 	newData = request.Filter
-
 	var createNewID = func() (id int64) {
 
 	newID:
@@ -448,20 +447,18 @@ func saveFilter(request RequestStruct) (settings SettingsStruct, err error) {
 	}
 
 	for dataID, data := range newData {
-
 		if dataID == -1 {
 
-			// Neuer Filter
+			// New Filter
 			newFilter = true
 			dataID = createNewID()
-			filterMap[dataID] = jsonToMap(mapToJSON(defaultFilter))
-
+			filterMap[dataID] = jsonToMap(mapToJSON(newData))
 		}
 
-		// Filter aktualisieren / löschen
+		// Update / delete filters
 		for key, value := range data.(map[string]interface{}) {
 
-			// Filter löschen
+			// Clear Filters
 			if _, ok := data.(map[string]interface{})["delete"]; ok {
 				delete(filterMap, dataID)
 				break
@@ -472,7 +469,7 @@ func saveFilter(request RequestStruct) (settings SettingsStruct, err error) {
 				if len(filter) == 0 {
 
 					err = errors.New(getErrMsg(1014))
-					if newFilter == true {
+					if newFilter {
 						delete(filterMap, dataID)
 					}
 

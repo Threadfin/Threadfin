@@ -742,6 +742,25 @@ func mapping() (err error) {
 
 				}
 
+			} else {
+				// Loop through dummy channels and assign the filter info
+				filters := []FilterStruct{}
+				for _, filter := range Settings.Filter {
+					filter_json, _ := json.Marshal(filter)
+					f := FilterStruct{}
+					json.Unmarshal(filter_json, &f)
+					filters = append(filters, f)
+				}
+				for _, filter := range filters {
+					if xepgChannel.GroupTitle == filter.Filter {
+						category := &Category{}
+						category.Value = filter.Category
+						category.Lang = "en"
+						if xepgChannel.XCategory == "" {
+							xepgChannel.XCategory = filter.Category
+						}
+					}
+				}
 			}
 
 			if len(xepgChannel.XmltvFile) == 0 {
