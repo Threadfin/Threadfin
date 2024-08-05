@@ -16,7 +16,7 @@ RUN go build threadfin.go
 # Second stage. Creating an image
 # -----------------------------------------------------------------------------
 ARG USE_NVIDIA=0
-FROM ${USE_NVIDIA:+nvidia/cuda:12.1.1-base-ubuntu22.04}${USE_NVIDIA:-ubuntu:22.04}
+FROM ${USE_NVIDIA:+nvidia/cuda:12.5.1-base-ubuntu22.04}${USE_NVIDIA:-ubuntu:22.04}
 
 ARG BUILD_DATE
 ARG VCS_REF

@@ -1,8 +1,6 @@
 name: Threadfin Build
 on:
   push:
-    branches:
-      - main
     tags: "1.*"
 permissions:
   contents: write
@@ -67,7 +65,7 @@ jobs:
           tags: fyb3roptik/threadfin:latest-nvidia,fyb3roptik/threadfin:${{  github.ref_name }}-nvidia
 
       - name: Release
-        uses: "marvinpinto/action-automatic-releases@latest"
+        uses: "ModeSevenIndustrialSolutions/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
           prerelease: false
