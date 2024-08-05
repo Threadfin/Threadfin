@@ -152,16 +152,11 @@ func main() {
 	}
 
 	// kill all ffmpeg and VLC processess
-	cmdFindFFmpeg := "pgrep -f 'ffmpeg.*title=Threadfin'"
 	cmdFindVLC := "pgrep -f 'cvlc.*meta-title=Threadfin'"
-
-	// Execute the commands
-	ffmpegPIDs, _ := getPIDs(cmdFindFFmpeg)
-
 	vlcPIDs, _ := getPIDs(cmdFindVLC)
 
 	// Combine PIDs into one slice
-	allPIDs := append(ffmpegPIDs, vlcPIDs...)
+	allPIDs := vlcPIDs
 
 	// Kill all the processes by PID
 	for _, pid := range allPIDs {
