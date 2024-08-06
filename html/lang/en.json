@@ -163,7 +163,7 @@
     },
     "http_proxy_port": {
       "title": "HTTP Proxy Port",
-      "placeholder": "8080",
+      "placeholder": "8888",
       "description": "Port to be used by HTTP Proxy"
     }
   },
@@ -189,6 +189,16 @@
       "title": "XMLTV File",
       "placeholder": "File path or URL of the XMLTV",
       "description": ""
+    },
+    "http_proxy_ip": {
+      "title": "HTTP Proxy IP",
+      "placeholder": "192.168.0.2",
+      "description": "IP address to be used by HTTP Proxy"
+    },
+    "http_proxy_port": {
+      "title": "HTTP Proxy Port",
+      "placeholder": "8888",
+      "description": "Port to be used by HTTP Proxy"
     }
   },
   "mapping": {

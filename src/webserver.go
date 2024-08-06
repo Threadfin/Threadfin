@@ -219,6 +219,9 @@ func Stream(w http.ResponseWriter, r *http.Request) {
 		showInfo(fmt.Sprintf("Buffer Size:%d KB", Settings.BufferSize))
 	}
 
+	log.Println("Stream Info: ", streamInfo)
+	log.Println("M3U Info: ", Settings.Files.M3U)
+
 	showInfo(fmt.Sprintf("Channel Name:%s", streamInfo.Name))
 	showInfo(fmt.Sprintf("Client User-Agent:%s", r.Header.Get("User-Agent")))
 
@@ -226,8 +229,7 @@ func Stream(w http.ResponseWriter, r *http.Request) {
 	switch Settings.Buffer {
 
 	case "-":
-		m3uSettings := Settings.Files.M3U
-		providerSettings, ok := m3uSettings["MJV2V0SW1A9RLMRQZ4U7"].(map[string]interface{})
+		providerSettings, ok := Settings.Files.M3U[streamInfo.PlaylistID].(map[string]interface{})
 		if !ok {
 			return
 		}

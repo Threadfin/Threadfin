@@ -3,6 +3,7 @@ package src
 import (
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -150,6 +151,13 @@ func getProviderData(fileType, fileID string) (err error) {
 
 		var data = d.(map[string]interface{})
 		var fileSource = data["file.source"].(string)
+		var httpProxyIp = data["http_proxy.ip"].(string)
+		var httpProxyPort = data["http_proxy.port"].(string)
+		var httpProxyUrl = ""
+		if httpProxyIp != "" && httpProxyPort != "" {
+			httpProxyUrl = fmt.Sprintf("http://%s:%s", httpProxyIp, httpProxyPort)
+		}
+
 		newProvider = false
 
 		if _, ok := data["new"]; ok {
@@ -171,7 +179,7 @@ func getProviderData(fileType, fileID string) (err error) {
 			// Laden vom HDHomeRun Tuner
 			showInfo("Tuner:" + fileSource)
 			var tunerURL = "http://" + fileSource + "/lineup.json"
-			serverFileName, body, err = downloadFileFromServer(tunerURL)
+			serverFileName, body, err = downloadFileFromServer(tunerURL, httpProxyUrl)
 
 		default:
 
@@ -179,7 +187,7 @@ func getProviderData(fileType, fileID string) (err error) {
 
 				// Laden vom Remote Server
 				showInfo("Download:" + fileSource)
-				serverFileName, body, err = downloadFileFromServer(fileSource)
+				serverFileName, body, err = downloadFileFromServer(fileSource, httpProxyUrl)
 
 			} else {
 
@@ -281,36 +289,17 @@ func getProviderData(fileType, fileID string) (err error) {
 	return
 }
 
-func downloadFileFromServer(providerURL string) (filename string, body []byte, err error) {
-
+func downloadFileFromServer(providerURL string, proxyUrl string) (filename string, body []byte, err error) {
+	log.Println("PROXY URL: ", proxyUrl)
 	_, err = url.ParseRequestURI(providerURL)
 	if err != nil {
 		return
 	}
 
-	m3uSettings := Settings.Files.M3U
-	providerSettings, ok := m3uSettings["MJV2V0SW1A9RLMRQZ4U7"].(map[string]interface{})
-	if !ok {
-		err = fmt.Errorf("invalid provider settings format")
-		return
-	}
-
-	proxyIP, ok := providerSettings["http_proxy.ip"].(string)
-	if !ok {
-		err = fmt.Errorf("invalid proxy IP format")
-		return
-	}
-
-	proxyPort, ok := providerSettings["http_proxy.port"].(string)
-	if !ok {
-		err = fmt.Errorf("invalid proxy port format")
-		return
-	}
-
 	httpClient := &http.Client{}
 
-	if proxyIP != "" && proxyPort != "" {
-		proxyURL, err := url.Parse(fmt.Sprintf("http://%s:%s", proxyIP, proxyPort))
+	if proxyUrl != "" {
+		proxyURL, err := url.Parse(proxyUrl)
 		if err != nil {
 			return "", nil, err
 		}
