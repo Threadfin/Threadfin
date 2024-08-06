@@ -11,7 +11,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -105,6 +104,9 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 		playlist.Tuner = getTuner(playlistID, playlistType)
 
 		playlist.PlaylistName = getProviderParameter(playlist.PlaylistID, playlistType, "name")
+
+		playlist.HttpProxyIP = getProviderParameter(playlist.PlaylistID, playlistType, "http_proxy.ip")
+		playlist.HttpProxyPort = getProviderParameter(playlist.PlaylistID, playlistType, "http_proxy.port")
 
 		// Default-Werte für den Stream erstellen
 		streamID = createStreamID(playlist.Streams)
@@ -900,20 +902,14 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 			if backupNumber >= 1 && backupNumber <= 3 {
 				switch backupNumber {
 				case 1:
-					log.Println("STREAM ID: ", streamID)
-					log.Println("STREAM: ", playlist.Streams)
 					url = playlist.Streams[streamID].BackupChannel1URL
 					showHighlight("START OF BACKUP 1 STREAM")
 					showInfo("Backup Channel 1 URL: " + url)
 				case 2:
-					log.Println("STREAM ID: ", streamID)
-					log.Println("STREAM: ", playlist.Streams)
 					url = playlist.Streams[streamID].BackupChannel2URL
 					showHighlight("START OF BACKUP 2 STREAM")
 					showInfo("Backup Channel 2 URL: " + url)
 				case 3:
-					log.Println("STREAM ID: ", streamID)
-					log.Println("STREAM: ", playlist.Streams)
 					url = playlist.Streams[streamID].BackupChannel3URL
 					showHighlight("START OF BACKUP 3 STREAM")
 					showInfo("Backup Channel 3 URL: " + url)
@@ -1008,6 +1004,9 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 					if len(Settings.UserAgent) != 0 {
 						args = []string{"-user_agent", Settings.UserAgent}
 					}
+					if playlist.HttpProxyIP != "" && playlist.HttpProxyPort != "" {
+						args = append(args, "-http_proxy", fmt.Sprintf("http://%s:%s", playlist.HttpProxyIP, playlist.HttpProxyPort))
+					}
 				}
 
 				args = append(args, a)
@@ -1019,6 +1018,9 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 
 					if len(Settings.UserAgent) != 0 {
 						args = append(args, fmt.Sprintf(":http-user-agent=%s", Settings.UserAgent))
+					}
+					if playlist.HttpProxyIP != "" && playlist.HttpProxyPort != "" {
+						args = append(args, fmt.Sprintf(":http-proxy=%s:%s", playlist.HttpProxyIP, playlist.HttpProxyPort))
 					}
 
 				} else {

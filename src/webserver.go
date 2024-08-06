@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -225,16 +226,66 @@ func Stream(w http.ResponseWriter, r *http.Request) {
 	switch Settings.Buffer {
 
 	case "-":
-		showInfo("Streaming URL:" + streamInfo.URL)
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		http.Redirect(w, r, streamInfo.URL, 302)
+		m3uSettings := Settings.Files.M3U
+		providerSettings, ok := m3uSettings["MJV2V0SW1A9RLMRQZ4U7"].(map[string]interface{})
+		if !ok {
+			return
+		}
 
-		showInfo("Streaming Info:URL was passed to the client.")
-		showInfo("Streaming Info:Threadfin is no longer involved, the client connects directly to the streaming server.")
+		proxyIP, ok := providerSettings["http_proxy.ip"].(string)
+		if !ok {
+			return
+		}
+
+		proxyPort, ok := providerSettings["http_proxy.port"].(string)
+		if !ok {
+			return
+		}
+
+		if proxyIP != "" && proxyPort != "" {
+			showInfo("Streaming Info: Streaming through proxy.")
+
+			proxyURL, err := url.Parse(fmt.Sprintf("http://%s:%s", proxyIP, proxyPort))
+			if err != nil {
+				return
+			}
+
+			httpClient := &http.Client{
+				Transport: &http.Transport{
+					Proxy: http.ProxyURL(proxyURL),
+				},
+			}
+
+			resp, err := httpClient.Get(streamInfo.URL)
+			if err != nil {
+				http.Error(w, "Failed to fetch stream", http.StatusInternalServerError)
+				return
+			}
+			defer resp.Body.Close()
+
+			for key, values := range resp.Header {
+				for _, value := range values {
+					w.Header().Add(key, value)
+				}
+			}
+
+			w.WriteHeader(resp.StatusCode)
+			_, err = io.Copy(w, resp.Body)
+			if err != nil {
+				http.Error(w, "Failed to stream response", http.StatusInternalServerError)
+				return
+			}
+		} else {
+			showInfo("Streaming URL:" + streamInfo.URL)
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+			http.Redirect(w, r, streamInfo.URL, 302)
+
+			showInfo("Streaming Info:URL was passed to the client.")
+			showInfo("Streaming Info:Threadfin is no longer involved, the client connects directly to the streaming server.")
+		}
 
 	default:
 		bufferingStream(streamInfo.PlaylistID, streamInfo.URL, streamInfo.BackupChannel1URL, streamInfo.BackupChannel2URL, streamInfo.BackupChannel3URL, streamInfo.Name, w, r)
-
 	}
 
 	return

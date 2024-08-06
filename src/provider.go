@@ -2,7 +2,7 @@ package src
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -31,7 +31,7 @@ func getProviderData(fileType, fileID string) (err error) {
 		}
 
 		// Default keys für die Providerdaten
-		var keys = []string{"name", "description", "type", "file." + System.AppName, "file.source", "tuner", "last.update", "compatibility", "counter.error", "counter.download", "provider.availability"}
+		var keys = []string{"name", "description", "type", "file." + System.AppName, "file.source", "tuner", "http_proxy.ip", "http_proxy.port", "last.update", "compatibility", "counter.error", "counter.download", "provider.availability"}
 
 		for _, key := range keys {
 
@@ -53,6 +53,12 @@ func getProviderData(fileType, fileID string) (err error) {
 
 				case "file.source":
 					data[key] = fileSource
+
+				case "http_proxy.ip":
+					data[key] = ""
+
+				case "http_proxy.port":
+					data[key] = 0
 
 				case "last.update":
 					data[key] = time.Now().Format("2006-01-02 15:04:05")
@@ -282,39 +288,69 @@ func downloadFileFromServer(providerURL string) (filename string, body []byte, e
 		return
 	}
 
-	resp, err := http.Get(providerURL)
+	m3uSettings := Settings.Files.M3U
+	providerSettings, ok := m3uSettings["MJV2V0SW1A9RLMRQZ4U7"].(map[string]interface{})
+	if !ok {
+		err = fmt.Errorf("invalid provider settings format")
+		return
+	}
+
+	proxyIP, ok := providerSettings["http_proxy.ip"].(string)
+	if !ok {
+		err = fmt.Errorf("invalid proxy IP format")
+		return
+	}
+
+	proxyPort, ok := providerSettings["http_proxy.port"].(string)
+	if !ok {
+		err = fmt.Errorf("invalid proxy port format")
+		return
+	}
+
+	httpClient := &http.Client{}
+
+	if proxyIP != "" && proxyPort != "" {
+		proxyURL, err := url.Parse(fmt.Sprintf("http://%s:%s", proxyIP, proxyPort))
+		if err != nil {
+			return "", nil, err
+		}
+
+		httpClient = &http.Client{
+			Transport: &http.Transport{
+				Proxy: http.ProxyURL(proxyURL),
+			},
+		}
+	}
+
+	resp, err := httpClient.Get(providerURL)
 	if err != nil {
 		return
 	}
+	defer resp.Body.Close()
 
 	resp.Header.Set("User-Agent", Settings.UserAgent)
 
 	if resp.StatusCode != http.StatusOK {
-		err = fmt.Errorf(fmt.Sprintf("%d: %s "+http.StatusText(resp.StatusCode), resp.StatusCode, providerURL))
+		err = fmt.Errorf("%d: %s %s", resp.StatusCode, providerURL, http.StatusText(resp.StatusCode))
 		return
 	}
 
-	// Dateiname aus dem Header holen
+	// Get filename from the header
 	var index = strings.Index(resp.Header.Get("Content-Disposition"), "filename")
 
 	if index > -1 {
-
-		var headerFilename = resp.Header.Get("Content-Disposition")[index:len(resp.Header.Get("Content-Disposition"))]
+		var headerFilename = resp.Header.Get("Content-Disposition")[index:]
 		var value = strings.Split(headerFilename, `=`)
 		var f = strings.Replace(value[1], `"`, "", -1)
-
 		f = strings.Replace(f, `;`, "", -1)
 		filename = f
 		showInfo("Header filename:" + filename)
-
 	} else {
-
 		var cleanFilename = strings.SplitN(getFilenameFromPath(providerURL), "?", 2)
 		filename = cleanFilename[0]
-
 	}
 
-	body, err = ioutil.ReadAll(resp.Body)
+	body, err = io.ReadAll(resp.Body)
 	if err != nil {
 		return
 	}

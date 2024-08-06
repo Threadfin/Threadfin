@@ -1411,6 +1411,18 @@ function openPopUp(dataType, element) {
 
       content.description("{{.playlist.tuner.description}}")
 
+      var dbKey: string = "http_proxy.ip"
+      var input = content.createInput("text", dbKey, data[dbKey])
+      input.setAttribute("placeholder", "{{.playlist.http_proxy_ip.placeholder}}")
+      content.appendRow("{{.playlist.http_proxy_ip.title}}", input)
+      content.description("{{.playlist.http_proxy_ip.description}}")
+
+      var dbKey: string = "http_proxy.port"
+      var input = content.createInput("text", dbKey, data[dbKey])
+      input.setAttribute("placeholder", "{{.playlist.http_proxy_port.placeholder}}")
+      content.appendRow("{{.playlist.http_proxy_port.title}}", input)
+      content.description("{{.playlist.http_proxy_port.description}}")
+
       // Interaktion
       content.createInteraction()
       // Löschen
