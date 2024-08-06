@@ -2,7 +2,8 @@ package src
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -31,7 +32,7 @@ func getProviderData(fileType, fileID string) (err error) {
 		}
 
 		// Default keys für die Providerdaten
-		var keys = []string{"name", "description", "type", "file." + System.AppName, "file.source", "tuner", "last.update", "compatibility", "counter.error", "counter.download", "provider.availability"}
+		var keys = []string{"name", "description", "type", "file." + System.AppName, "file.source", "tuner", "http_proxy.ip", "http_proxy.port", "last.update", "compatibility", "counter.error", "counter.download", "provider.availability"}
 
 		for _, key := range keys {
 
@@ -53,6 +54,12 @@ func getProviderData(fileType, fileID string) (err error) {
 
 				case "file.source":
 					data[key] = fileSource
+
+				case "http_proxy.ip":
+					data[key] = ""
+
+				case "http_proxy.port":
+					data[key] = ""
 
 				case "last.update":
 					data[key] = time.Now().Format("2006-01-02 15:04:05")
@@ -144,6 +151,19 @@ func getProviderData(fileType, fileID string) (err error) {
 
 		var data = d.(map[string]interface{})
 		var fileSource = data["file.source"].(string)
+		var httpProxyIp = ""
+		if data["http_proxy.ip"] != nil {
+			httpProxyIp = data["http_proxy.ip"].(string)
+		}
+		var httpProxyPort = ""
+		if data["http_proxy.port"] != nil {
+			httpProxyPort = data["http_proxy.port"].(string)
+		}
+		var httpProxyUrl = ""
+		if httpProxyIp != "" && httpProxyPort != "" {
+			httpProxyUrl = fmt.Sprintf("http://%s:%s", httpProxyIp, httpProxyPort)
+		}
+
 		newProvider = false
 
 		if _, ok := data["new"]; ok {
@@ -165,7 +185,7 @@ func getProviderData(fileType, fileID string) (err error) {
 			// Laden vom HDHomeRun Tuner
 			showInfo("Tuner:" + fileSource)
 			var tunerURL = "http://" + fileSource + "/lineup.json"
-			serverFileName, body, err = downloadFileFromServer(tunerURL)
+			serverFileName, body, err = downloadFileFromServer(tunerURL, httpProxyUrl)
 
 		default:
 
@@ -173,7 +193,7 @@ func getProviderData(fileType, fileID string) (err error) {
 
 				// Laden vom Remote Server
 				showInfo("Download:" + fileSource)
-				serverFileName, body, err = downloadFileFromServer(fileSource)
+				serverFileName, body, err = downloadFileFromServer(fileSource, httpProxyUrl)
 
 			} else {
 
@@ -275,46 +295,57 @@ func getProviderData(fileType, fileID string) (err error) {
 	return
 }
 
-func downloadFileFromServer(providerURL string) (filename string, body []byte, err error) {
-
+func downloadFileFromServer(providerURL string, proxyUrl string) (filename string, body []byte, err error) {
+	log.Println("PROXY URL: ", proxyUrl)
 	_, err = url.ParseRequestURI(providerURL)
 	if err != nil {
 		return
 	}
 
-	resp, err := http.Get(providerURL)
+	httpClient := &http.Client{}
+
+	if proxyUrl != "" {
+		proxyURL, err := url.Parse(proxyUrl)
+		if err != nil {
+			return "", nil, err
+		}
+
+		httpClient = &http.Client{
+			Transport: &http.Transport{
+				Proxy: http.ProxyURL(proxyURL),
+			},
+		}
+	}
+
+	resp, err := httpClient.Get(providerURL)
 	if err != nil {
 		return
 	}
+	defer resp.Body.Close()
 
 	resp.Header.Set("User-Agent", Settings.UserAgent)
 
 	if resp.StatusCode != http.StatusOK {
-		err = fmt.Errorf(fmt.Sprintf("%d: %s "+http.StatusText(resp.StatusCode), resp.StatusCode, providerURL))
+		err = fmt.Errorf("%d: %s %s", resp.StatusCode, providerURL, http.StatusText(resp.StatusCode))
 		return
 	}
 
-	// Dateiname aus dem Header holen
+	// Get filename from the header
 	var index = strings.Index(resp.Header.Get("Content-Disposition"), "filename")
 
 	if index > -1 {
-
-		var headerFilename = resp.Header.Get("Content-Disposition")[index:len(resp.Header.Get("Content-Disposition"))]
+		var headerFilename = resp.Header.Get("Content-Disposition")[index:]
 		var value = strings.Split(headerFilename, `=`)
 		var f = strings.Replace(value[1], `"`, "", -1)
-
 		f = strings.Replace(f, `;`, "", -1)
 		filename = f
 		showInfo("Header filename:" + filename)
-
 	} else {
-
 		var cleanFilename = strings.SplitN(getFilenameFromPath(providerURL), "?", 2)
 		filename = cleanFilename[0]
-
 	}
 
-	body, err = ioutil.ReadAll(resp.Body)
+	body, err = io.ReadAll(resp.Body)
 	if err != nil {
 		return
 	}
