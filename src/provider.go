@@ -59,7 +59,7 @@ func getProviderData(fileType, fileID string) (err error) {
 					data[key] = ""
 
 				case "http_proxy.port":
-					data[key] = 0
+					data[key] = ""
 
 				case "last.update":
 					data[key] = time.Now().Format("2006-01-02 15:04:05")
@@ -151,8 +151,14 @@ func getProviderData(fileType, fileID string) (err error) {
 
 		var data = d.(map[string]interface{})
 		var fileSource = data["file.source"].(string)
-		var httpProxyIp = data["http_proxy.ip"].(string)
-		var httpProxyPort = data["http_proxy.port"].(string)
+		var httpProxyIp = ""
+		if data["http_proxy.ip"] != nil {
+			httpProxyIp = data["http_proxy.ip"].(string)
+		}
+		var httpProxyPort = ""
+		if data["http_proxy.port"] != nil {
+			httpProxyPort = data["http_proxy.port"].(string)
+		}
 		var httpProxyUrl = ""
 		if httpProxyIp != "" && httpProxyPort != "" {
 			httpProxyUrl = fmt.Sprintf("http://%s:%s", httpProxyIp, httpProxyPort)
