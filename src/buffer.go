@@ -954,6 +954,8 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 
 		var addErrorToStream = func(err error) {
 
+			showDebug("ERROR ADDED TO STREAM", 3)
+
 			if !useBackup || (useBackup && backupNumber >= 0 && backupNumber <= 3) {
 				backupNumber = backupNumber + 1
 				if playlist.Streams[streamID].BackupChannel1URL != "" || playlist.Streams[streamID].BackupChannel2URL != "" || playlist.Streams[streamID].BackupChannel3URL != "" {
