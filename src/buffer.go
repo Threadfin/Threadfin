@@ -11,7 +11,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -261,8 +260,6 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 	w.WriteHeader(200)
 
 	for { // Loop 1: Wait until the first segment has been downloaded through the buffer
-
-		log.Println("I MADE IT HERE HOW??????")
 
 		if p, ok := BufferInformation.Load(playlistID); ok {
 
@@ -519,7 +516,7 @@ func killClientConnection(streamID int, playlistID string, force bool) {
 
 				showInfo("Streaming Status:Client has terminated the connection")
 				showInfo(fmt.Sprintf("Streaming Status:Channel: %s (Clients: %d)", stream.ChannelName, clients.Connection))
-				showInfo("ACTIVE CONNECTIONS: " + strconv.Itoa(clients.Connection))
+
 				if clients.Connection <= 0 {
 					if activePlaylistCount > 0 {
 						activePlaylistCount = activePlaylistCount - 1
@@ -970,7 +967,6 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 				var clients = c.(ClientConnection)
 				clients.Error = err
 				BufferClients.Store(playlistID+stream.MD5, clients)
-
 			}
 
 		}
@@ -1010,7 +1006,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 
 		//args = strings.Replace(args, "[USER-AGENT]", Settings.UserAgent, -1)
 
-		// User-Agent setzen
+		// Set user agent
 		var args []string
 
 		for i, a := range strings.Split(options, " ") {
@@ -1054,7 +1050,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 		debug = fmt.Sprintf("%s:%s %s", bufferType, path, args)
 		showDebug(debug, 1)
 
-		// Byte-Daten vom Prozess
+		// Byte data from process
 		stdOut, err := cmd.StdoutPipe()
 		if err != nil {
 			ShowError(err, 0)
@@ -1063,9 +1059,10 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 			return
 		}
 
-		// Log-Daten vom Prozess
+		// Log data from the process
 		logOut, err := cmd.StderrPipe()
 		if err != nil {
+			fmt.Println("I GOT HERE AND ERRORED")
 			ShowError(err, 0)
 			killClientConnection(streamID, playlistID, false)
 			addErrorToStream(err)
@@ -1081,7 +1078,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 
 		go func() {
 
-			// Log Daten vom Prozess im Dubug Mode 1 anzeigen.
+			// Show log data from the process in Debug Mode 1.
 			scanner := bufio.NewScanner(logOut)
 			scanner.Split(bufio.ScanLines)
 
