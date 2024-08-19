@@ -1154,6 +1154,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 			select {
 			case timeout := <-t:
 				if timeout >= 5 && tmpSegment == 1 {
+					fmt.Println("I GOT HERE 7")
 					cmd.Process.Kill()
 					err = errors.New("Timout")
 					ShowError(err, 4006)
@@ -1173,6 +1174,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 			}
 
 			if !clientConnection(stream) {
+				fmt.Println("I GOT HERE 8")
 				cmd.Process.Kill()
 				killClientConnection(streamID, playlistID, false)
 				addErrorToStream(err)
@@ -1189,6 +1191,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 			fileSize = fileSize + len(buffer[:n])
 
 			if _, err := f.Write(buffer[:n]); err != nil {
+				fmt.Println("I GOT HERE 9")
 				cmd.Process.Kill()
 				ShowError(err, 0)
 				killClientConnection(streamID, playlistID, false)
@@ -1224,6 +1227,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 				_, errCreate = bufferVFS.Create(tmpFile)
 				f, errOpen = bufferVFS.OpenFile(tmpFile, os.O_APPEND|os.O_WRONLY, 0600)
 				if errCreate != nil || errOpen != nil {
+					fmt.Println("I GOT HERE 10")
 					cmd.Process.Kill()
 					ShowError(err, 0)
 					killClientConnection(streamID, playlistID, false)
