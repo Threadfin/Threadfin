@@ -1090,7 +1090,18 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 
 			for scanner.Scan() {
 
-				debug = fmt.Sprintf("%s log:%s", bufferType, strings.TrimSpace(scanner.Text()))
+				serviceText := strings.TrimSpace(scanner.Text())
+
+				if strings.Contains(serviceText, "Your input can't be opened") {
+					err = errors.New(serviceText)
+					showDebug("CALLED FROM HERE 6", 1)
+					killClientConnection(streamID, playlistID, false)
+					addErrorToStream(err)
+					cmd.Wait()
+					return
+				}
+
+				debug = fmt.Sprintf("%s log:%s", bufferType, serviceText)
 
 				select {
 				case <-streamStatus:
