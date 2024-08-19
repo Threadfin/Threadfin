@@ -31,6 +31,7 @@ var activeClientCount int
 var activePlaylistCount int
 
 func getActiveClientCount() (count int) {
+	log.Println("Clients: ", BufferClients)
 	return activeClientCount
 }
 
@@ -77,7 +78,7 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 
 	// Check whether the playlist is already in use
 	log.Println("BUFFER INFORMATION 2: ", BufferInformation)
-	if p, ok := BufferInformation.Load(playlistID); !ok {
+	if p, ok := BufferInformation.Load(playlistID + stream.MD5); !ok {
 
 		var playlistType string
 		// Playlist wird noch nicht verwendet, Default-Werte für die Playlist erstellen
@@ -148,6 +149,7 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 				newStream = false
 
 				client.Connection += 1
+				activeClientCount += 1
 
 				playlist.Streams[streamID] = stream
 				playlist.Clients[streamID] = client
@@ -263,7 +265,7 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 
 	for { // Loop 1: Wait until the first segment has been downloaded through the buffer
 
-		if p, ok := BufferInformation.Load(playlistID); ok {
+		if p, ok := BufferInformation.Load(playlistID + stream.MD5); ok {
 
 			var playlist = p.(Playlist)
 
@@ -529,7 +531,7 @@ func killClientConnection(streamID int, playlistID string, force bool) {
 
 					delete(playlist.Streams, streamID)
 					delete(playlist.Clients, streamID)
-					BufferInformation.Delete(stream.PlaylistID)
+					BufferInformation.Delete(playlistID)
 					BufferClients.Delete(playlistID + stream.MD5)
 				} else {
 					BufferInformation.Store(playlistID, playlist)
