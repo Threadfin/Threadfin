@@ -512,7 +512,7 @@ func killClientConnection(streamID int, playlistID string, force bool) {
 				}
 
 				var clients = c.(ClientConnection)
-				clients.Connection = activeClientCount
+				clients.Connection -= 1
 				BufferClients.Store(playlistID+stream.MD5, clients)
 
 				showInfo("Streaming Status:Client has terminated the connection")
