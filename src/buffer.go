@@ -244,7 +244,7 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 		switch Settings.Buffer {
 
 		case "ffmpeg", "vlc":
-			thirdPartyBuffer(streamID, playlistID, false, 0)
+			go thirdPartyBuffer(streamID, playlistID, false, 0)
 
 		default:
 			break
@@ -293,9 +293,9 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 
 				var oldSegments []string
 
-				for { // Loop 2: Temporäre Datein sind vorhanden, Daten können zum Client gesendet werden
+				for { // Loop 2: Temporary files are present, data can be sent to the client
 
-					// HTTP Clientverbindung überwachen
+					// Monitor HTTP client connection
 
 					ctx := r.Context()
 					if ok {
@@ -554,7 +554,7 @@ func clientConnection(stream *ThisStream) (status bool) {
 	status = true
 	Lock.Lock()
 	defer Lock.Unlock()
-
+	fmt.Println("CONNECTIONS: ", BufferInformation.Playlist)
 	if BufferInformation.Playlist[stream.PlaylistID].Clients == nil {
 
 		var debug = fmt.Sprintf("Streaming Status:Remove temporary files (%s)", stream.Folder)
