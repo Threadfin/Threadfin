@@ -109,7 +109,6 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 		// Default-Werte für den Stream erstellen
 		streamID = createStreamID(playlist.Streams)
 
-		client.Connection = 1
 		activeClientCount = 1
 		if activePlaylistCount == 0 {
 			activePlaylistCount = 1
@@ -142,16 +141,14 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 
 				streamID = id
 				newStream = false
-				client.Connection += 1
 				activeClientCount += 1
-				activePlaylistCount += 1
 
-				//playlist.Streams[streamID] = stream
+				playlist.Streams[streamID] = stream
 				playlist.Clients[streamID] = client
 
 				BufferInformation.Store(playlistID, playlist)
 
-				debug = fmt.Sprintf("Restream Status:Playlist: %s - Channel: %s - Connections: %d", playlist.PlaylistName, stream.ChannelName, client.Connection)
+				debug = fmt.Sprintf("Restream Status:Playlist: %s - Channel: %s - Connections: %d", playlist.PlaylistName, stream.ChannelName, activeClientCount)
 
 				showDebug(debug, 1)
 
@@ -170,10 +167,10 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 
 		}
 
-		// Neuer Stream bei einer bereits aktiven Playlist
+		// New stream for an already active playlist
 		if newStream {
 
-			// Prüfen ob die Playlist noch einen weiteren Stream erlaubt (Tuner)
+			// Check whether the playlist allows another stream (tuner)
 			if len(playlist.Streams) >= playlist.Tuner {
 
 				showInfo(fmt.Sprintf("Streaming Status:Playlist: %s - No new connections available. Tuner = %d", playlist.PlaylistName, playlist.Tuner))
@@ -198,15 +195,15 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 				return
 			}
 
-			// Playlist erlaubt einen weiterern Stream (Das Limit des Tuners ist noch nicht erreicht)
-			// Default-Werte für den Stream erstellen
+			// Playlist allows another stream (the tuner's limit has not yet been reached)
+			// Create default values ​​for the stream
 			stream = ThisStream{}
 			client = ThisClient{}
 
 			streamID = createStreamID(playlist.Streams)
 			activePlaylistCount += 1
+			activeClientCount += 1
 
-			client.Connection = 1
 			stream.URL = streamingURL
 			stream.ChannelName = channelName
 			stream.Status = false
@@ -256,7 +253,9 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 
 	w.WriteHeader(200)
 
-	for { // Loop 1: Warten bis das erste Segment durch den Buffer heruntergeladen wurde
+	for { // Loop 1: Wait until the first segment has been downloaded through the buffer
+
+		log.Println("I MADE IT HERE HOW??????")
 
 		if p, ok := BufferInformation.Load(playlistID); ok {
 
