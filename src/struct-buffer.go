@@ -11,13 +11,14 @@ type Playlist struct {
 	HttpProxyIP   string
 	HttpProxyPort string
 
-	Clients map[int]ThisClient
-	Streams map[int]ThisStream
+	Clients map[int]*ThisClient
+	Streams map[int]*ThisStream
 }
 
 // ThisClient : Clientinfos
 type ThisClient struct {
 	Connection int
+	Error      error
 }
 
 // ThisStream : Enthält Informationen zu dem abzuspielenden Stream einer Playlist
@@ -112,6 +113,12 @@ type BandwidthCalculation struct {
 	Start            time.Time
 	Stop             time.Time
 	TimeDiff         float64
+}
+
+type BufferDetails struct {
+	Playlist      map[string]*Playlist
+	ClientCount   int
+	PlaylistCount int
 }
 
 /*
