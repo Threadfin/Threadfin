@@ -519,7 +519,7 @@ func killClientConnection(streamID int, playlistID string, force bool) {
 
 				showInfo("Streaming Status:Client has terminated the connection")
 				showInfo(fmt.Sprintf("Streaming Status:Channel: %s (Clients: %d)", stream.ChannelName, clients.Connection))
-
+				showInfo("ACTIVE CONNECTIONS: " + strconv.Itoa(clients.Connection))
 				if clients.Connection <= 0 {
 					if activePlaylistCount > 0 {
 						activePlaylistCount = activePlaylistCount - 1
