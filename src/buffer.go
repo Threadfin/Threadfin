@@ -1157,6 +1157,8 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 			if !clientConnection(stream) {
 				fmt.Println("I GOT HERE AND ERRORED 3")
 				cmd.Process.Kill()
+				killClientConnection(streamID, playlistID, false)
+				addErrorToStream(err)
 				f.Close()
 				cmd.Wait()
 				return
