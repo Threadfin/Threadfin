@@ -552,6 +552,8 @@ func clientConnection(stream ThisStream) (status bool) {
 
 	if _, ok := BufferClients.Load(stream.PlaylistID + stream.MD5); !ok {
 
+		showDebug("I GOT HERE. SHOULD CLOSE", 1)
+
 		var debug = fmt.Sprintf("Streaming Status:Remove temporary files (%s)", stream.Folder)
 		showDebug(debug, 1)
 
@@ -1224,7 +1226,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 		ShowError(err, 1204)
 
 		time.Sleep(time.Duration(500) * time.Millisecond)
-		// clientConnection(stream)
+		clientConnection(stream)
 
 		return
 
