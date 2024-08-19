@@ -526,6 +526,8 @@ func killClientConnection(streamID int, playlistID string, force bool) {
 					} else {
 						activePlaylistCount = 0
 					}
+
+					BufferInformation.Delete(stream.PlaylistID)
 					BufferClients.Delete(playlistID + stream.MD5)
 					delete(playlist.Streams, streamID)
 					delete(playlist.Clients, streamID)
@@ -570,7 +572,11 @@ func clientConnection(stream ThisStream) (status bool) {
 			showInfo(fmt.Sprintf("Streaming Status:Channel: %s - No client is using this channel anymore. Streaming Server connection has ended", stream.ChannelName))
 
 			var playlist = p.(Playlist)
-			activePlaylistCount -= 1
+			if activePlaylistCount > 0 {
+				activePlaylistCount = activePlaylistCount - 1
+			} else {
+				activePlaylistCount = 0
+			}
 
 			showInfo(fmt.Sprintf("Streaming Status:Playlist: %s - Tuner: %d / %d", playlist.PlaylistName, len(playlist.Streams), playlist.Tuner))
 
