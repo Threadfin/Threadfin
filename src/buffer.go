@@ -1062,7 +1062,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 		// Log data from the process
 		logOut, err := cmd.StderrPipe()
 		if err != nil {
-			fmt.Println("I GOT HERE AND ERRORED")
+			fmt.Println("I GOT HERE AND ERRORED 1")
 			ShowError(err, 0)
 			killClientConnection(streamID, playlistID, false)
 			addErrorToStream(err)
@@ -1134,6 +1134,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 			select {
 			case timeout := <-t:
 				if timeout >= 20 && tmpSegment == 1 {
+					fmt.Println("I GOT HERE AND ERRORED 2")
 					cmd.Process.Kill()
 					err = errors.New("Timout")
 					ShowError(err, 4006)
@@ -1153,6 +1154,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 			}
 
 			if !clientConnection(stream) {
+				fmt.Println("I GOT HERE AND ERRORED 3")
 				cmd.Process.Kill()
 				f.Close()
 				cmd.Wait()
@@ -1167,6 +1169,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 			fileSize = fileSize + len(buffer[:n])
 
 			if _, err := f.Write(buffer[:n]); err != nil {
+				fmt.Println("I GOT HERE AND ERRORED 4")
 				cmd.Process.Kill()
 				ShowError(err, 0)
 				killClientConnection(streamID, playlistID, false)
@@ -1202,6 +1205,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 				_, errCreate = bufferVFS.Create(tmpFile)
 				f, errOpen = bufferVFS.OpenFile(tmpFile, os.O_APPEND|os.O_WRONLY, 0600)
 				if errCreate != nil || errOpen != nil {
+					fmt.Println("I GOT HERE AND ERRORED 5")
 					cmd.Process.Kill()
 					ShowError(err, 0)
 					killClientConnection(streamID, playlistID, false)
@@ -1214,6 +1218,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 
 		}
 
+		fmt.Println("I GOT HERE AND ERRORED 6")
 		cmd.Process.Kill()
 		cmd.Wait()
 
