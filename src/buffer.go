@@ -145,8 +145,9 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 
 				streamID = id
 				newStream = false
+				activeClientCount += 1
 
-				client.Connection += 1
+				client.Connection = activeClientCount
 
 				playlist.Streams[streamID] = stream
 				playlist.Clients[streamID] = client
@@ -160,6 +161,7 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 				if c, ok := BufferClients.Load(playlistID + stream.MD5); ok {
 
 					var clients = c.(ClientConnection)
+					clients.Connection = activeClientCount
 
 					showInfo(fmt.Sprintf("Streaming Status:Channel: %s (Clients: %d)", stream.ChannelName, client.Connection))
 
@@ -208,7 +210,6 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 			streamID = createStreamID(playlist.Streams)
 			activePlaylistCount += 1
 			activeClientCount += 1
-			client.Connection = 1
 
 			stream.URL = streamingURL
 			stream.ChannelName = channelName
@@ -518,7 +519,6 @@ func killClientConnection(streamID int, playlistID string, force bool) {
 				showInfo("Streaming Status:Client has terminated the connection")
 				showInfo(fmt.Sprintf("Streaming Status:Channel: %s (Clients: %d)", stream.ChannelName, clients.Connection))
 
-				log.Println("CLIENT CONNECTIONS: ", clients.Connection)
 				if clients.Connection <= 0 {
 					if activePlaylistCount > 0 {
 						activePlaylistCount = activePlaylistCount - 1
