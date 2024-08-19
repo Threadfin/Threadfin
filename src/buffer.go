@@ -135,7 +135,7 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 		// Check if the URL is already streaming from another client.
 
 		playlist = p.(Playlist)
-
+		log.Println("Playlists: ", playlist)
 		for id := range playlist.Streams {
 
 			stream = playlist.Streams[id]
@@ -146,7 +146,7 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 				streamID = id
 				newStream = false
 				activeClientCount += 1
-				log.Println("CLients: ", playlist.Clients[streamID])
+
 				client.Connection = activeClientCount
 
 				playlist.Streams[streamID] = stream
