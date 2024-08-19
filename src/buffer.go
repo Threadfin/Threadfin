@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -145,6 +146,7 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 				streamID = id
 				newStream = false
 				activeClientCount += 1
+				log.Println("CLients: ", playlist.Clients[streamID])
 				client.Connection = activeClientCount
 
 				playlist.Streams[streamID] = stream
