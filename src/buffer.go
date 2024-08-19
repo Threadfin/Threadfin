@@ -63,9 +63,9 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 
 	time.Sleep(time.Duration(Settings.BufferTimeout) * time.Millisecond)
 
-	var playlist *Playlist
-	var client *ThisClient
-	var stream *ThisStream
+	playlist := &Playlist{}
+	client := &ThisClient{}
+	stream := &ThisStream{}
 	var streamID int
 	var debug string
 	var newStream = true
