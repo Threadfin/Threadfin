@@ -31,7 +31,10 @@ var activeClientCount int
 var activePlaylistCount int
 
 func getActiveClientCount() (count int) {
-	log.Println("Clients: ", BufferClients)
+	BufferClients.Range(func(key, value interface{}) bool {
+		log.Println("CLIENTS: ", key, value)
+		return true
+	})
 	return activeClientCount
 }
 
