@@ -76,7 +76,6 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 
 	// Check whether the playlist is already in use
-	log.Println("BUFFER INFORMATION 2: ", BufferInformation)
 	if p, ok := BufferInformation.Load(playlistID); !ok {
 
 		var playlistType string
@@ -148,7 +147,6 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 				newStream = false
 
 				client.Connection += 1
-				activeClientCount += 1
 
 				playlist.Streams[streamID] = stream
 				playlist.Clients[streamID] = client
@@ -256,7 +254,7 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 		var clients ClientConnection
 		activeClientCount = 1
 		clients.Connection = activeClientCount
-		BufferClients.Store(playlistID, clients)
+		BufferClients.Store(playlistID+stream.MD5, clients)
 
 	}
 
@@ -514,7 +512,7 @@ func killClientConnection(streamID int, playlistID string, force bool) {
 				}
 
 				var clients = c.(ClientConnection)
-				clients.Connection -= 1
+				clients.Connection = activeClientCount
 				BufferClients.Store(playlistID+stream.MD5, clients)
 
 				showInfo("Streaming Status:Client has terminated the connection")
@@ -528,10 +526,10 @@ func killClientConnection(streamID int, playlistID string, force bool) {
 						activePlaylistCount = 0
 					}
 
+					BufferInformation.Delete(stream.PlaylistID)
+					BufferClients.Delete(playlistID + stream.MD5)
 					delete(playlist.Streams, streamID)
 					delete(playlist.Clients, streamID)
-					BufferInformation.Delete(playlistID)
-					BufferClients.Delete(playlistID + stream.MD5)
 				} else {
 					BufferInformation.Store(playlistID, playlist)
 				}
