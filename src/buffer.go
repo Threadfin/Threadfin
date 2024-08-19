@@ -980,6 +980,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 		err := checkVFSFolder(tmpFolder, bufferVFS)
 		if err != nil {
 			ShowError(err, 0)
+			showDebug("CALLED FROM HERE 1", 1)
 			killClientConnection(streamID, playlistID, false)
 			addErrorToStream(err)
 			return
@@ -988,6 +989,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 		err = checkFile(path)
 		if err != nil {
 			ShowError(err, 0)
+			showDebug("CALLED FROM HERE 2", 1)
 			killClientConnection(streamID, playlistID, false)
 			addErrorToStream(err)
 			return
@@ -1001,6 +1003,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 		f, err := bufferVFS.Create(tmpFile)
 		f.Close()
 		if err != nil {
+			showDebug("CALLED FROM HERE 3", 1)
 			killClientConnection(streamID, playlistID, false)
 			addErrorToStream(err)
 			return
@@ -1056,6 +1059,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 		stdOut, err := cmd.StdoutPipe()
 		if err != nil {
 			ShowError(err, 0)
+			showDebug("CALLED FROM HERE 4", 1)
 			killClientConnection(streamID, playlistID, false)
 			addErrorToStream(err)
 			return
@@ -1065,6 +1069,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 		logOut, err := cmd.StderrPipe()
 		if err != nil {
 			ShowError(err, 0)
+			showDebug("CALLED FROM HERE 5", 1)
 			killClientConnection(streamID, playlistID, false)
 			addErrorToStream(err)
 			return
@@ -1138,6 +1143,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 					cmd.Process.Kill()
 					err = errors.New("Timout")
 					ShowError(err, 4006)
+					showDebug("CALLED FROM HERE 6", 1)
 					killClientConnection(streamID, playlistID, false)
 					addErrorToStream(err)
 					cmd.Wait()
@@ -1155,6 +1161,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 
 			if !clientConnection(stream) {
 				cmd.Process.Kill()
+				showDebug("CALLED FROM HERE 7", 1)
 				killClientConnection(streamID, playlistID, false)
 				addErrorToStream(err)
 				f.Close()
@@ -1172,6 +1179,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 			if _, err := f.Write(buffer[:n]); err != nil {
 				cmd.Process.Kill()
 				ShowError(err, 0)
+				showDebug("CALLED FROM HERE 8", 1)
 				killClientConnection(streamID, playlistID, false)
 				addErrorToStream(err)
 				cmd.Wait()
@@ -1207,6 +1215,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 				if errCreate != nil || errOpen != nil {
 					cmd.Process.Kill()
 					ShowError(err, 0)
+					showDebug("CALLED FROM HERE 9", 1)
 					killClientConnection(streamID, playlistID, false)
 					addErrorToStream(err)
 					cmd.Wait()
@@ -1221,6 +1230,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 		cmd.Wait()
 
 		err = errors.New(bufferType + " error")
+		showDebug("CALLED FROM HERE 10", 1)
 		killClientConnection(streamID, playlistID, false)
 		addErrorToStream(err)
 		ShowError(err, 1204)
