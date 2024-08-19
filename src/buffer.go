@@ -502,7 +502,7 @@ func killClientConnection(streamID int, playlistID string, force bool) {
 
 		if stream, ok := playlist.Streams[streamID]; ok {
 
-			if c, ok := BufferClients.Load(playlistID + stream.MD5); ok {
+			if BufferInformation.Playlist[playlistID].Clients[streamID].Connection > 0 {
 
 				if activeClientCount > 0 {
 					activeClientCount = activeClientCount - 1
@@ -510,9 +510,9 @@ func killClientConnection(streamID int, playlistID string, force bool) {
 					activeClientCount = 0
 				}
 
-				var clients = c.(ClientConnection)
+				var clients = BufferInformation.Playlist[playlistID].Clients[streamID]
 				clients.Connection = activeClientCount
-				BufferClients.Store(playlistID+stream.MD5, clients)
+				BufferInformation.Playlist[playlistID].Clients[streamID] = clients
 
 				showInfo("Streaming Status:Client has terminated the connection")
 				showInfo(fmt.Sprintf("Streaming Status:Channel: %s (Clients: %d)", stream.ChannelName, clients.Connection))
@@ -961,13 +961,10 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 				return
 			}
 
-			var stream = playlist.Streams[streamID]
-
-			if c, ok := BufferClients.Load(playlistID + stream.MD5); ok {
-
-				var clients = c.(ClientConnection)
+			if BufferInformation.Playlist[playlistID].Clients[streamID].Connection > 0 {
+				var clients = BufferInformation.Playlist[playlistID].Clients[streamID]
 				clients.Error = err
-				BufferClients.Store(playlistID+stream.MD5, clients)
+				BufferInformation.Playlist[playlistID].Clients[streamID] = clients
 			}
 
 		}
