@@ -1053,6 +1053,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 		// Byte data from process
 		stdOut, err := cmd.StdoutPipe()
 		if err != nil {
+			fmt.Println("I GOT HERE AND ERRORED 0")
 			ShowError(err, 0)
 			killClientConnection(streamID, playlistID, false)
 			addErrorToStream(err)
