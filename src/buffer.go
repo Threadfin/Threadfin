@@ -28,8 +28,6 @@ import (
 
 var activeClientCount int
 var activePlaylistCount int
-var timeOut int
-var streaming bool
 
 func getActiveClientCount() (count int) {
 	return activeClientCount
@@ -69,6 +67,8 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 	var streamID int
 	var debug string
 	var newStream = true
+	var timeOut = 0
+	var streaming = false
 
 	//w.Header().Set("Connection", "keep-alive")
 	w.Header().Set("Connection", "close")
@@ -137,7 +137,6 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 		// Check if the URL is already streaming from another client.
 
 		playlist = BufferInformation.Playlist[playlistID]
-		fmt.Println("Playlists: ", playlist)
 		for id := range playlist.Streams {
 
 			stream = playlist.Streams[id]
