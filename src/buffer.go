@@ -554,7 +554,21 @@ func clientConnection(stream *ThisStream) (status bool) {
 	status = true
 	Lock.Lock()
 	defer Lock.Unlock()
-	fmt.Println("CONNECTIONS: ", BufferInformation.Playlist)
+
+	if len(BufferInformation.Playlist) == 0 {
+		showInfo(fmt.Sprintf("Streaming Status:Channel: %s - No client is using this channel anymore. Streaming Server connection has ended", stream.ChannelName))
+
+		var playlist = BufferInformation.Playlist[stream.PlaylistID]
+
+		activePlaylistCount = 0
+
+		showInfo(fmt.Sprintf("Streaming Status:Playlist: %s - Tuner: %d / %d", playlist.PlaylistName, len(playlist.Streams), playlist.Tuner))
+
+		delete(BufferInformation.Playlist, stream.PlaylistID)
+
+		status = false
+	}
+
 	if BufferInformation.Playlist[stream.PlaylistID].Clients == nil {
 
 		var debug = fmt.Sprintf("Streaming Status:Remove temporary files (%s)", stream.Folder)
