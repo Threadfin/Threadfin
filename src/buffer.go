@@ -244,7 +244,7 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 		switch Settings.Buffer {
 
 		case "ffmpeg", "vlc":
-			go thirdPartyBuffer(streamID, playlistID, false, 0)
+			thirdPartyBuffer(streamID, playlistID, false, 0)
 
 		default:
 			break
