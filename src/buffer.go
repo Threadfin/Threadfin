@@ -113,6 +113,7 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 		if activePlaylistCount == 0 {
 			activePlaylistCount = 1
 		}
+		client.Connection = activeClientCount
 		stream.URL = streamingURL
 		stream.BackupChannel1URL = backupStreamingURL1
 		stream.BackupChannel2URL = backupStreamingURL2
@@ -142,21 +143,23 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 				streamID = id
 				newStream = false
 				activeClientCount += 1
+				client.Connection = activeClientCount
 
 				playlist.Streams[streamID] = stream
 				playlist.Clients[streamID] = client
 
 				BufferInformation.Store(playlistID, playlist)
 
-				debug = fmt.Sprintf("Restream Status:Playlist: %s - Channel: %s - Connections: %d", playlist.PlaylistName, stream.ChannelName, activeClientCount)
+				debug = fmt.Sprintf("Restream Status:Playlist: %s - Channel: %s - Connections: %d", playlist.PlaylistName, stream.ChannelName, client.Connection)
 
 				showDebug(debug, 1)
 
 				if c, ok := BufferClients.Load(playlistID + stream.MD5); ok {
 
 					var clients = c.(ClientConnection)
+					clients.Connection = activeClientCount
 
-					showInfo(fmt.Sprintf("Streaming Status:Channel: %s (Clients: %d)", stream.ChannelName, clients.Connection))
+					showInfo(fmt.Sprintf("Streaming Status:Channel: %s (Clients: %d)", stream.ChannelName, client.Connection))
 
 					BufferClients.Store(playlistID+stream.MD5, clients)
 
@@ -246,7 +249,8 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 		showInfo(fmt.Sprintf("Streaming Status:Playlist: %s - Tuner: %d / %d", playlist.PlaylistName, len(playlist.Streams), playlist.Tuner))
 
 		var clients ClientConnection
-		clients.Connection = 1
+		activeClientCount = 1
+		clients.Connection = activeClientCount
 		BufferClients.Store(playlistID+stream.MD5, clients)
 
 	}
@@ -500,9 +504,11 @@ func killClientConnection(streamID int, playlistID string, force bool) {
 
 			if c, ok := BufferClients.Load(playlistID + stream.MD5); ok {
 
+				if activeClientCount > 0 {
+					activeClientCount = activeClientCount - 1
+				}
 				var clients = c.(ClientConnection)
-				clients.Connection = clients.Connection - 1
-				activeClientCount = activeClientCount - 1
+				clients.Connection = activeClientCount
 				BufferClients.Store(playlistID+stream.MD5, clients)
 
 				showInfo("Streaming Status:Client has terminated the connection")
