@@ -272,7 +272,6 @@ func StartSystem(updateProviderFiles bool) (err error) {
 
 	buildXEPG(true)
 
-	// BufferInformation.Delete(stream.PlaylistID)
 	log.Println("BUFFER INFORMATION: ", BufferInformation)
 
 	return

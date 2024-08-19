@@ -76,6 +76,7 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 
 	// Check whether the playlist is already in use
+	log.Println("BUFFER INFORMATION 2: ", BufferInformation)
 	if p, ok := BufferInformation.Load(playlistID); !ok {
 
 		var playlistType string
