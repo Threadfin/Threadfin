@@ -11,7 +11,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -125,6 +124,7 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 		playlist.Streams[streamID] = stream
 		playlist.Clients[streamID] = client
 
+		BufferInformation.Playlist = make(map[string]*Playlist)
 		BufferInformation.Playlist[playlistID] = &playlist
 		BufferInformation.ClientCount += 1
 		BufferInformation.PlaylistCount += 1
@@ -135,7 +135,7 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 		// Check if the URL is already streaming from another client.
 
 		playlist = *BufferInformation.Playlist[playlistID]
-		log.Println("Playlists: ", playlist)
+		fmt.Println("Playlists: ", playlist)
 		for id := range playlist.Streams {
 
 			stream = playlist.Streams[id]
@@ -551,9 +551,7 @@ func clientConnection(stream ThisStream) (status bool) {
 	Lock.Lock()
 	defer Lock.Unlock()
 
-	if _, ok := BufferClients.Load(stream.PlaylistID + stream.MD5); !ok {
-
-		showDebug("I GOT HERE. SHOULD CLOSE", 1)
+	if BufferInformation.Playlist[stream.PlaylistID].Clients == nil {
 
 		var debug = fmt.Sprintf("Streaming Status:Remove temporary files (%s)", stream.Folder)
 		showDebug(debug, 1)
@@ -982,6 +980,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 
 		err := checkVFSFolder(tmpFolder, bufferVFS)
 		if err != nil {
+			fmt.Println("I GOT HERE 1")
 			ShowError(err, 0)
 			killClientConnection(streamID, playlistID, false)
 			addErrorToStream(err)
@@ -990,6 +989,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 
 		err = checkFile(path)
 		if err != nil {
+			fmt.Println("I GOT HERE 2")
 			ShowError(err, 0)
 			killClientConnection(streamID, playlistID, false)
 			addErrorToStream(err)
@@ -1004,6 +1004,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 		f, err := bufferVFS.Create(tmpFile)
 		f.Close()
 		if err != nil {
+			fmt.Println("I GOT HERE 3")
 			killClientConnection(streamID, playlistID, false)
 			addErrorToStream(err)
 			return
@@ -1058,6 +1059,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 		// Byte data from process
 		stdOut, err := cmd.StdoutPipe()
 		if err != nil {
+			fmt.Println("I GOT HERE 4")
 			ShowError(err, 0)
 			killClientConnection(streamID, playlistID, false)
 			addErrorToStream(err)
@@ -1067,6 +1069,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 		// Log data from the process
 		logOut, err := cmd.StderrPipe()
 		if err != nil {
+			fmt.Println("I GOT HERE 5")
 			ShowError(err, 0)
 			killClientConnection(streamID, playlistID, false)
 			addErrorToStream(err)
@@ -1091,6 +1094,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 				serviceText := strings.TrimSpace(scanner.Text())
 
 				if strings.Contains(serviceText, "access stream error") {
+					fmt.Println("I GOT HERE 6")
 					err = errors.New(serviceText)
 					cmd.Process.Kill()
 					killClientConnection(streamID, playlistID, false)
