@@ -1093,12 +1093,12 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 				serviceText := strings.TrimSpace(scanner.Text())
 
 				if strings.Contains(serviceText, "Your input can't be opened") {
-					err = errors.New(serviceText)
-					cmd.Process.Kill()
-					showDebug("CALLED FROM HERE 6", 1)
-					killClientConnection(streamID, playlistID, false)
-					addErrorToStream(err)
-					cmd.Wait()
+					// err = errors.New(serviceText)
+					// cmd.Process.Kill()
+					showDebug("I HAVE AN ERROR!!!!!!!!!!", 1)
+					// killClientConnection(streamID, playlistID, false)
+					// addErrorToStream(err)
+					// cmd.Wait()
 					return
 				}
 
