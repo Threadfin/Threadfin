@@ -1171,6 +1171,7 @@ func setDefaultResponseData(response ResponseStruct, data bool) (defaults Respon
 	defaults.ClientInfo.Warnings = WebScreenLog.Warnings
 	defaults.ClientInfo.ActiveClients = getActiveClientCount()
 	defaults.ClientInfo.ActivePlaylist = getActivePlaylistCount()
+	log.Println("Active PLAYLISTS:", getActivePlaylistCount())
 	defaults.ClientInfo.TotalClients = Settings.Tuner
 	defaults.ClientInfo.TotalPlaylist = totalPlaylistCount
 	defaults.Notification = System.Notification
