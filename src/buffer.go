@@ -254,7 +254,7 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 
 		showInfo(fmt.Sprintf("Streaming Status:Playlist: %s - Tuner: %d / %d", playlist.PlaylistName, len(playlist.Streams), playlist.Tuner))
 
-		var clients *ThisClient
+		clients := &ThisClient{}
 		activeClientCount = 1
 		clients.Connection = activeClientCount
 		BufferInformation.Playlist[playlistID].Clients[streamID] = clients
@@ -353,67 +353,63 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 						}
 						defer file.Close()
 
+						l, err := file.Stat()
 						if err == nil {
 
-							l, err := file.Stat()
+							debug = fmt.Sprintf("Buffer Status:Send to client (%s)", fileName)
+							showDebug(debug, 2)
+
+							var buffer = make([]byte, int(l.Size()))
+							_, err = file.Read(buffer)
+
 							if err == nil {
 
-								debug = fmt.Sprintf("Buffer Status:Send to client (%s)", fileName)
-								showDebug(debug, 2)
+								file.Seek(0, 0)
 
-								var buffer = make([]byte, int(l.Size()))
-								_, err = file.Read(buffer)
+								if !streaming {
 
-								if err == nil {
+									contentType := http.DetectContentType(buffer)
+									_ = contentType
+									//w.Header().Set("Content-type", "video/mpeg")
+									w.Header().Set("Content-type", contentType)
+									w.Header().Set("Content-Length", "0")
+									w.Header().Set("Connection", "close")
 
-									file.Seek(0, 0)
+								}
 
-									if !streaming {
+								/*
+								   // HDHR Header
+								   w.Header().Set("Cache-Control", "no-cache")
+								   w.Header().Set("Pragma", "no-cache")
+								   w.Header().Set("transferMode.dlna.org", "Streaming")
+								*/
 
-										contentType := http.DetectContentType(buffer)
-										_ = contentType
-										//w.Header().Set("Content-type", "video/mpeg")
-										w.Header().Set("Content-type", contentType)
-										w.Header().Set("Content-Length", "0")
-										w.Header().Set("Connection", "close")
+								_, err := w.Write(buffer)
 
-									}
-
-									/*
-									   // HDHR Header
-									   w.Header().Set("Cache-Control", "no-cache")
-									   w.Header().Set("Pragma", "no-cache")
-									   w.Header().Set("transferMode.dlna.org", "Streaming")
-									*/
-
-									_, err := w.Write(buffer)
-
-									if err != nil {
-										file.Close()
-										killClientConnection(streamID, playlistID, false)
-										return
-									}
-
+								if err != nil {
 									file.Close()
-									streaming = true
-
+									killClientConnection(streamID, playlistID, false)
+									return
 								}
 
 								file.Close()
+								streaming = true
 
 							}
 
-							var n = indexOfString(f, oldSegments)
+							file.Close()
 
-							if n > 20 {
+						}
 
-								var fileToRemove = stream.Folder + oldSegments[0]
-								if err = bufferVFS.RemoveAll(getPlatformFile(fileToRemove)); err != nil {
-									ShowError(err, 4007)
-								}
-								oldSegments = append(oldSegments[:0], oldSegments[0+1:]...)
+						var n = indexOfString(f, oldSegments)
 
+						if n > 20 {
+
+							var fileToRemove = stream.Folder + oldSegments[0]
+							if err = bufferVFS.RemoveAll(getPlatformFile(fileToRemove)); err != nil {
+								ShowError(err, 4007)
 							}
+							oldSegments = append(oldSegments[:0], oldSegments[0+1:]...)
 
 						}
 
