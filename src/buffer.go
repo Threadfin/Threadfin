@@ -530,11 +530,10 @@ func killClientConnection(streamID int, playlistID string, force bool) {
 					BufferClients.Delete(playlistID + stream.MD5)
 					delete(playlist.Streams, streamID)
 					delete(playlist.Clients, streamID)
+				} else {
+					BufferInformation.Store(playlistID, playlist)
 				}
-
 			}
-
-			BufferInformation.Store(playlistID, playlist)
 
 			if len(playlist.Streams) > 0 {
 				showInfo(fmt.Sprintf("Streaming Status:Playlist: %s - Tuner: %d / %d", playlist.PlaylistName, len(playlist.Streams), playlist.Tuner))
