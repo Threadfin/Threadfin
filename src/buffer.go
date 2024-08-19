@@ -519,6 +519,7 @@ func killClientConnection(streamID int, playlistID string, force bool) {
 				showInfo("Streaming Status:Client has terminated the connection")
 				showInfo(fmt.Sprintf("Streaming Status:Channel: %s (Clients: %d)", stream.ChannelName, clients.Connection))
 
+				log.Println("CLIENT CONNECTIONS: ", clients.Connection)
 				if clients.Connection <= 0 {
 					if activePlaylistCount > 0 {
 						activePlaylistCount = activePlaylistCount - 1
@@ -552,8 +553,6 @@ func clientConnection(stream ThisStream) (status bool) {
 	defer Lock.Unlock()
 
 	if _, ok := BufferClients.Load(stream.PlaylistID + stream.MD5); !ok {
-
-		showDebug("I GOT HERE. SHOULD CLOSE", 1)
 
 		var debug = fmt.Sprintf("Streaming Status:Remove temporary files (%s)", stream.Folder)
 		showDebug(debug, 1)
