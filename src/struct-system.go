@@ -111,6 +111,12 @@ type SystemStruct struct {
 	}
 }
 
+type BufferDetails struct {
+	Playlist      map[string]*Playlist
+	ClientCount   int
+	PlaylistCount int
+}
+
 // GitStruct : Updateinformationen von GitHub
 type GitStruct struct {
 	Filename string `json:"filename"`

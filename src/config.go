@@ -29,7 +29,7 @@ var Data DataStruct
 var SystemFiles = []string{"authentication.json", "pms.json", "settings.json", "xepg.json", "urls.json"}
 
 // BufferInformation : Informationen über den Buffer (aktive Streams, maximale Streams)
-var BufferInformation sync.Map
+var BufferInformation BufferDetails
 
 // bufferVFS : Filesystem to use for the Buffer
 var bufferVFS avfs.VFS
