@@ -155,6 +155,16 @@
       "title": "Tuner / Streams",
       "placeholder": "",
       "description": "Number of parallel connections that can be established to the provider. <br>Only available with activated buffer.<br>New settings will only be applied after quitting all streams."
+    },
+    "http_proxy_ip": {
+      "title": "HTTP Proxy IP",
+      "placeholder": "192.168.0.2",
+      "description": "IP address to be used by HTTP Proxy"
+    },
+    "http_proxy_port": {
+      "title": "HTTP Proxy Port",
+      "placeholder": "8888",
+      "description": "Port to be used by HTTP Proxy"
     }
   },
   "xmltv": {
@@ -179,6 +189,16 @@
       "title": "XMLTV File",
       "placeholder": "File path or URL of the XMLTV",
       "description": ""
+    },
+    "http_proxy_ip": {
+      "title": "HTTP Proxy IP",
+      "placeholder": "192.168.0.2",
+      "description": "IP address to be used by HTTP Proxy"
+    },
+    "http_proxy_port": {
+      "title": "HTTP Proxy Port",
+      "placeholder": "8888",
+      "description": "Port to be used by HTTP Proxy"
     }
   },
   "mapping": {

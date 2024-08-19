@@ -1411,6 +1411,18 @@ function openPopUp(dataType, element) {
 
       content.description("{{.playlist.tuner.description}}")
 
+      var dbKey: string = "http_proxy.ip"
+      var input = content.createInput("text", dbKey, data[dbKey])
+      input.setAttribute("placeholder", "{{.playlist.http_proxy_ip.placeholder}}")
+      content.appendRow("{{.playlist.http_proxy_ip.title}}", input)
+      content.description("{{.playlist.http_proxy_ip.description}}")
+
+      var dbKey: string = "http_proxy.port"
+      var input = content.createInput("text", dbKey, data[dbKey])
+      input.setAttribute("placeholder", "{{.playlist.http_proxy_port.placeholder}}")
+      content.appendRow("{{.playlist.http_proxy_port.title}}", input)
+      content.description("{{.playlist.http_proxy_port.description}}")
+
       // Interaktion
       content.createInteraction()
       // Löschen
@@ -1489,6 +1501,18 @@ function openPopUp(dataType, element) {
       }
 
       content.description("{{.playlist.tuner.description}}")
+
+      var dbKey: string = "http_proxy.ip"
+      var input = content.createInput("text", dbKey, data[dbKey])
+      input.setAttribute("placeholder", "{{.playlist.http_proxy_ip.placeholder}}")
+      content.appendRow("{{.playlist.http_proxy_ip.title}}", input)
+      content.description("{{.playlist.http_proxy_ip.description}}")
+
+      var dbKey: string = "http_proxy.port"
+      var input = content.createInput("text", dbKey, data[dbKey])
+      input.setAttribute("placeholder", "{{.playlist.http_proxy_port.placeholder}}")
+      content.appendRow("{{.playlist.http_proxy_port.title}}", input)
+      content.description("{{.playlist.http_proxy_port.description}}")
 
       // Interaktion
       content.createInteraction()
@@ -1707,6 +1731,18 @@ function openPopUp(dataType, element) {
       var input = content.createInput("text", dbKey, data[dbKey])
       input.setAttribute("placeholder", "{{.xmltv.fileXMLTV.placeholder}}")
       content.appendRow("{{.xmltv.fileXMLTV.title}}", input)
+
+      var dbKey: string = "http_proxy.ip"
+      var input = content.createInput("text", dbKey, data[dbKey])
+      input.setAttribute("placeholder", "{{.xmltv.http_proxy_ip.placeholder}}")
+      content.appendRow("{{.xmltv.http_proxy_ip.title}}", input)
+      content.description("{{.xmltv.http_proxy_ip.description}}")
+
+      var dbKey: string = "http_proxy.port"
+      var input = content.createInput("text", dbKey, data[dbKey])
+      input.setAttribute("placeholder", "{{.xmltv.http_proxy_port.placeholder}}")
+      content.appendRow("{{.xmltv.http_proxy_port.title}}", input)
+      content.description("{{.xmltv.http_proxy_port.description}}")
 
       // Interaktion
       content.createInteraction()

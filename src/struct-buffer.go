@@ -4,10 +4,12 @@ import "time"
 
 // Playlist : Enthält allen Playlistinformationen, die der Buffer benötigr
 type Playlist struct {
-	Folder       string
-	PlaylistID   string
-	PlaylistName string
-	Tuner        int
+	Folder        string
+	PlaylistID    string
+	PlaylistName  string
+	Tuner         int
+	HttpProxyIP   string
+	HttpProxyPort string
 
 	Clients map[int]ThisClient
 	Streams map[int]ThisStream
