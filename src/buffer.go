@@ -305,6 +305,7 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 						case <-ctx.Done():
 							fmt.Println("I GOT HERE 222222222")
 							killClientConnection(streamID, playlistID, false)
+							clientConnection(stream)
 							return
 
 						default:
@@ -315,6 +316,7 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 									fmt.Println("I GOT HERE 3333333333")
 									ShowError(clients.Error, 0)
 									killClientConnection(streamID, playlistID, false)
+									clientConnection(stream)
 									return
 								}
 
