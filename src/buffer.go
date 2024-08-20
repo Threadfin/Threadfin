@@ -276,16 +276,18 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 
 					time.Sleep(time.Duration(100) * time.Millisecond)
 
-					if BufferInformation.Playlist[playlistID].Clients[streamID].Connection > 0 {
+					if BufferInformation.Playlist[playlistID] != nil {
+						if BufferInformation.Playlist[playlistID].Clients[streamID].Connection > 0 {
 
-						var clients = BufferInformation.Playlist[playlistID].Clients[streamID]
+							var clients = BufferInformation.Playlist[playlistID].Clients[streamID]
 
-						if clients.Error != nil || (timeOut > 200 && (playlist.Streams[streamID].BackupChannel1URL == "" && playlist.Streams[streamID].BackupChannel2URL == "" && playlist.Streams[streamID].BackupChannel3URL == "")) {
-							fmt.Println("I GOT HERE 11111111")
-							killClientConnection(streamID, stream.PlaylistID, false)
-							return
+							if clients.Error != nil || (timeOut > 200 && (playlist.Streams[streamID].BackupChannel1URL == "" && playlist.Streams[streamID].BackupChannel2URL == "" && playlist.Streams[streamID].BackupChannel3URL == "")) {
+								fmt.Println("I GOT HERE 11111111")
+								killClientConnection(streamID, stream.PlaylistID, false)
+								return
+							}
+
 						}
-
 					}
 
 					continue
