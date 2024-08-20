@@ -281,8 +281,8 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 						var clients = BufferInformation.Playlist[playlistID].Clients[streamID]
 
 						if clients.Error != nil || (timeOut > 200 && (playlist.Streams[streamID].BackupChannel1URL == "" && playlist.Streams[streamID].BackupChannel2URL == "" && playlist.Streams[streamID].BackupChannel3URL == "")) {
-							fmt.Println("I GOT HERE 11111111")
 							killClientConnection(streamID, stream.PlaylistID, false)
+							clientConnection(stream)
 							return
 						}
 
@@ -303,7 +303,6 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 						select {
 
 						case <-ctx.Done():
-							fmt.Println("I GOT HERE 222222222")
 							killClientConnection(streamID, playlistID, false)
 							clientConnection(stream)
 							return
@@ -313,7 +312,6 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 
 								var clients = BufferInformation.Playlist[playlistID].Clients[streamID]
 								if clients.Error != nil {
-									fmt.Println("I GOT HERE 3333333333")
 									ShowError(clients.Error, 0)
 									killClientConnection(streamID, playlistID, false)
 									clientConnection(stream)
@@ -331,8 +329,8 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 					}
 
 					if _, err := bufferVFS.Stat(stream.Folder); fsIsNotExistErr(err) {
-						fmt.Println("I GOT HERE 4444444444")
 						killClientConnection(streamID, playlistID, false)
+						clientConnection(stream)
 						return
 					}
 
@@ -342,8 +340,8 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 					for _, f := range tmpFiles {
 
 						if _, err := bufferVFS.Stat(stream.Folder); fsIsNotExistErr(err) {
-							fmt.Println("I GOT HERE 555555555")
 							killClientConnection(streamID, playlistID, false)
+							clientConnection(stream)
 							return
 						}
 
@@ -394,8 +392,8 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 
 								if err != nil {
 									file.Close()
-									fmt.Println("I GOT HERE 66666666")
 									killClientConnection(streamID, playlistID, false)
+									clientConnection(stream)
 									return
 								}
 
@@ -433,8 +431,8 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 			} else {
 
 				// Stream nicht vorhanden
-				fmt.Println("I GOT HERE 777777777")
 				killClientConnection(streamID, stream.PlaylistID, false)
+				clientConnection(stream)
 				showInfo(fmt.Sprintf("Streaming Status:Playlist: %s - Tuner: %d / %d", playlist.PlaylistName, len(playlist.Streams), playlist.Tuner))
 				return
 
@@ -979,7 +977,6 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 
 		err := checkVFSFolder(tmpFolder, bufferVFS)
 		if err != nil {
-			fmt.Println("I GOT HERE 1")
 			ShowError(err, 0)
 			killClientConnection(streamID, playlistID, false)
 			addErrorToStream(err)
@@ -988,7 +985,6 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 
 		err = checkFile(path)
 		if err != nil {
-			fmt.Println("I GOT HERE 2")
 			ShowError(err, 0)
 			killClientConnection(streamID, playlistID, false)
 			addErrorToStream(err)
@@ -1003,7 +999,6 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 		f, err := bufferVFS.Create(tmpFile)
 		f.Close()
 		if err != nil {
-			fmt.Println("I GOT HERE 3")
 			killClientConnection(streamID, playlistID, false)
 			addErrorToStream(err)
 			return
@@ -1058,7 +1053,6 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 		// Byte data from process
 		stdOut, err := cmd.StdoutPipe()
 		if err != nil {
-			fmt.Println("I GOT HERE 4")
 			ShowError(err, 0)
 			killClientConnection(streamID, playlistID, false)
 			addErrorToStream(err)
@@ -1068,7 +1062,6 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 		// Log data from the process
 		logOut, err := cmd.StderrPipe()
 		if err != nil {
-			fmt.Println("I GOT HERE 5")
 			ShowError(err, 0)
 			killClientConnection(streamID, playlistID, false)
 			addErrorToStream(err)
@@ -1093,7 +1086,6 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 				serviceText := strings.TrimSpace(scanner.Text())
 
 				if strings.Contains(serviceText, "access stream error") {
-					fmt.Println("I GOT HERE 6")
 					err = errors.New(serviceText)
 					cmd.Process.Kill()
 					killClientConnection(streamID, playlistID, false)
@@ -1152,7 +1144,6 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 			select {
 			case timeout := <-t:
 				if timeout >= 5 && tmpSegment == 1 {
-					fmt.Println("I GOT HERE 7")
 					cmd.Process.Kill()
 					err = errors.New("Timout")
 					ShowError(err, 4006)
@@ -1172,7 +1163,6 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 			}
 
 			if !clientConnection(stream) {
-				fmt.Println("I GOT HERE 8")
 				cmd.Process.Kill()
 				killClientConnection(streamID, playlistID, false)
 				addErrorToStream(err)
@@ -1189,7 +1179,6 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 			fileSize = fileSize + len(buffer[:n])
 
 			if _, err := f.Write(buffer[:n]); err != nil {
-				fmt.Println("I GOT HERE 9")
 				cmd.Process.Kill()
 				ShowError(err, 0)
 				killClientConnection(streamID, playlistID, false)
@@ -1225,7 +1214,6 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 				_, errCreate = bufferVFS.Create(tmpFile)
 				f, errOpen = bufferVFS.OpenFile(tmpFile, os.O_APPEND|os.O_WRONLY, 0600)
 				if errCreate != nil || errOpen != nil {
-					fmt.Println("I GOT HERE 10")
 					cmd.Process.Kill()
 					ShowError(err, 0)
 					killClientConnection(streamID, playlistID, false)
