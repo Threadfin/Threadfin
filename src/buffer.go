@@ -584,7 +584,6 @@ func clientConnection(stream *ThisStream) (status bool) {
 		delete(BufferInformation.Playlist, stream.PlaylistID)
 	}
 
-	fmt.Println("STATUS: ", status)
 	return status
 }
 
