@@ -957,9 +957,10 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 				backupNumber = backupNumber + 1
 				if playlist != nil {
 					if playlist.Streams != nil && len(playlist.Streams) > 0 {
-						fmt.Println("STREAMS:", playlist.Streams[streamID])
-						if playlist.Streams[streamID].BackupChannel1URL != "" || playlist.Streams[streamID].BackupChannel2URL != "" || playlist.Streams[streamID].BackupChannel3URL != "" {
-							thirdPartyBuffer(streamID, playlistID, true, backupNumber)
+						if playlist.Streams[streamID] != nil {
+							if playlist.Streams[streamID].BackupChannel1URL != "" || playlist.Streams[streamID].BackupChannel2URL != "" || playlist.Streams[streamID].BackupChannel3URL != "" {
+								thirdPartyBuffer(streamID, playlistID, true, backupNumber)
+							}
 						}
 					}
 				}
