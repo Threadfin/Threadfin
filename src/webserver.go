@@ -144,6 +144,9 @@ func Stream(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	fmt.Println("PATH: ", path)
+	fmt.Println("STREAM INFO: ", streamInfo)
+
 	if r.Method == "HEAD" {
 		client := &http.Client{}
 		log.Println("URL: ", streamInfo.URL)
