@@ -555,7 +555,8 @@ func clientConnection(stream *ThisStream) (status bool) {
 	defer Lock.Unlock()
 
 	playlist := BufferInformation.Playlist[stream.PlaylistID]
-	fmt.Println("I GOT CALLED: ", stream)
+	fmt.Println("CLIENTS: ", playlist.Clients)
+	fmt.Println("COUNT: ", activeClientCount)
 	// If no clients are connected
 	if len(playlist.Clients) == 0 || playlist.Clients == nil {
 		fmt.Println("No clients connected, stream should end.")
