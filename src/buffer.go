@@ -604,7 +604,7 @@ func clientConnection(stream *ThisStream) (status bool) {
 
 	}
 
-	return
+	return status
 }
 
 func parseM3U8(stream *ThisStream) (err error) {
