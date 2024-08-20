@@ -1,6 +1,8 @@
-# github.com/avfs/avfs v0.30.0
-## explicit; go 1.17
+# github.com/avfs/avfs v0.33.0
+## explicit; go 1.20
 github.com/avfs/avfs
+github.com/avfs/avfs/idm/dummyidm
+github.com/avfs/avfs/idm/memidm
 github.com/avfs/avfs/idm/osidm
 github.com/avfs/avfs/vfs/memfs
 github.com/avfs/avfs/vfs/osfs

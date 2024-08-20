@@ -1,8 +1,11 @@
 package src
 
-import "time"
+import (
+	"sync"
+	"time"
+)
 
-// Playlist : Enthält allen Playlistinformationen, die der Buffer benötigr
+// Playlist : Contains all playlist information required by the buffer
 type Playlist struct {
 	Folder        string
 	PlaylistID    string
@@ -15,13 +18,13 @@ type Playlist struct {
 	Streams map[int]*ThisStream
 }
 
-// ThisClient : Clientinfos
+// ThisClient : Client information
 type ThisClient struct {
 	Connection int
 	Error      error
 }
 
-// ThisStream : Enthält Informationen zu dem abzuspielenden Stream einer Playlist
+// ThisStream : Contains information about the stream to be played for a playlist
 type ThisStream struct {
 	ChannelName       string
 	Error             string
@@ -38,7 +41,7 @@ type ThisStream struct {
 
 	Segment []Segment
 
-	// Serverinformationen
+	// Server information
 	Location           string
 	URLFile            string
 	URLHost            string
@@ -47,7 +50,7 @@ type ThisStream struct {
 	URLScheme          string
 	URLStreamingServer string
 
-	// Wird nur für HLS / M3U8 verwendet
+	// Used only for HLS / M3U8
 	Body             string
 	Difference       float64
 	Duration         float64
@@ -68,11 +71,11 @@ type ThisStream struct {
 
 	DynamicStream map[int]DynamicStream
 
-	// Lokale Temp Datein
+	// Local temp files
 	OldSegments []string
 }
 
-// Segment : URL Segmente (HLS / M3U8)
+// Segment : URL segments (HLS / M3U8)
 type Segment struct {
 	Duration     float64
 	Info         bool
@@ -91,7 +94,7 @@ type Segment struct {
 	}
 }
 
-// DynamicStream : Streaminformationen bei dynamischer Bandbreite
+// DynamicStream : Stream information for dynamic bandwidth
 type DynamicStream struct {
 	AverageBandwidth int
 	Bandwidth        int
@@ -100,13 +103,13 @@ type DynamicStream struct {
 	URL              string
 }
 
-// ClientConnection : Client Verbindungen
+// ClientConnection : Client connections
 type ClientConnection struct {
 	Connection int
 	Error      error
 }
 
-// BandwidthCalculation : Bandbreitenberechnung für den Stream
+// BandwidthCalculation : Bandwidth calculation for the stream
 type BandwidthCalculation struct {
 	NetworkBandwidth int
 	Size             int
@@ -115,152 +118,50 @@ type BandwidthCalculation struct {
 	TimeDiff         float64
 }
 
+// BufferDetails holds information about the buffer
 type BufferDetails struct {
+	sync.RWMutex
 	Playlist      map[string]*Playlist
 	ClientCount   int
 	PlaylistCount int
 }
 
-/*
-var args = "-hide_banner -loglevel panic -re -i " + url + " -codec copy -f mpegts pipe:1"
-		//var args = "-re -i " + url + " -codec copy -f mpegts pipe:1"
-		cmd := exec.Command("/usr/local/bin/ffmpeg", strings.Split(args, " ")...)
+// NewBufferDetails initializes a new BufferDetails instance
+func NewBufferDetails() *BufferDetails {
+	return &BufferDetails{
+		Playlist: make(map[string]*Playlist),
+	}
+}
 
-		//run := exec.Command("/usr/local/bin/ffmpeg", "-hide_banner", "-loglevel", "panic", "-re", "-i", url, "-codec", "copy", "-f", "mpegts", "pipe:1")
-		//run := exec.Command("/usr/local/bin/ffmpeg", "-re", "-i", url, "-codec", "copy", "-f", "mpegts", "pipe:1")
+// Load retrieves a playlist from the buffer
+func (bd *BufferDetails) Load(key string) (*Playlist, bool) {
+	bd.RLock()
+	defer bd.RUnlock()
+	playlist, ok := bd.Playlist[key]
+	return playlist, ok
+}
 
-		stderr, _ := cmd.StderrPipe()
-		cmd.Start()
+// Store stores a playlist in the buffer
+func (bd *BufferDetails) Store(key string, playlist *Playlist) {
+	bd.Lock()
+	defer bd.Unlock()
+	bd.Playlist[key] = playlist
+}
 
-		scanner := bufio.NewScanner(stderr)
-		scanner.Split(bufio.ScanLines)
-		for scanner.Scan() {
-			m := scanner.Text()
-			fmt.Println(m)
+// Delete removes a playlist from the buffer
+func (bd *BufferDetails) Delete(key string) {
+	bd.Lock()
+	defer bd.Unlock()
+	delete(bd.Playlist, key)
+}
+
+// Range iterates over the buffer's playlists
+func (bd *BufferDetails) Range(f func(key string, playlist *Playlist) bool) {
+	bd.RLock()
+	defer bd.RUnlock()
+	for k, v := range bd.Playlist {
+		if !f(k, v) {
+			break
 		}
-		cmd.Wait()
-
-		os.Exit(0)
-*/
-
-/*
-
-ffmpegOut, _ := run.StderrPipe()
-		//run.Start()
-
-		scanner = bufio.NewScanner(ffmpegOut)
-		scanner.Split(bufio.ScanLines)
-		for scanner.Scan() {
-			m := scanner.Text()
-			fmt.Println(m)
-		}
-
-		ffmpegOut, err = run.StdoutPipe()
-		if err != nil {
-			ShowError(err, 0)
-			return
-		}
-
-		stderr, stderrErr := run.StderrPipe()
-		if stderrErr != nil {
-			fmt.Println(stderrErr)
-		}
-
-		_ = stderr
-
-		if startErr := run.Start(); startErr != nil {
-			fmt.Println(startErr)
-
-			return
-		}
-
-		n, err := ffmpegOut.Read(buffer)
-		_ = n
-		_ = stream
-		_ = fileSize
-
-		if err != nil && err != io.EOF {
-
-			ShowError(err, 0)
-			addErrorToStream(err)
-			return
-
-		}
-
-		defer bufferFile.Close()
-
-		scanner = bufio.NewScanner(ffmpegOut)
-
-		for scanner.Scan() {
-			//fmt.Printf("%s\n", scanner.Text())
-			//fmt.Println(scanner)
-			thisLine := scanner.Text()
-			line := make([]byte, len(thisLine))
-
-			buffer = append(buffer, line...)
-
-			fmt.Println(len(buffer))
-
-			if len(buffer) > tmpFileSize {
-
-				if _, err := bufferFile.Write(buffer[:]); err != nil {
-
-					ShowError(err, 0)
-					addErrorToStream(err)
-					run.Process.Kill()
-					return
-
-				}
-
-				buffer = make([]byte, 1024*Settings.BufferSize*2)
-
-				debug = fmt.Sprintf("Buffer Status:Done (%s)", tmpFile)
-				showDebug(debug, 2)
-
-				bufferFile.Close()
-
-				stream.Status = true
-				playlist.Streams[streamID] = stream
-				BufferInformation.Store(playlistID, playlist)
-
-				tmpSegment++
-
-				tmpFile = fmt.Sprintf("%s%d.ts", tmpFolder, tmpSegment)
-
-				if clientConnection(stream) == false {
-
-					bufferFile.Close()
-					run.Process.Kill()
-
-					err = os.RemoveAll(stream.Folder)
-					if err != nil {
-						ShowError(err, 4005)
-					}
-
-					return
-				}
-
-				bufferFile, err = os.Create(tmpFile)
-				if err != nil {
-					addErrorToStream(err)
-					run.Process.Kill()
-					return
-				}
-
-				fileSize = 0
-
-				if n == 0 {
-					bufferFile.Close()
-					run.Process.Kill()
-					break
-				}
-
-				os.Exit(0)
-
-			}
-
-
-
-		}
-
-*/
+	}
+}

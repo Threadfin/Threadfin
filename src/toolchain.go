@@ -51,27 +51,27 @@ func checkFolder(path string) (err error) {
 
 // checkVFSFolder : Checks whether the Folder exists in provided virtual filesystem, if not, the Folder is created
 func checkVFSFolder(path string, vfs avfs.VFS) (err error) {
-
 	var debug string
 	_, err = vfs.Stat(filepath.Dir(path))
 
 	if fsIsNotExistErr(err) {
 		// Folder does not exist, will now be created
 
-		// If we are on Windows and the cache location path is NOT on C:\ we need to create the volume it is located on
-		// Failure to do so here will result in a panic error and the stream not playing
-		vm := vfs.(avfs.VolumeManager)
-		vfsUtils := avfs.NewUtils(vfs.OSType())
-		if vfs.OSType() == avfs.OsWindows && vfsUtils.VolumeName(path) != "C:" {
-			vm.VolumeAdd(path)
+		// If we are on Windows and the cache location path is NOT on C:\, create the volume if needed.
+		if vfs.OSType() == avfs.OsWindows {
+			vm, ok := vfs.(avfs.VolumeManager)
+			if ok {
+				volumeName := filepath.VolumeName(path)
+				if volumeName != "C:" {
+					vm.VolumeAdd(volumeName)
+				}
+			}
 		}
 
 		err = vfs.MkdirAll(getPlatformPath(path), 0755)
 		if err == nil {
-
-			debug = fmt.Sprintf("Create virtual filesystem Folder:%s", path)
+			debug = fmt.Sprintf("Create virtual filesystem Folder: %s", path)
 			showDebug(debug, 1)
-
 		} else {
 			return err
 		}
