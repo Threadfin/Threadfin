@@ -317,7 +317,7 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 										fmt.Println("I GOT HERE 3333333333")
 										ShowError(clients.Error, 0)
 										killClientConnection(streamID, playlistID, false)
-										clientConnection(stream)
+										// clientConnection(stream)
 										return
 									}
 
