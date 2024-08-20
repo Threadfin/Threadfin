@@ -603,7 +603,7 @@ func clientConnection(stream *ThisStream) (status bool) {
 		status = false
 
 	}
-
+	fmt.Println("STATUS: ", status)
 	return status
 }
 
