@@ -550,59 +550,33 @@ func killClientConnection(streamID int, playlistID string, force bool) {
 }
 
 func clientConnection(stream *ThisStream) (status bool) {
-
 	status = true
 	Lock.Lock()
 	defer Lock.Unlock()
 
-	if len(BufferInformation.Playlist) == 0 {
-		showInfo(fmt.Sprintf("Streaming Status:Channel: %s - No client is using this channel anymore. Streaming Server connection has ended", stream.ChannelName))
+	playlist := BufferInformation.Playlist[stream.PlaylistID]
 
-		var playlist = BufferInformation.Playlist[stream.PlaylistID]
-
-		activePlaylistCount = 0
-
-		showInfo(fmt.Sprintf("Streaming Status:Playlist: %s - Tuner: %d / %d", playlist.PlaylistName, len(playlist.Streams), playlist.Tuner))
-
-		delete(BufferInformation.Playlist, stream.PlaylistID)
-
+	// If no clients are connected
+	if len(playlist.Clients) == 0 || playlist.Clients == nil {
+		fmt.Println("No clients connected, stream should end.")
 		status = false
 	}
 
-	if BufferInformation.Playlist[stream.PlaylistID].Clients == nil {
-
-		var debug = fmt.Sprintf("Streaming Status:Remove temporary files (%s)", stream.Folder)
-		showDebug(debug, 1)
-
+	// Additional checks to ensure the state is consistent
+	if activeClientCount <= 0 {
+		fmt.Println("Active client count is zero, stopping stream.")
 		status = false
+	}
 
-		debug = fmt.Sprintf("Remove tmp folder:%s", stream.Folder)
-		showDebug(debug, 1)
-
+	if !status {
+		fmt.Println("Stream ending: removing temporary files.")
+		// Cleanup: remove files, etc.
 		if err := bufferVFS.RemoveAll(stream.Folder); err != nil {
 			ShowError(err, 4005)
 		}
-
-		if BufferInformation.Playlist[stream.PlaylistID] != nil {
-
-			showInfo(fmt.Sprintf("Streaming Status:Channel: %s - No client is using this channel anymore. Streaming Server connection has ended", stream.ChannelName))
-
-			var playlist = BufferInformation.Playlist[stream.PlaylistID]
-			if activePlaylistCount > 0 {
-				activePlaylistCount = activePlaylistCount - 1
-			} else {
-				activePlaylistCount = 0
-			}
-
-			showInfo(fmt.Sprintf("Streaming Status:Playlist: %s - Tuner: %d / %d", playlist.PlaylistName, len(playlist.Streams), playlist.Tuner))
-
-			delete(BufferInformation.Playlist, stream.PlaylistID)
-
-		}
-
-		status = false
-
+		delete(BufferInformation.Playlist, stream.PlaylistID)
 	}
+
 	fmt.Println("STATUS: ", status)
 	return status
 }
