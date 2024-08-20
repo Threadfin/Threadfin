@@ -435,8 +435,10 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 			} else {
 
 				// Stream nicht vorhanden
-				killClientConnection(streamID, stream.PlaylistID, false)
-				showInfo(fmt.Sprintf("Streaming Status:Playlist: %s - Tuner: %d / %d", playlist.PlaylistName, len(playlist.Streams), playlist.Tuner))
+				if stream != nil {
+					killClientConnection(streamID, stream.PlaylistID, false)
+					showInfo(fmt.Sprintf("Streaming Status:Playlist: %s - Tuner: %d / %d", playlist.PlaylistName, len(playlist.Streams), playlist.Tuner))
+				}
 				return
 
 			}
