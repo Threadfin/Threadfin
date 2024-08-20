@@ -309,17 +309,23 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 							return
 
 						default:
-							if BufferInformation.Playlist[playlistID].Clients[streamID] != nil {
+							if BufferInformation.Playlist[playlistID] != nil {
+								if BufferInformation.Playlist[playlistID].Clients[streamID] != nil {
 
-								var clients = BufferInformation.Playlist[playlistID].Clients[streamID]
-								if clients.Error != nil {
-									fmt.Println("I GOT HERE 3333333333")
-									ShowError(clients.Error, 0)
-									killClientConnection(streamID, playlistID, false)
-									clientConnection(stream)
+									var clients = BufferInformation.Playlist[playlistID].Clients[streamID]
+									if clients.Error != nil {
+										fmt.Println("I GOT HERE 3333333333")
+										ShowError(clients.Error, 0)
+										killClientConnection(streamID, playlistID, false)
+										clientConnection(stream)
+										return
+									}
+
+								} else {
+
 									return
-								}
 
+								}
 							} else {
 
 								return
