@@ -495,7 +495,7 @@ func killClientConnection(streamID int, playlistID string, force bool) {
 
 	if p, ok := BufferInformation.Load(playlistID); ok {
 		// Convert the loaded value to a Playlist struct
-		var playlist = p.(*Playlist)
+		var playlist = p.(Playlist)
 
 		if force {
 			delete(playlist.Streams, streamID)
