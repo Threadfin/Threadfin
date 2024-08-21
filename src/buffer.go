@@ -110,8 +110,8 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 		// Default-Werte für den Stream erstellen
 		streamID = createStreamID(playlist.Streams)
 
-		client.Connection = 1
-		activeClientCount = 1
+		client.Connection += 1
+		activeClientCount += 1
 		if activePlaylistCount == 0 {
 			activePlaylistCount = 1
 		}
