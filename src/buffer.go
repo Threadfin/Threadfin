@@ -158,6 +158,7 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 				if c, ok := BufferClients.Load(playlistID + stream.MD5); ok {
 
 					var clients = c.(ClientConnection)
+					clients.Connection = client.Connection
 					fmt.Println("CLIENT COUNT: ", clients.Connection)
 
 					showInfo(fmt.Sprintf("Streaming Status:Channel: %s (Clients: %d)", stream.ChannelName, clients.Connection))
