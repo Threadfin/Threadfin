@@ -11,6 +11,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -76,7 +77,7 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 
 	// Check whether the playlist is already in use
 	if p, ok := BufferInformation.Load(playlistID); !ok {
-
+		log.Println("I GOT HERE")
 		var playlistType string
 		// Playlist wird noch nicht verwendet, Default-Werte für die Playlist erstellen
 		playlist.Folder = System.Folder.Temp + playlistID + string(os.PathSeparator)
