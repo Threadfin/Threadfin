@@ -136,7 +136,7 @@ func Stream(w http.ResponseWriter, r *http.Request) {
 
 	var path = strings.Replace(r.RequestURI, "/stream/", "", 1)
 	//var stream = strings.SplitN(path, "-", 2)
-
+	fmt.Println("PATH: ", path)
 	streamInfo, err := getStreamInfo(path)
 	if err != nil {
 		ShowError(err, 1203)
