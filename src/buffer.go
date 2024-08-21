@@ -26,15 +26,25 @@ import (
 	"github.com/avfs/avfs/vfs/osfs"
 )
 
-var activeClientCount int
-var activePlaylistCount int
-
 func getActiveClientCount() (count int) {
-	return activeClientCount
+	count = 0
+	BufferInformation.Range(func(key, value interface{}) bool {
+		playlist := value.(Playlist)
+		for _, client := range playlist.Clients {
+			count += client.Connection
+		}
+		return true
+	})
+	return count
 }
 
 func getActivePlaylistCount() (count int) {
-	return activePlaylistCount
+	count = 0
+	BufferInformation.Range(func(key, value interface{}) bool {
+		count++
+		return true
+	})
+	return count
 }
 
 func createStreamID(stream map[int]ThisStream) (streamID int) {
@@ -111,10 +121,7 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 		streamID = createStreamID(playlist.Streams)
 
 		client.Connection += 1
-		activeClientCount += 1
-		if activePlaylistCount == 0 {
-			activePlaylistCount = 1
-		}
+
 		stream.URL = streamingURL
 		stream.BackupChannel1URL = backupStreamingURL1
 		stream.BackupChannel2URL = backupStreamingURL2
@@ -144,7 +151,6 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 				streamID = id
 				newStream = false
 				client.Connection += 1
-				activeClientCount += 1
 
 				//playlist.Streams[streamID] = stream
 				playlist.Clients[streamID] = client
@@ -206,7 +212,6 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 			client = ThisClient{}
 
 			streamID = createStreamID(playlist.Streams)
-			activePlaylistCount += 1
 
 			client.Connection = 1
 			stream.URL = streamingURL
@@ -509,10 +514,7 @@ func killClientConnection(streamID int, playlistID string, force bool) {
 				fmt.Println("COUNT BEFORE: ", clients.Connection)
 				clients.Connection = clients.Connection - 1
 				client.Connection = client.Connection - 1
-				activeClientCount = activeClientCount - 1
-				if activeClientCount <= 0 {
-					activeClientCount = 0
-				}
+
 				playlist.Clients[streamID] = client
 				fmt.Println("COUNT AFTER: ", clients.Connection)
 				BufferClients.Store(playlistID+stream.MD5, clients)
@@ -521,10 +523,6 @@ func killClientConnection(streamID int, playlistID string, force bool) {
 				showInfo(fmt.Sprintf("Streaming Status:Channel: %s (Clients: %d)", stream.ChannelName, clients.Connection))
 
 				if clients.Connection <= 0 {
-					activePlaylistCount = activePlaylistCount - 1
-					if activePlaylistCount <= 0 {
-						activePlaylistCount = 0
-					}
 					BufferClients.Delete(playlistID + stream.MD5)
 					delete(playlist.Streams, streamID)
 					delete(playlist.Clients, streamID)
