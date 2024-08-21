@@ -76,7 +76,6 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 
 	// Check whether the playlist is already in use
 	if p, ok := BufferInformation.Load(playlistID); !ok {
-		fmt.Println("I GOT HERE")
 		var playlistType string
 		// Playlist wird noch nicht verwendet, Default-Werte für die Playlist erstellen
 		playlist.Folder = System.Folder.Temp + playlistID + string(os.PathSeparator)
@@ -146,7 +145,6 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 				newStream = false
 				client.Connection += 1
 				activeClientCount += 1
-				activePlaylistCount += 1
 
 				//playlist.Streams[streamID] = stream
 				playlist.Clients[streamID] = client
@@ -160,6 +158,7 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 				if c, ok := BufferClients.Load(playlistID + stream.MD5); ok {
 
 					var clients = c.(ClientConnection)
+					fmt.Println("CLIENT COUNT: ", clients.Connection)
 
 					showInfo(fmt.Sprintf("Streaming Status:Channel: %s (Clients: %d)", stream.ChannelName, clients.Connection))
 
