@@ -506,6 +506,9 @@ func killClientConnection(streamID int, playlistID string, force bool) {
 				var clients = c.(ClientConnection)
 				clients.Connection = clients.Connection - 1
 				activeClientCount = activeClientCount - 1
+				if activeClientCount <= 0 {
+					activeClientCount = 0
+				}
 				BufferClients.Store(playlistID+stream.MD5, clients)
 
 				showInfo("Streaming Status:Client has terminated the connection")
@@ -513,6 +516,9 @@ func killClientConnection(streamID int, playlistID string, force bool) {
 
 				if clients.Connection <= 0 {
 					activePlaylistCount = activePlaylistCount - 1
+					if activePlaylistCount <= 0 {
+						activePlaylistCount = 0
+					}
 					BufferClients.Delete(playlistID + stream.MD5)
 					delete(playlist.Streams, streamID)
 					delete(playlist.Clients, streamID)
@@ -552,7 +558,7 @@ func clientConnection(stream ThisStream) (status bool) {
 			ShowError(err, 4005)
 		}
 
-		if p, ok := BufferInformation.Load(stream.PlaylistID); ok {
+		if p, ok := BufferInformation.Load(stream.PlaylistID); !ok {
 
 			showInfo(fmt.Sprintf("Streaming Status:Channel: %s - No client is using this channel anymore. Streaming Server connection has ended", stream.ChannelName))
 
@@ -1241,7 +1247,7 @@ func getTuner(id, playlistType string) (tuner int) {
 func initBufferVFS(virtual bool) {
 
 	if virtual {
-		bufferVFS = memfs.New(memfs.WithMainDirs())
+		bufferVFS = memfs.New()
 	} else {
 		bufferVFS = osfs.New()
 	}
