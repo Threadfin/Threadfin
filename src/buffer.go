@@ -501,15 +501,19 @@ func killClientConnection(streamID int, playlistID string, force bool) {
 
 		if stream, ok := playlist.Streams[streamID]; ok {
 
+			client := playlist.Clients[streamID]
+
 			if c, ok := BufferClients.Load(playlistID + stream.MD5); ok {
 
 				var clients = c.(ClientConnection)
 				fmt.Println("COUNT BEFORE: ", clients.Connection)
 				clients.Connection = clients.Connection - 1
+				client.Connection = client.Connection - 1
 				activeClientCount = activeClientCount - 1
 				if activeClientCount <= 0 {
 					activeClientCount = 0
 				}
+				playlist.Clients[streamID] = client
 				fmt.Println("COUNT AFTER: ", clients.Connection)
 				BufferClients.Store(playlistID+stream.MD5, clients)
 
