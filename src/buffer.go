@@ -26,15 +26,25 @@ import (
 	"github.com/avfs/avfs/vfs/osfs"
 )
 
-var activeClientCount int
-var activePlaylistCount int
-
 func getActiveClientCount() (count int) {
-	return activeClientCount
+	count = 0
+	BufferInformation.Range(func(key, value interface{}) bool {
+		playlist := value.(Playlist)
+		for _, client := range playlist.Clients {
+			count += client.Connection
+		}
+		return true
+	})
+	return count
 }
 
 func getActivePlaylistCount() (count int) {
-	return activePlaylistCount
+	count = 0
+	BufferInformation.Range(func(key, value interface{}) bool {
+		count++
+		return true
+	})
+	return count
 }
 
 func createStreamID(stream map[int]ThisStream) (streamID int) {
@@ -76,7 +86,6 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 
 	// Check whether the playlist is already in use
 	if p, ok := BufferInformation.Load(playlistID); !ok {
-
 		var playlistType string
 		// Playlist wird noch nicht verwendet, Default-Werte für die Playlist erstellen
 		playlist.Folder = System.Folder.Temp + playlistID + string(os.PathSeparator)
@@ -111,11 +120,8 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 		// Default-Werte für den Stream erstellen
 		streamID = createStreamID(playlist.Streams)
 
-		client.Connection = 1
-		activeClientCount = 1
-		if activePlaylistCount == 0 {
-			activePlaylistCount = 1
-		}
+		client.Connection += 1
+
 		stream.URL = streamingURL
 		stream.BackupChannel1URL = backupStreamingURL1
 		stream.BackupChannel2URL = backupStreamingURL2
@@ -145,8 +151,6 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 				streamID = id
 				newStream = false
 				client.Connection += 1
-				activeClientCount += 1
-				activePlaylistCount += 1
 
 				//playlist.Streams[streamID] = stream
 				playlist.Clients[streamID] = client
@@ -160,6 +164,7 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 				if c, ok := BufferClients.Load(playlistID + stream.MD5); ok {
 
 					var clients = c.(ClientConnection)
+					clients.Connection = client.Connection
 
 					showInfo(fmt.Sprintf("Streaming Status:Channel: %s (Clients: %d)", stream.ChannelName, clients.Connection))
 
@@ -206,7 +211,6 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 			client = ThisClient{}
 
 			streamID = createStreamID(playlist.Streams)
-			activePlaylistCount += 1
 
 			client.Connection = 1
 			stream.URL = streamingURL
@@ -501,18 +505,21 @@ func killClientConnection(streamID int, playlistID string, force bool) {
 
 		if stream, ok := playlist.Streams[streamID]; ok {
 
+			client := playlist.Clients[streamID]
+
 			if c, ok := BufferClients.Load(playlistID + stream.MD5); ok {
 
 				var clients = c.(ClientConnection)
 				clients.Connection = clients.Connection - 1
-				activeClientCount = activeClientCount - 1
+				client.Connection = client.Connection - 1
+
+				playlist.Clients[streamID] = client
 				BufferClients.Store(playlistID+stream.MD5, clients)
 
 				showInfo("Streaming Status:Client has terminated the connection")
 				showInfo(fmt.Sprintf("Streaming Status:Channel: %s (Clients: %d)", stream.ChannelName, clients.Connection))
 
 				if clients.Connection <= 0 {
-					activePlaylistCount = activePlaylistCount - 1
 					BufferClients.Delete(playlistID + stream.MD5)
 					delete(playlist.Streams, streamID)
 					delete(playlist.Clients, streamID)
@@ -552,7 +559,7 @@ func clientConnection(stream ThisStream) (status bool) {
 			ShowError(err, 4005)
 		}
 
-		if p, ok := BufferInformation.Load(stream.PlaylistID); ok {
+		if p, ok := BufferInformation.Load(stream.PlaylistID); !ok {
 
 			showInfo(fmt.Sprintf("Streaming Status:Channel: %s - No client is using this channel anymore. Streaming Server connection has ended", stream.ChannelName))
 
@@ -1241,7 +1248,7 @@ func getTuner(id, playlistType string) (tuner int) {
 func initBufferVFS(virtual bool) {
 
 	if virtual {
-		bufferVFS = memfs.New(memfs.WithMainDirs())
+		bufferVFS = memfs.New()
 	} else {
 		bufferVFS = osfs.New()
 	}
