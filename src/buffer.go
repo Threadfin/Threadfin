@@ -494,49 +494,54 @@ func killClientConnection(streamID int, playlistID string, force bool) {
 	defer Lock.Unlock()
 
 	if p, ok := BufferInformation.Load(playlistID); ok {
-
-		var playlist = p.(Playlist)
+		// Convert the loaded value to a Playlist struct
+		var playlist = p.(*Playlist)
 
 		if force {
 			delete(playlist.Streams, streamID)
-			showInfo(fmt.Sprintf("Streaming Status:Playlist: %s - Tuner: %d / %d", playlist.PlaylistName, len(playlist.Streams), playlist.Tuner))
+			if len(playlist.Streams) == 0 {
+				BufferInformation.Delete(playlistID) // Remove the playlist if no streams remain
+			} else {
+				BufferInformation.Store(playlistID, playlist) // Update the map if streams still exist
+			}
+			showInfo(fmt.Sprintf("Streaming Status: Playlist: %s - Tuner: %d / %d", playlist.PlaylistName, len(playlist.Streams), playlist.Tuner))
 			return
 		}
 
 		if stream, ok := playlist.Streams[streamID]; ok {
-
 			client := playlist.Clients[streamID]
 
 			if c, ok := BufferClients.Load(playlistID + stream.MD5); ok {
-
 				var clients = c.(ClientConnection)
-				clients.Connection = clients.Connection - 1
-				client.Connection = client.Connection - 1
+				clients.Connection--
+				client.Connection--
 
 				playlist.Clients[streamID] = client
 				BufferClients.Store(playlistID+stream.MD5, clients)
 
-				showInfo("Streaming Status:Client has terminated the connection")
-				showInfo(fmt.Sprintf("Streaming Status:Channel: %s (Clients: %d)", stream.ChannelName, clients.Connection))
+				showInfo("Streaming Status: Client has terminated the connection")
+				showInfo(fmt.Sprintf("Streaming Status: Channel: %s (Clients: %d)", stream.ChannelName, clients.Connection))
 
 				if clients.Connection <= 0 {
 					BufferClients.Delete(playlistID + stream.MD5)
 					delete(playlist.Streams, streamID)
 					delete(playlist.Clients, streamID)
+
+					if len(playlist.Streams) == 0 {
+						BufferInformation.Delete(playlistID) // Remove the playlist if no streams remain
+					} else {
+						BufferInformation.Store(playlistID, playlist) // Update the map if streams still exist
+					}
+				} else {
+					BufferInformation.Store(playlistID, playlist) // Update the map after modifications
 				}
 
+				if len(playlist.Streams) > 0 {
+					showInfo(fmt.Sprintf("Streaming Status: Playlist: %s - Tuner: %d / %d", playlist.PlaylistName, len(playlist.Streams), playlist.Tuner))
+				}
 			}
-
-			BufferInformation.Store(playlistID, playlist)
-
-			if len(playlist.Streams) > 0 {
-				showInfo(fmt.Sprintf("Streaming Status:Playlist: %s - Tuner: %d / %d", playlist.PlaylistName, len(playlist.Streams), playlist.Tuner))
-			}
-
 		}
-
 	}
-
 }
 
 func clientConnection(stream ThisStream) (status bool) {
