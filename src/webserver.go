@@ -135,8 +135,6 @@ func Index(w http.ResponseWriter, r *http.Request) {
 func Stream(w http.ResponseWriter, r *http.Request) {
 
 	var path = strings.Replace(r.RequestURI, "/stream/", "", 1)
-	//var stream = strings.SplitN(path, "-", 2)
-	fmt.Println("PATH: ", path)
 	streamInfo, err := getStreamInfo(path)
 	if err != nil {
 		ShowError(err, 1203)
@@ -146,7 +144,6 @@ func Stream(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == "HEAD" {
 		client := &http.Client{}
-		log.Println("URL: ", streamInfo.URL)
 		req, err := http.NewRequest("HEAD", streamInfo.URL, nil)
 		if err != nil {
 			ShowError(err, 1501)
@@ -163,7 +160,6 @@ func Stream(w http.ResponseWriter, r *http.Request) {
 		defer resp.Body.Close()
 
 		// Copy headers from the source HEAD response to the outgoing response
-		log.Println("HEAD response from source: ", resp.Header)
 		for key, values := range resp.Header {
 			for _, value := range values {
 				w.Header().Add(key, value)
@@ -218,9 +214,6 @@ func Stream(w http.ResponseWriter, r *http.Request) {
 	if Settings.Buffer != "-" {
 		showInfo(fmt.Sprintf("Buffer Size:%d KB", Settings.BufferSize))
 	}
-
-	log.Println("Stream Info: ", streamInfo)
-	log.Println("M3U Info: ", Settings.Files.M3U)
 
 	showInfo(fmt.Sprintf("Channel Name:%s", streamInfo.Name))
 	showInfo(fmt.Sprintf("Client User-Agent:%s", r.Header.Get("User-Agent")))
