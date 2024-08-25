@@ -890,12 +890,6 @@ func buildDatabaseDVR() (err error) {
 
 				Data.Streams.All = append(Data.Streams.All, stream)
 
-				for _, stream := range Data.Streams.All {
-					if stream.(map[string]string)["group-title"] == "NFL" {
-						log.Println(stream)
-					}
-				}
-
 				// Neuer Filter ab Version 1.3.0
 				var preview string
 				var status bool
