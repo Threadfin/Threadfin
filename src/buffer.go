@@ -228,6 +228,8 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 		}
 
 	}
+	// Stop the thirdPartyBuffer
+	stopCh := make(chan struct{})
 
 	// Check whether the stream is already being played by another client
 	if !playlist.Streams[streamID].Status && newStream {
@@ -245,7 +247,7 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 		switch Settings.Buffer {
 
 		case "ffmpeg", "vlc":
-			go thirdPartyBuffer(streamID, playlistID, false, 0)
+			go thirdPartyBuffer(streamID, playlistID, false, 0, stopCh)
 
 		default:
 			break
@@ -302,6 +304,7 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 						select {
 
 						case <-ctx.Done():
+							close(stopCh)
 							killClientConnection(streamID, playlistID, false)
 							return
 
@@ -311,6 +314,7 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 								var clients = c.(ClientConnection)
 								if clients.Error != nil {
 									ShowError(clients.Error, 0)
+									close(stopCh)
 									killClientConnection(streamID, playlistID, false)
 									return
 								}
@@ -326,6 +330,7 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 					}
 
 					if _, err := bufferVFS.Stat(stream.Folder); fsIsNotExistErr(err) {
+						close(stopCh)
 						killClientConnection(streamID, playlistID, false)
 						return
 					}
@@ -336,6 +341,7 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 					for _, f := range tmpFiles {
 
 						if _, err := bufferVFS.Stat(stream.Folder); fsIsNotExistErr(err) {
+							close(stopCh)
 							killClientConnection(streamID, playlistID, false)
 							return
 						}
@@ -404,7 +410,7 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 
 							var n = indexOfString(f, oldSegments)
 
-							if n > 20 {
+							if n > 30 {
 
 								var fileToRemove = stream.Folder + oldSegments[0]
 								if err = bufferVFS.RemoveAll(getPlatformFile(fileToRemove)); err != nil {
@@ -427,6 +433,7 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 				} // Ende Loop 2
 
 			} else {
+				close(stopCh)
 
 				// Stream nicht vorhanden
 				killClientConnection(streamID, stream.PlaylistID, false)
@@ -895,7 +902,7 @@ func switchBandwidth(stream *ThisStream) (err error) {
 }
 
 // Buffer mit FFMPEG
-func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNumber int) {
+func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNumber int,  stopCh <-chan struct{}) {
 
 	if p, ok := BufferInformation.Load(playlistID); ok {
 
@@ -952,7 +959,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 			if !useBackup || (useBackup && backupNumber >= 0 && backupNumber <= 3) {
 				backupNumber = backupNumber + 1
 				if playlist.Streams[streamID].BackupChannel1URL != "" || playlist.Streams[streamID].BackupChannel2URL != "" || playlist.Streams[streamID].BackupChannel3URL != "" {
-					thirdPartyBuffer(streamID, playlistID, true, backupNumber)
+					thirdPartyBuffer(streamID, playlistID, true, backupNumber, stopCh)
 				}
 				return
 			}
@@ -1127,7 +1134,16 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 		}()
 
 		for {
-
+			select {
+				case <-stopCh:
+					// Stop signal received
+					showHighlight("Background task stopping...")
+					showHighlight(fmt.Sprintf("The pid is %d", cmd.Process.Pid))
+					cmd.Process.Kill()
+					showHighlight("Background Exec Killed")
+					return
+				default:
+			}
 			select {
 			case timeout := <-t:
 				if timeout >= 20 && tmpSegment == 1 {
