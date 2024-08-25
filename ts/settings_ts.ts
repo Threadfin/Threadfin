@@ -553,7 +553,7 @@ class SettingsCategory {
         setting.appendChild(tdLeft)
         setting.appendChild(tdRight)
         break
-
+  
       case "buffer":
         var tdLeft = document.createElement("TD")
         tdLeft.innerHTML = "{{.settings.streamBuffering.title}}" + ":"
@@ -561,6 +561,21 @@ class SettingsCategory {
         var tdRight = document.createElement("TD")
         var text: any[] = ["{{.settings.streamBuffering.info_false}}", "FFmpeg: ({{.settings.streamBuffering.info_ffmpeg}})", "VLC: ({{.settings.streamBuffering.info_vlc}})"]
         var values: any[] = ["-", "ffmpeg", "vlc"]
+
+        var select = content.createSelect(text, values, data, settingsKey)
+        select.setAttribute("onchange", "javascript: this.className = 'changed'")
+        tdRight.appendChild(select)
+
+        setting.appendChild(tdLeft)
+        setting.appendChild(tdRight)
+        break
+      case "streaming.timeout":
+        var tdLeft = document.createElement("TD")
+        tdLeft.innerHTML = "{{.settings.streamingTimeout.title}}" + ":"
+
+        var tdRight = document.createElement("TD")
+        var text: any[] = ["10 s", "20 s", "30 s", "40 s"]
+        var values: any[] = ["10","20","30","40"]
 
         var select = content.createSelect(text, values, data, settingsKey)
         select.setAttribute("onchange", "javascript: this.className = 'changed'")
@@ -644,6 +659,9 @@ class SettingsCategory {
         text = "{{.settings.bufferSize.description}}"
         break
 
+      case "streaming.timeout":
+          text = "{{.settings.streamingTimeout.description}}"
+          break
       case "storeBufferInRAM":
         text = "{{.settings.storeBufferInRAM.description}}"
         break
@@ -683,6 +701,10 @@ class SettingsCategory {
       case "buffer.timeout":
         text = "{{.settings.bufferTimeout.description}}"
         break
+
+      case "streaming.timeout":
+          text = "{{.settings.streamingTimeout.description}}"
+          break
 
       case "user.agent":
         text = "{{.settings.userAgent.description}}"

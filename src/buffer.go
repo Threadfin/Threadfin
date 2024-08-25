@@ -1137,16 +1137,14 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 			select {
 				case <-stopCh:
 					// Stop signal received
-					showHighlight("Background task stopping...")
-					showHighlight(fmt.Sprintf("The pid is %d", cmd.Process.Pid))
+					showHighlight(fmt.Sprintf("Killing the process %d", cmd.Process.Pid))
 					cmd.Process.Kill()
-					showHighlight("Background Exec Killed")
 					return
 				default:
 			}
 			select {
 			case timeout := <-t:
-				if timeout >= 20 && tmpSegment == 1 {
+				if timeout >= Settings.StreamingTimeout && tmpSegment == 1 {
 					cmd.Process.Kill()
 					err = errors.New("Timout")
 					ShowError(err, 4006)

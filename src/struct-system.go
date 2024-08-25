@@ -289,6 +289,7 @@ type SettingsStruct struct {
 	Buffer            string   `json:"buffer"`
 	BufferSize        int      `json:"buffer.size.kb"`
 	BufferTimeout     float64  `json:"buffer.timeout"`
+	StreamingTimeout  int      `json:"streaming.timeout"`
 	CacheImages       bool     `json:"cache.images"`
 	EpgSource         string   `json:"epgSource"`
 	FFmpegOptions     string   `json:"ffmpeg.options"`

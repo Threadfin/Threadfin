@@ -29,6 +29,7 @@ type RequestStruct struct {
 		Buffer                   *string   `json:"buffer,omitempty"`
 		BufferSize               *int      `json:"buffer.size.kb,omitempty"`
 		BufferTimeout            *float64  `json:"buffer.timeout,omitempty"`
+		StreamingTimeout 	     *int      `json:"streaming.timeout,omitempty"`
 		CacheImages              *bool     `json:"cache.images,omitempty"`
 		EpgSource                *string   `json:"epgSource,omitempty"`
 		FFmpegOptions            *string   `json:"ffmpeg.options,omitempty"`

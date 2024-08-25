@@ -447,6 +447,18 @@ class SettingsCategory {
                 setting.appendChild(tdLeft);
                 setting.appendChild(tdRight);
                 break;
+            case "streaming.timeout":
+                var tdLeft = document.createElement("TD");
+                tdLeft.innerHTML = "{{.settings.streamingTimeout.title}}" + ":";
+                var tdRight = document.createElement("TD");
+                var text = ["10 s", "20 s", "30 s", "40 s"];
+                var values = ["10", "20", "30", "40"];
+                var select = content.createSelect(text, values, data, settingsKey);
+                select.setAttribute("onchange", "javascript: this.className = 'changed'");
+                tdRight.appendChild(select);
+                setting.appendChild(tdLeft);
+                setting.appendChild(tdRight);
+                break;
             case "udpxy":
                 var tdLeft = document.createElement("TD");
                 tdLeft.innerHTML = "{{.settings.udpxy.title}}" + ":";
@@ -500,6 +512,9 @@ class SettingsCategory {
             case "buffer.size.kb":
                 text = "{{.settings.bufferSize.description}}";
                 break;
+            case "streaming.timeout":
+                text = "{{.settings.streamingTimeout.description}}";
+                break;
             case "storeBufferInRAM":
                 text = "{{.settings.storeBufferInRAM.description}}";
                 break;
@@ -529,6 +544,9 @@ class SettingsCategory {
                 break;
             case "buffer.timeout":
                 text = "{{.settings.bufferTimeout.description}}";
+                break;
+            case "streaming.timeout":
+                text = "{{.settings.streamingTimeout.description}}";
                 break;
             case "user.agent":
                 text = "{{.settings.userAgent.description}}";

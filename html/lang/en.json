@@ -450,6 +450,10 @@
       "title": "Buffer Size",
       "description": "Buffer size in MB.<br>M3U8: If the TS segment smaller then the buffer size, the file size of the segment is used."
     },
+    "streamingTimeout": {
+      "title": "Streaming Timeout",
+      "description": "Timeout before receiving the streaming waiting for buffering"
+    },
     "storeBufferInRAM":
     {
       "title": "Store buffer in RAM",
