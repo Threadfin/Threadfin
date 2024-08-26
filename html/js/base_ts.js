@@ -141,6 +141,14 @@ function getAllSelectedChannels() {
             }
         }
     }
+    var trs_inactive = document.getElementById("inactive_content_table").getElementsByTagName("TR");
+    for (var i = 1; i < trs_inactive.length; i++) {
+        if (trs_inactive[i].style.display != "none") {
+            if (trs_inactive[i].firstChild.firstChild.checked == true) {
+                channels.push(trs_inactive[i].id);
+            }
+        }
+    }
     return channels;
 }
 function selectAllChannels(table_name = "content_table") {

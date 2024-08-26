@@ -178,6 +178,20 @@ function getAllSelectedChannels(): string[] {
 
   }
 
+  var trs_inactive = document.getElementById("inactive_content_table").getElementsByTagName("TR")
+
+  for (var i = 1; i < trs_inactive.length; i++) {
+
+    if ((trs_inactive[i] as HTMLElement).style.display != "none") {
+
+      if ((trs_inactive[i].firstChild.firstChild as HTMLInputElement).checked == true) {
+        channels.push(trs_inactive[i].id)
+      }
+
+    }
+
+  }
+
   return channels
 }
 
