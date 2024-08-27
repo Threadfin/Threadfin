@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"path"
 	"sort"
@@ -923,7 +922,6 @@ func buildDatabaseDVR() (err error) {
 				}
 
 			}
-			log.Println("STREAMS: ", Data.Streams.All)
 
 			if tvgID == 0 {
 				compatibility["tvg.id"] = 0
