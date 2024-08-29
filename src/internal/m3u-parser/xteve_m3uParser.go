@@ -2,10 +2,24 @@ package m3u
 
 import (
 	"errors"
+	"fmt"
 	"net/url"
 	"regexp"
 	"strings"
+	"sync"
 )
+
+var (
+	counter int
+	mu      sync.Mutex
+)
+
+func generateUniqueString() string {
+	mu.Lock()
+	defer mu.Unlock()
+	counter++
+	return fmt.Sprintf("threadfin-%d", counter)
+}
 
 // MakeInterfaceFromM3U :
 func MakeInterfaceFromM3U(byteStream []byte) (allChannels []interface{}, err error) {
@@ -87,6 +101,10 @@ func MakeInterfaceFromM3U(byteStream []byte) (allChannels []interface{}, err err
 							channelName = v
 						}
 
+					}
+
+					if stream["tvg-id"] == "" {
+						stream["tvg-id"] = generateUniqueString()
 					}
 
 					channelName = strings.TrimRight(channelName, " ")

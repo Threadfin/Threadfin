@@ -568,12 +568,14 @@ func clientConnection(stream ThisStream) (status bool) {
 
 			showInfo(fmt.Sprintf("Streaming Status:Channel: %s - No client is using this channel anymore. Streaming Server connection has ended", stream.ChannelName))
 
-			var playlist = p.(Playlist)
+			if p != nil {
+				var playlist = p.(Playlist)
 
-			showInfo(fmt.Sprintf("Streaming Status:Playlist: %s - Tuner: %d / %d", playlist.PlaylistName, len(playlist.Streams), playlist.Tuner))
+				showInfo(fmt.Sprintf("Streaming Status:Playlist: %s - Tuner: %d / %d", playlist.PlaylistName, len(playlist.Streams), playlist.Tuner))
 
-			if len(playlist.Streams) <= 0 {
-				BufferInformation.Delete(stream.PlaylistID)
+				if len(playlist.Streams) <= 0 {
+					BufferInformation.Delete(stream.PlaylistID)
+				}
 			}
 
 		}
