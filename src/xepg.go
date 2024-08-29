@@ -421,6 +421,7 @@ func createXEPGDatabase() (err error) {
 
 		// Try to find the channel based on matching all known values.  If that fails, then move to full channel scan
 		m3uChannelHash := generateHashForChannel(m3uChannel.FileM3UID, m3uChannel.GroupTitle, m3uChannel.TvgID, m3uChannel.UUIDKey, m3uChannel.UUIDValue)
+
 		if val, ok := xepgChannelsValuesMap[m3uChannelHash]; ok {
 			channelExists = true
 			currentXEPGID = val.XEPG
@@ -487,7 +488,7 @@ func createXEPGDatabase() (err error) {
 
 			// Kanalname aktualisieren, nur mit Kanal ID's möglich
 			if channelHasUUID == true {
-				if xepgChannel.XUpdateChannelName == true {
+				if xepgChannel.XUpdateChannelName || Settings.Dummy {
 					xepgChannel.XName = m3uChannel.Name
 				}
 			}
