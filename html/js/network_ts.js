@@ -54,6 +54,13 @@ class Server {
                 }
                 return;
             }
+            if (response.hasOwnProperty("probeInfo")) {
+                if (document.getElementById("probeDetails")) {
+                    if (response["probeInfo"]["resolution"] !== undefined) {
+                        document.getElementById("probeDetails").innerHTML = "<p>Resolution: <span class='text-primary'>" + response["probeInfo"]["resolution"] + "</span></p><p>Frame Rate: <span class='text-primary'>" + response["probeInfo"]["frameRate"] + " FPS</span></p><p>Audio: <span class='text-primary'>" + response["probeInfo"]["audioChannel"] + "</span></p>";
+                    }
+                }
+            }
             if (response.hasOwnProperty("logoURL")) {
                 var div = document.getElementById("channel-icon");
                 div.value = response["logoURL"];

@@ -80,6 +80,9 @@ type RequestStruct struct {
 		Tuner     *int    `json:"tuner,omitempty"`
 		XMLTV     *string `json:"xmltv,omitempty"`
 	} `json:"wizard,omitempty"`
+
+	// Probe Url
+	ProbeURL string `json:"probeURL,omitempty"`
 }
 
 // ResponseStruct : Antworten an den Client (WEB)
@@ -134,8 +137,15 @@ type ResponseStruct struct {
 	Users               map[string]interface{} `json:"users,omitempty"`
 	Wizard              int                    `json:"wizard,omitempty"`
 	XEPG                map[string]interface{} `json:"xepg,required"`
+	ProbeInfo           ProbeInfoStruct        `json:"probeInfo,omitempty"`
 
 	Notification map[string]Notification `json:"notification,omitempty"`
+}
+
+type ProbeInfoStruct struct {
+	Resolution   string `json:"resolution,omitempty"`
+	FrameRate    string `json:"frameRate,omitempty"`
+	AudioChannel string `json:"audioChannel,omitempty"`
 }
 
 // APIRequestStruct : Anfrage über die API Schnittstelle
