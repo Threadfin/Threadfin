@@ -1649,6 +1649,9 @@ function openPopUp(dataType, element) {
             content.appendRow("{{.mapping.backupChannel3.title}}", xmlTvBackup3IdContainer);
             // Interaktion
             content.createInteraction();
+            var input = content.createInput("button", "cancel", "{{.button.probeChannel}}");
+            input.setAttribute("onclick", 'javascript: probeChannel("' + data["url"] + '");');
+            content.addInteraction(input);
             // Logo hochladen
             var input = content.createInput("button", "cancel", "{{.button.uploadLogo}}");
             input.setAttribute("onclick", 'javascript: uploadLogo();');
@@ -1666,6 +1669,13 @@ function openPopUp(dataType, element) {
             var input = content.createInput("button", "save", "{{.button.done}}");
             input.setAttribute("onclick", 'javascript: donePopupData("' + dataType + '", "' + ids + '", "false");');
             content.addInteraction(input);
+            var cell = new Cell();
+            cell.child = true;
+            cell.childType = "P";
+            cell.value = "<span></span>";
+            var td = cell.createCell();
+            td.id = "probeDetails";
+            content.appendRow("{{.mapping.probeDetails.title}}", td);
             break;
         default:
             break;

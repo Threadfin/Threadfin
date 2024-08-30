@@ -101,10 +101,31 @@ func getProviderData(fileType, fileID string) (err error) {
 
 		// Daten überprüfen
 		showInfo("Check File:" + fileSource)
+		var newM3u []interface{}
 		switch fileType {
 
 		case "m3u":
-			_, err = m3u.MakeInterfaceFromM3U(body)
+			newM3u, err = m3u.MakeInterfaceFromM3U(body)
+			if err != nil {
+				return err
+			}
+
+			var updatedM3uContent string
+			updatedM3uContent = "#EXTM3U\n"
+			for _, channel := range newM3u {
+				channelMap := channel.(map[string]string)
+				updatedM3uContent += fmt.Sprintf(
+					`#EXTINF:-1 tvg-id="%s" tvg-name="%s" tvg-logo="%s" group-title="%s",%s`+"\n%s\n",
+					channelMap["tvg-id"],
+					channelMap["tvg-name"],
+					channelMap["tvg-logo"],
+					channelMap["group-title"],
+					channelMap["name"],
+					channelMap["url"],
+				)
+			}
+
+			body = []byte(updatedM3uContent)
 
 		case "hdhr":
 			_, err = jsonToInterface(string(body))

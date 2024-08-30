@@ -682,11 +682,10 @@ func WS(w http.ResponseWriter, r *http.Request) {
 
 			}
 
-			/*
-				case "wizardCompleted":
-					System.ConfigurationWizard = false
-					response.Reload = true
-			*/
+		case "probeChannel":
+			resolution, frameRate, audioChannels, _ := probeChannel(request)
+			response.ProbeInfo = ProbeInfoStruct{Resolution: resolution, FrameRate: frameRate, AudioChannel: audioChannels}
+
 		default:
 			fmt.Println("+ + + + + + + + + + +", request.Cmd)
 

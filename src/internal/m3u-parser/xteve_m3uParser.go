@@ -14,7 +14,7 @@ var (
 	mu      sync.Mutex
 )
 
-func generateUniqueString() string {
+func GenerateUniqueString() string {
 	mu.Lock()
 	defer mu.Unlock()
 	counter++
@@ -104,7 +104,7 @@ func MakeInterfaceFromM3U(byteStream []byte) (allChannels []interface{}, err err
 					}
 
 					if stream["tvg-id"] == "" {
-						stream["tvg-id"] = generateUniqueString()
+						stream["tvg-id"] = GenerateUniqueString()
 					}
 
 					channelName = strings.TrimRight(channelName, " ")

@@ -344,3 +344,16 @@ type LanguageUI struct {
 		Failed string
 	}
 }
+
+type FFProbeOutput struct {
+	Streams []ProbeStream `json:"streams"`
+}
+
+type ProbeStream struct {
+	CodecType     string `json:"codec_type"`
+	Width         int    `json:"width,omitempty"`
+	Height        int    `json:"height,omitempty"`
+	RFrameRate    string `json:"r_frame_rate,omitempty"`
+	ChannelLayout string `json:"channel_layout,omitempty"`
+	Channels      int    `json:"channels,omitempty"`
+}

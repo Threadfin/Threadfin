@@ -526,6 +526,17 @@ function uploadLogo() {
         return;
     };
 }
+function probeChannel(url) {
+    if (document.getElementById("probeDetails")) {
+        document.getElementById("probeDetails").innerHTML = "Probing Channel Details...";
+    }
+    var data = new Object();
+    var cmd = "probeChannel";
+    data["probeUrl"] = url;
+    var server = new Server(cmd);
+    server.request(data);
+    return;
+}
 function checkUndo(key) {
     switch (key) {
         case "epgMapping":
