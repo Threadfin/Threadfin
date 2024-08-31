@@ -713,6 +713,22 @@ function uploadLogo() {
 
 }
 
+function probeChannel(url: string) {
+
+  if (document.getElementById("probeDetails")) {
+    document.getElementById("probeDetails").innerHTML = "Probing Channel Details..."
+  }
+  
+  var data = new Object()
+  var cmd = "probeChannel"
+  data["probeUrl"] = url
+
+  var server: Server = new Server(cmd)
+  server.request(data)
+
+  return
+}
+
 function checkUndo(key: string) {
 
   switch (key) {

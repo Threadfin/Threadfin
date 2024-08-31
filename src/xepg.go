@@ -981,12 +981,14 @@ func getProgramData(xepgChannel XEPGChannelStruct) (xepgXML XMLTV, err error) {
 	return
 }
 
-func createLiveProgram(xepgChannel XEPGChannelStruct, channelId string) *Program {
-	var program = &Program{}
-	program.Channel = channelId
+func createLiveProgram(xepgChannel XEPGChannelStruct, channelId string) []*Program {
+	var programs []*Program
+
 	var currentTime = time.Now()
-	startTime := time.Date(currentTime.Year(), currentTime.Month(), currentTime.Day(), 12, 0, 0, currentTime.Nanosecond(), currentTime.Location()).Format("20060102150405 -0700")
-	stopTime := time.Date(currentTime.Year(), currentTime.Month(), currentTime.Day()+1, 23, 59, 59, currentTime.Nanosecond(), currentTime.Location()).Format("20060102150405 -0700")
+	localLocation := currentTime.Location() // Central Time (CT)
+
+	startTime := time.Date(currentTime.Year(), currentTime.Month(), currentTime.Day(), 12, 0, 0, currentTime.Nanosecond(), localLocation)
+	stopTime := time.Date(currentTime.Year(), currentTime.Month(), currentTime.Day(), 23, 59, 59, currentTime.Nanosecond(), localLocation)
 
 	name := ""
 	if xepgChannel.TvgName != "" {
@@ -997,58 +999,85 @@ func createLiveProgram(xepgChannel XEPGChannelStruct, channelId string) *Program
 
 	re := regexp.MustCompile(`(\d{1,2}[./]\d{1,2})[-\s](\d{1,2}:\d{2}\s*(AM|PM))`)
 	matches := re.FindStringSubmatch(name)
-	layout := "2006.1.2 3:04 PM MST"
+	layout := "2006.1.2 3:04 PM"
 	if len(matches) > 0 {
 
 		if strings.Contains(matches[0], "/") {
 			matches[0] = strings.Replace(matches[0], "/", ".", 1)
 			matches[0] = strings.Replace(matches[0], "-", " ", 1)
-			layout = "2006.1.2 3:04PM MST"
+			layout = "2006.1.2 3:04PM"
 		}
 
 		timeString := matches[0]
 		if !regexp.MustCompile(`ET$`).MatchString(timeString) {
 			timeString += " ET"
 		}
-		matches[0] = strings.Replace(matches[0], "ET", "EST", 1)
-		if !strings.Contains(matches[0], "EST") {
-			matches[0] = matches[0] + " EST"
-		}
-		nyLocation, _ := time.LoadLocation("America/New_York")
-		year := currentTime.Year()
-		startTimeParsed, err := time.ParseInLocation(layout, fmt.Sprintf("%d.%s", year, matches[0]), nyLocation)
+		timeString = strings.Replace(timeString, " ET", "", 1) // Remove "ET" from the time string
+
+		// Use LoadLocation to properly account for DST
+		nyLocation, _ := time.LoadLocation("America/New_York") // ET location
+		startTimeParsed, err := time.ParseInLocation(layout, fmt.Sprintf("2024.%s", timeString), nyLocation)
 		if err != nil {
 			showInfo("TIME PARSE ERROR: " + err.Error())
 		} else {
-			localTime := startTimeParsed.In(currentTime.Location())
-			startTime = localTime.Format("20060102150405 -0700")
+			localTime := startTimeParsed.In(localLocation) // Convert to CT
+			startTime = localTime
 		}
 	}
 
-	program.Start = startTime
-	program.Stop = stopTime
+	// Add "CHANNEL OFFLINE" program for the time before the event
+	beginningOfDay := time.Date(startTime.Year(), startTime.Month(), startTime.Day(), 0, 0, 0, 0, localLocation)
+	programBefore := &Program{
+		Channel: channelId,
+		Start:   beginningOfDay.Format("20060102150405 -0700"),
+		Stop:    startTime.Format("20060102150405 -0700"),
+		Title:   []*Title{{Lang: "en", Value: "CHANNEL OFFLINE"}},
+		Desc:    []*Desc{{Lang: "en", Value: "CHANNEL OFFLINE"}},
+	}
+	programs = append(programs, programBefore)
+
+	// Add the main program
+	mainProgram := &Program{
+		Channel: channelId,
+		Start:   startTime.Format("20060102150405 -0700"),
+		Stop:    stopTime.Format("20060102150405 -0700"),
+	}
 
 	if Settings.XepgReplaceChannelTitle && xepgChannel.XMapping == "PPV" {
 		title := []*Title{}
 		title_parsed := fmt.Sprintf("%s %s", name, xepgChannel.XPpvExtra)
 		t := &Title{Lang: "en", Value: title_parsed}
 		title = append(title, t)
-		program.Title = title
+		mainProgram.Title = title
 
 		desc := []*Desc{}
 		d := &Desc{Lang: "en", Value: title_parsed}
 		desc = append(desc, d)
-		program.Desc = desc
+		mainProgram.Desc = desc
 	}
-	return program
+	programs = append(programs, mainProgram)
+
+	// Add "CHANNEL OFFLINE" program for the time after the event
+	midnightNextDayStart := time.Date(stopTime.Year(), stopTime.Month(), stopTime.Day()+1, 0, 0, 0, currentTime.Nanosecond(), localLocation)
+	midnightNextDayStop := time.Date(stopTime.Year(), stopTime.Month(), stopTime.Day()+1, 23, 59, 59, currentTime.Nanosecond(), localLocation)
+	programAfter := &Program{
+		Channel: channelId,
+		Start:   midnightNextDayStart.Format("20060102150405 -0700"),
+		Stop:    midnightNextDayStop.Format("20060102150405 -0700"),
+		Title:   []*Title{{Lang: "en", Value: "CHANNEL OFFLINE"}},
+		Desc:    []*Desc{{Lang: "en", Value: "CHANNEL OFFLINE"}},
+	}
+	programs = append(programs, programAfter)
+
+	return programs
 }
 
 // Dummy Daten erstellen (createXMLTVFile)
 func createDummyProgram(xepgChannel XEPGChannelStruct) (dummyXMLTV XMLTV) {
 	if xepgChannel.XMapping == "PPV" {
 		var channelID = xepgChannel.XMapping
-		program := createLiveProgram(xepgChannel, channelID)
-		dummyXMLTV.Program = append(dummyXMLTV.Program, program)
+		programs := createLiveProgram(xepgChannel, channelID)
+		dummyXMLTV.Program = programs
 		return
 	}
 

@@ -47,6 +47,7 @@
     "craeteAccount": "Create Account",
     "resetLogs": "Reset Logs",
     "uploadLogo": "Upload Logo",
+    "probeChannel": "Probe Channel",
     "sortChannelsAlpha": "Sort Channels Alphabetically",
     "sortChannelNumbers": "Sort Channels"
   },
@@ -298,6 +299,11 @@
     },
     "hideChannel": {
       "title": "Hide Backup Channel",
+      "placeholder": "",
+      "description": ""
+    },
+    "probeDetails": {
+      "title": "Probe Details",
       "placeholder": "",
       "description": ""
     }
