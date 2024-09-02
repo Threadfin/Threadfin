@@ -1138,7 +1138,6 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 					ShowError(err, 4006)
 					killClientConnection(streamID, playlistID, false)
 					addErrorToStream(err)
-					cmd.Wait()
 					f.Close()
 					return
 				}
@@ -1154,7 +1153,6 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 			if !clientConnection(stream) {
 				terminateProcessGracefully(cmd)
 				f.Close()
-				cmd.Wait()
 				return
 			}
 
@@ -1170,7 +1168,6 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 				ShowError(err, 0)
 				killClientConnection(streamID, playlistID, false)
 				addErrorToStream(err)
-				cmd.Wait()
 				return
 			}
 
@@ -1205,7 +1202,6 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 					ShowError(err, 0)
 					killClientConnection(streamID, playlistID, false)
 					addErrorToStream(err)
-					cmd.Wait()
 					return
 				}
 
