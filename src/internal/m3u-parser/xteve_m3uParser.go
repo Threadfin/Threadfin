@@ -1,25 +1,12 @@
 package m3u
 
 import (
+	"crypto/md5"
 	"errors"
 	"fmt"
-	"net/url"
 	"regexp"
 	"strings"
-	"sync"
 )
-
-var (
-	counter int
-	mu      sync.Mutex
-)
-
-func GenerateUniqueString() string {
-	mu.Lock()
-	defer mu.Unlock()
-	counter++
-	return fmt.Sprintf("threadfin-%d", counter)
-}
 
 // MakeInterfaceFromM3U :
 func MakeInterfaceFromM3U(byteStream []byte) (allChannels []interface{}, err error) {
@@ -34,105 +21,84 @@ func MakeInterfaceFromM3U(byteStream []byte) (allChannels []interface{}, err err
 		var exceptForParameter = `[a-z-A-Z&=]*(".*?")`
 		var exceptForChannelName = `,([^\n]*|,[^\r]*)`
 		var lines = strings.Split(strings.Replace(channel, "\r\n", "\n", -1), "\n")
-		// Zeilen mit # und leerer Zeilen entfernen
-		for i := len(lines) - 1; i >= 0; i-- {
 
+		// Remove lines starting with # and empty lines
+		for i := len(lines) - 1; i >= 0; i-- {
 			if len(lines[i]) == 0 || lines[i][0:1] == "#" {
 				lines = append(lines[:i], lines[i+1:]...)
 			}
-
 		}
 
+		// URL is always on the second line after #EXTINF
 		if len(lines) >= 2 {
-			for _, line := range lines {
-				_, err := url.ParseRequestURI(line)
+			stream["url"] = strings.Trim(lines[1], "\r\n")
 
-				switch err {
-
-				case nil:
-					stream["url"] = strings.Trim(line, "\r\n")
-
-				default:
-					var value string
-					// Alle Parameter parsen
-					var p = regexp.MustCompile(exceptForParameter)
-					var streamParameter = p.FindAllString(line, -1)
-					for _, p := range streamParameter {
-
-						line = strings.Replace(line, p, "", 1)
-
-						p = strings.Replace(p, `"`, "", -1)
-						var parameter = strings.SplitN(p, "=", 2)
-						if len(parameter) == 2 {
-
-							// TVG Key als Kleinbuchstaben speichern
-							switch strings.Contains(parameter[0], "tvg") {
-
-							case true:
-								stream[strings.ToLower(parameter[0])] = parameter[1]
-							case false:
-								stream[parameter[0]] = parameter[1]
-
-							}
-
-							// URL's nicht an die Filterfunktion übergeben
-							if !strings.Contains(parameter[1], "://") && len(parameter[1]) > 0 {
-								value = value + parameter[1] + " "
-							}
-
-						}
-
+			// Parse the first line (#EXTINF line) for metadata
+			var value string
+			var p = regexp.MustCompile(exceptForParameter)
+			var streamParameter = p.FindAllString(lines[0], -1)
+			for _, p := range streamParameter {
+				lines[0] = strings.Replace(lines[0], p, "", 1)
+				p = strings.Replace(p, `"`, "", -1)
+				var parameter = strings.SplitN(p, "=", 2)
+				if len(parameter) == 2 {
+					// Save TVG Key in lowercase
+					if strings.Contains(parameter[0], "tvg") {
+						stream[strings.ToLower(parameter[0])] = parameter[1]
+					} else {
+						stream[parameter[0]] = parameter[1]
 					}
 
-					// Kanalnamen parsen
-					n := regexp.MustCompile(exceptForChannelName)
-					var name = n.FindAllString(line, 1)
-
-					if len(name) > 0 {
-						channelName = name[0]
-						channelName = strings.Replace(channelName, `,`, "", 1)
-						channelName = strings.TrimRight(channelName, "\r\n")
-						channelName = strings.TrimRight(channelName, " ")
+					// Do not pass URLs to the filter function
+					if !strings.Contains(parameter[1], "://") && len(parameter[1]) > 0 {
+						value = value + parameter[1] + " "
 					}
-
-					if len(channelName) == 0 {
-
-						if v, ok := stream["tvg-name"]; ok {
-							channelName = v
-						}
-
-					}
-
-					if stream["tvg-id"] == "" {
-						stream["tvg-id"] = GenerateUniqueString()
-					}
-
-					channelName = strings.TrimRight(channelName, " ")
-
-					// Kanäle ohne Namen werden augelassen
-					if len(channelName) == 0 {
-						return
-					}
-
-					stream["name"] = channelName
-					value = value + channelName
-
-					stream["_values"] = value
 				}
-
 			}
 
+			// Parse channel name
+			n := regexp.MustCompile(exceptForChannelName)
+			var name = n.FindAllString(lines[0], 1)
+
+			if len(name) > 0 {
+				channelName = name[0]
+				channelName = strings.Replace(channelName, `,`, "", 1)
+				channelName = strings.TrimRight(channelName, "\r\n")
+				channelName = strings.TrimRight(channelName, " ")
+			}
+
+			if len(channelName) == 0 {
+				if v, ok := stream["tvg-name"]; ok {
+					channelName = v
+				}
+			}
+
+			// Only generate a new tvg-id if it's missing or blank
+			if stream["tvg-id"] == "" {
+				// Use MD5 hash of the URL as the tvg-id
+				hash := md5.Sum([]byte(stream["url"]))
+				stream["tvg-id"] = fmt.Sprintf("threadfin-%x", hash)
+			}
+
+			channelName = strings.TrimRight(channelName, " ")
+
+			// Skip channels without a name
+			if len(channelName) == 0 {
+				return
+			}
+
+			stream["name"] = channelName
+			value = value + channelName
+			stream["_values"] = value
 		}
 
-		// Nach eindeutiger ID im Stream suchen
+		// Search for a unique ID in the stream
 		for key, value := range stream {
 			if strings.Contains(strings.ToLower(key), "tvg-id") {
 				if indexOfString(value, uuids) != -1 {
 					break
 				}
-
 				uuids = append(uuids, value)
-
 				stream["_uuid.key"] = key
 				stream["_uuid.value"] = value
 				break
@@ -142,7 +108,7 @@ func MakeInterfaceFromM3U(byteStream []byte) (allChannels []interface{}, err err
 		return
 	}
 
-	//fmt.Println(content)
+	// Check if the content is a valid M3U file
 	if strings.Contains(content, "#EXT-X-TARGETDURATION") || strings.Contains(content, "#EXT-X-MEDIA-SEQUENCE") {
 		err = errors.New("Invalid M3U file, an extended M3U file is required.")
 		return
@@ -160,13 +126,10 @@ func MakeInterfaceFromM3U(byteStream []byte) (allChannels []interface{}, err err
 			if len(stream) > 0 && stream != nil {
 				allChannels = append(allChannels, stream)
 			}
-
 		}
 
 	} else {
-
 		err = errors.New("Invalid M3U file, an extended M3U file is required.")
-
 	}
 
 	return

@@ -189,10 +189,14 @@ func buildM3U(groups []string) (m3u string, err error) {
 	var channelNumbers []float64
 
 	for _, dxc := range Data.XEPG.Channels {
-
 		var xepgChannel XEPGChannelStruct
 		err := json.Unmarshal([]byte(mapToJSON(dxc)), &xepgChannel)
 		if err == nil {
+			var channelNumber, err = strconv.ParseFloat(strings.TrimSpace(xepgChannel.XChannelID), 64)
+
+			if m3uChannels[channelNumber].TvgID == xepgChannel.TvgID {
+				fmt.Println("HEREEEEEEEEE")
+			}
 			if xepgChannel.TvgName == "" {
 				xepgChannel.TvgName = xepgChannel.Name
 			}
@@ -204,8 +208,6 @@ func buildM3U(groups []string) (m3u string, err error) {
 					}
 
 				}
-
-				var channelNumber, err = strconv.ParseFloat(strings.TrimSpace(xepgChannel.XChannelID), 64)
 
 				if err == nil {
 					m3uChannels[channelNumber] = xepgChannel
@@ -259,7 +261,9 @@ func buildM3U(groups []string) (m3u string, err error) {
 		var parameter = fmt.Sprintf(`#EXTINF:0 channelID="%s" tvg-chno="%s" tvg-name="%s" tvg-id="%s" tvg-logo="%s" group-title="%s",%s`+"\n", channel.XEPG, channel.XChannelID, channel.XName, channel.XChannelID, logo, group, channel.XName)
 		var stream, err = createStreamingURL("M3U", channel.FileM3UID, channel.XChannelID, channel.XName, channel.URL, channel.BackupChannel1URL, channel.BackupChannel2URL, channel.BackupChannel3URL)
 		if err == nil {
-			m3u = m3u + parameter + stream + "\n"
+			if !strings.Contains(m3u, stream) {
+				m3u = m3u + parameter + stream + "\n"
+			}
 		}
 
 	}
