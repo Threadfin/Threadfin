@@ -1,8 +1,6 @@
 package src
 
 import (
-	"crypto/md5"
-	"encoding/hex"
 	"encoding/json"
 	"encoding/xml"
 	"errors"
@@ -359,11 +357,6 @@ func createXEPGDatabase() (err error) {
 		}
 	}
 
-	var generateHashForChannel = func(m3uID string, groupTitle string, tvgID string, uuidKey string, uuidValue string) string {
-		hash := md5.Sum([]byte(m3uID + groupTitle + tvgID + uuidKey + uuidValue))
-		return hex.EncodeToString(hash[:])
-	}
-
 	showInfo("XEPG:" + "Update database")
 
 	// Kanal mit fehlenden Kanalnummern löschen.  Delete channel with missing channel numbers
@@ -396,7 +389,7 @@ func createXEPGDatabase() (err error) {
 		if channel.TvgName == "" {
 			channel.TvgName = channel.Name
 		}
-		channelHash := generateHashForChannel(channel.FileM3UID, channel.GroupTitle, channel.TvgID, channel.UUIDKey, channel.UUIDValue)
+		channelHash := channel.TvgID
 		xepgChannelsValuesMap[channelHash] = channel
 	}
 
@@ -420,8 +413,7 @@ func createXEPGDatabase() (err error) {
 		Data.Cache.Streams.Active = append(Data.Cache.Streams.Active, m3uChannel.Name+m3uChannel.FileM3UID)
 
 		// Try to find the channel based on matching all known values.  If that fails, then move to full channel scan
-		m3uChannelHash := generateHashForChannel(m3uChannel.FileM3UID, m3uChannel.GroupTitle, m3uChannel.TvgID, m3uChannel.UUIDKey, m3uChannel.UUIDValue)
-
+		m3uChannelHash := m3uChannel.TvgID
 		if val, ok := xepgChannelsValuesMap[m3uChannelHash]; ok {
 			channelExists = true
 			currentXEPGID = val.XEPG
@@ -429,7 +421,6 @@ func createXEPGDatabase() (err error) {
 				channelHasUUID = true
 			}
 		} else {
-
 			// XEPG Datenbank durchlaufen um nach dem Kanal zu suchen.  Run through the XEPG database to search for the channel (full scan)
 			for _, dxc := range xepgChannelsValuesMap {
 				if m3uChannel.FileM3UID == dxc.FileM3UID {
@@ -487,14 +478,14 @@ func createXEPGDatabase() (err error) {
 			xepgChannel.TvgChno = m3uChannel.TvgChno
 
 			// Kanalname aktualisieren, nur mit Kanal ID's möglich
-			if channelHasUUID == true {
-				if xepgChannel.XUpdateChannelName || Settings.Dummy {
+			if channelHasUUID {
+				if xepgChannel.XUpdateChannelName || strings.Contains(xepgChannel.TvgID, "threadfin-") {
 					xepgChannel.XName = m3uChannel.Name
 				}
 			}
 
 			// Kanallogo aktualisieren. Wird bei vorhandenem Logo in der XMLTV Datei wieder überschrieben
-			if xepgChannel.XUpdateChannelIcon == true {
+			if xepgChannel.XUpdateChannelIcon {
 				var imgc = Data.Cache.Images
 				xepgChannel.TvgLogo = imgc.Image.GetURL(m3uChannel.TvgLogo, Settings.HttpThreadfinDomain, Settings.Port, Settings.ForceHttps, Settings.HttpsPort, Settings.HttpsThreadfinDomain)
 			}
@@ -558,6 +549,7 @@ func createXEPGDatabase() (err error) {
 		}
 
 	}
+
 	showInfo("XEPG:" + "Save DB file")
 	err = saveMapToJSONFile(System.File.XEPG, Data.XEPG.Channels)
 	if err != nil {

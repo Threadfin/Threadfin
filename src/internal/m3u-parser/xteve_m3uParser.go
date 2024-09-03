@@ -77,7 +77,7 @@ func MakeInterfaceFromM3U(byteStream []byte) (allChannels []interface{}, err err
 			if stream["tvg-id"] == "" {
 				// Use MD5 hash of the URL as the tvg-id
 				hash := md5.Sum([]byte(stream["url"]))
-				stream["tvg-id"] = fmt.Sprintf("%x", hash)
+				stream["tvg-id"] = fmt.Sprintf("threadfin-%x", hash)
 			}
 
 			channelName = strings.TrimRight(channelName, " ")
