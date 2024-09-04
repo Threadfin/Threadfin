@@ -1133,12 +1133,11 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 			select {
 			case timeout := <-t:
 				if timeout >= 20 && tmpSegment == 1 {
-					cmd.Process.Kill()
+					terminateProcessGracefully(cmd)
 					err = errors.New("Timout")
 					ShowError(err, 4006)
 					killClientConnection(streamID, playlistID, false)
 					addErrorToStream(err)
-					cmd.Wait()
 					f.Close()
 					return
 				}
@@ -1152,9 +1151,8 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 			}
 
 			if !clientConnection(stream) {
-				cmd.Process.Kill()
+				terminateProcessGracefully(cmd)
 				f.Close()
-				cmd.Wait()
 				return
 			}
 
@@ -1166,11 +1164,10 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 			fileSize = fileSize + len(buffer[:n])
 
 			if _, err := f.Write(buffer[:n]); err != nil {
-				cmd.Process.Kill()
+				terminateProcessGracefully(cmd)
 				ShowError(err, 0)
 				killClientConnection(streamID, playlistID, false)
 				addErrorToStream(err)
-				cmd.Wait()
 				return
 			}
 
@@ -1201,11 +1198,10 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 				_, errCreate = bufferVFS.Create(tmpFile)
 				f, errOpen = bufferVFS.OpenFile(tmpFile, os.O_APPEND|os.O_WRONLY, 0600)
 				if errCreate != nil || errOpen != nil {
-					cmd.Process.Kill()
+					terminateProcessGracefully(cmd)
 					ShowError(err, 0)
 					killClientConnection(streamID, playlistID, false)
 					addErrorToStream(err)
-					cmd.Wait()
 					return
 				}
 
@@ -1213,8 +1209,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 
 		}
 
-		cmd.Process.Kill()
-		cmd.Wait()
+		terminateProcessGracefully(cmd)
 
 		err = errors.New(bufferType + " error")
 		killClientConnection(streamID, playlistID, false)
@@ -1348,7 +1343,9 @@ func debugResponse(resp *http.Response) {
 }
 
 func terminateProcessGracefully(cmd *exec.Cmd) {
+	showDebug("Killing Process: Gracefully",1)
 	if cmd.Process != nil {
+		showDebug("Killing Process: Sending SIGTERM",1)
 		// Send a SIGTERM to the process
 		if err := cmd.Process.Signal(syscall.SIGTERM); err != nil {
 			// If an error occurred while trying to send the SIGTERM, you might resort to a SIGKILL.
@@ -1356,7 +1353,22 @@ func terminateProcessGracefully(cmd *exec.Cmd) {
 			cmd.Process.Kill()
 		}
 
-		// Optionally, you can wait for the process to finish too
-		cmd.Wait()
+		done := make(chan error, 1)
+		go func() {
+			done <- cmd.Wait()
+		}()
+
+		select {
+		case <-done:
+			// Process terminated gracefully
+			showDebug("Killing Process: Process exited after SIGTERM",1)
+		case <-time.After(10 * time.Second):
+			// Timeout exceeded, forcefully kill the process
+			showDebug("Killing Process: Process did not exit, sending SIGKILL...",1)
+			if err := cmd.Process.Kill(); err != nil {
+				ShowError(err, 0)
+			}
+		}
 	}
+	showDebug("Killing Process: Done",1)
 }
