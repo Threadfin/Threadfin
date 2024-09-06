@@ -897,6 +897,7 @@ func getProgramData(xepgChannel XEPGChannelStruct) (xepgXML XMLTV, err error) {
 
 			// Title
 			if len(xmltvProgram.Title) > 0 {
+				// fmt.Println("Title: ", xmltvProgram.Title[0])
 				if !Settings.EnableNonAscii {
 					xmltvProgram.Title[0].Value = strings.TrimSpace(strings.Map(func(r rune) rune {
 						if r > unicode.MaxASCII {
@@ -983,10 +984,10 @@ func createLiveProgram(xepgChannel XEPGChannelStruct, channelId string) []*Progr
 	stopTime := time.Date(currentTime.Year(), currentTime.Month(), currentTime.Day(), 23, 59, 59, currentTime.Nanosecond(), localLocation)
 
 	name := ""
-	if xepgChannel.TvgName != "" {
-		name = xepgChannel.TvgName
-	} else {
+	if xepgChannel.XName != "" {
 		name = xepgChannel.XName
+	} else {
+		name = xepgChannel.TvgName
 	}
 
 	re := regexp.MustCompile(`(\d{1,2}[./]\d{1,2})[-\s](\d{1,2}:\d{2}\s*(AM|PM))`)
