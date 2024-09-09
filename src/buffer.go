@@ -28,6 +28,7 @@ import (
 
 func getActiveClientCount() (count int) {
 	count = 0
+	cleanUpStaleClients()
 	BufferInformation.Range(func(key, value interface{}) bool {
 		playlist := value.(Playlist)
 		for _, client := range playlist.Clients {
@@ -45,6 +46,18 @@ func getActivePlaylistCount() (count int) {
 		return true
 	})
 	return count
+}
+
+func cleanUpStaleClients() {
+	BufferInformation.Range(func(key, value interface{}) bool {
+		playlist := value.(Playlist)
+		for streamID, client := range playlist.Clients {
+			if client.Connection <= 0 {
+				delete(playlist.Clients, streamID)
+			}
+		}
+		return true
+	})
 }
 
 func createStreamID(stream map[int]ThisStream) (streamID int) {
@@ -489,20 +502,18 @@ func getBufTmpFiles(stream *ThisStream) (tmpFiles []string) {
 }
 
 func killClientConnection(streamID int, playlistID string, force bool) {
-
 	Lock.Lock()
 	defer Lock.Unlock()
 
 	if p, ok := BufferInformation.Load(playlistID); ok {
-		// Convert the loaded value to a Playlist struct
 		var playlist = p.(Playlist)
 
 		if force {
 			delete(playlist.Streams, streamID)
 			if len(playlist.Streams) == 0 {
-				BufferInformation.Delete(playlistID) // Remove the playlist if no streams remain
+				BufferInformation.Delete(playlistID)
 			} else {
-				BufferInformation.Store(playlistID, playlist) // Update the map if streams still exist
+				BufferInformation.Store(playlistID, playlist)
 			}
 			showInfo(fmt.Sprintf("Streaming Status: Playlist: %s - Tuner: %d / %d", playlist.PlaylistName, len(playlist.Streams), playlist.Tuner))
 			return
@@ -516,10 +527,17 @@ func killClientConnection(streamID int, playlistID string, force bool) {
 				clients.Connection--
 				client.Connection--
 
+				// Ensure client connections cannot go below zero
+				if client.Connection < 0 {
+					client.Connection = 0
+				}
+				if clients.Connection < 0 {
+					clients.Connection = 0
+				}
+
 				playlist.Clients[streamID] = client
 				BufferClients.Store(playlistID+stream.MD5, clients)
 
-				showInfo("Streaming Status: Client has terminated the connection")
 				showInfo(fmt.Sprintf("Streaming Status: Channel: %s (Clients: %d)", stream.ChannelName, clients.Connection))
 
 				if clients.Connection <= 0 {
@@ -528,12 +546,12 @@ func killClientConnection(streamID int, playlistID string, force bool) {
 					delete(playlist.Clients, streamID)
 
 					if len(playlist.Streams) == 0 {
-						BufferInformation.Delete(playlistID) // Remove the playlist if no streams remain
+						BufferInformation.Delete(playlistID)
 					} else {
-						BufferInformation.Store(playlistID, playlist) // Update the map if streams still exist
+						BufferInformation.Store(playlistID, playlist)
 					}
 				} else {
-					BufferInformation.Store(playlistID, playlist) // Update the map after modifications
+					BufferInformation.Store(playlistID, playlist)
 				}
 
 				if len(playlist.Streams) > 0 {

@@ -194,9 +194,6 @@ func buildM3U(groups []string) (m3u string, err error) {
 		if err == nil {
 			var channelNumber, err = strconv.ParseFloat(strings.TrimSpace(xepgChannel.XChannelID), 64)
 
-			if m3uChannels[channelNumber].TvgID == xepgChannel.TvgID {
-				fmt.Println("HEREEEEEEEEE")
-			}
 			if xepgChannel.TvgName == "" {
 				xepgChannel.TvgName = xepgChannel.Name
 			}
