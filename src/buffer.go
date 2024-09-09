@@ -28,6 +28,7 @@ import (
 
 func getActiveClientCount() (count int) {
 	count = 0
+	cleanUpStaleClients()
 	BufferInformation.Range(func(key, value interface{}) bool {
 		playlist := value.(Playlist)
 		for _, client := range playlist.Clients {
@@ -45,6 +46,18 @@ func getActivePlaylistCount() (count int) {
 		return true
 	})
 	return count
+}
+
+func cleanUpStaleClients() {
+	BufferInformation.Range(func(key, value interface{}) bool {
+		playlist := value.(Playlist)
+		for streamID, client := range playlist.Clients {
+			if client.Connection <= 0 {
+				delete(playlist.Clients, streamID)
+			}
+		}
+		return true
+	})
 }
 
 func createStreamID(stream map[int]ThisStream) (streamID int) {
