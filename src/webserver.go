@@ -346,6 +346,15 @@ func Threadfin(w http.ResponseWriter, r *http.Request) {
 		requestType = "m3u"
 		groupTitle = r.URL.Query().Get("group-title")
 
+                // Check auth and if not present exit. Same as in Line 388
+                err := urlAuth(r, requestType)
+                if err != nil {
+                    ShowError(err, 000)
+                    httpStatusError(w, r, 403)
+                    return
+                }
+		// end modification to check auth
+		
 		m3uFilePath := System.Folder.Data + "threadfin.m3u"
 
 		// Check if the m3u file exists
