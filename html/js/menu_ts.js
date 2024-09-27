@@ -1320,6 +1320,10 @@ function openPopUp(dataType, element) {
                     select.setAttribute("onchange", "javascript: this.className = 'changed'");
                     content.appendRow("{{.filter.filterGroup.title}}", select);
                     content.description("{{.filter.filterGroup.description}}");
+                    var dbKey = "liveEvent";
+                    var input = content.createCheckbox(dbKey);
+                    input.checked = data[dbKey];
+                    content.appendRow("{{.filter.liveEvent.title}}", input);
                     // Groß- Kleinschreibung beachten
                     var dbKey = "caseSensitive";
                     var input = content.createCheckbox(dbKey);

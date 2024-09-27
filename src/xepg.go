@@ -389,12 +389,16 @@ func createXEPGDatabase() (err error) {
 		if channel.TvgName == "" {
 			channel.TvgName = channel.Name
 		}
+		// fmt.Println("CHANNEL: ", channel)
 		channelHash := channel.TvgID
 		xepgChannelsValuesMap[channelHash] = channel
 	}
 
-	for _, dsa := range Data.Streams.Active {
+	groupCounters := make(map[string]int)
+	re := regexp.MustCompile(`\b\d{2,3}\b`)
+	lastNumberLength := make(map[string]int)
 
+	for _, dsa := range Data.Streams.Active {
 		var channelExists = false  // Entscheidet ob ein Kanal neu zu Datenbank hinzugefügt werden soll.  Decides whether a channel should be added to the database
 		var channelHasUUID = false // Überprüft, ob der Kanal (Stream) eindeutige ID's besitzt.  Checks whether the channel (stream) has unique IDs
 		var currentXEPGID string   // Aktuelle Datenbank ID (XEPG). Wird verwendet, um den Kanal in der Datenbank mit dem Stream der M3u zu aktualisieren. Current database ID (XEPG) Used to update the channel in the database with the stream of the M3u
@@ -414,6 +418,45 @@ func createXEPGDatabase() (err error) {
 
 		// Try to find the channel based on matching all known values.  If that fails, then move to full channel scan
 		m3uChannelHash := m3uChannel.TvgID
+		if m3uChannel.LiveEvent == "true" {
+			match := re.FindString(m3uChannel.Name)
+			if match != "" {
+				// Increment the counter for the group-title
+				numberLength := len(match)
+				groupCounters[m3uChannel.GroupTitle]++
+				lastNumberLength[m3uChannel.GroupTitle] = numberLength
+
+				// Create the new formatted name with the group-title and updated number
+				newName := fmt.Sprintf("%s%03d", m3uChannel.GroupTitle, groupCounters[m3uChannel.GroupTitle])
+				if len(match) == 2 {
+					newName = fmt.Sprintf("%s%02d", m3uChannel.GroupTitle, groupCounters[m3uChannel.GroupTitle])
+				} else if len(match) == 3 {
+					newName = fmt.Sprintf("%s%03d", m3uChannel.GroupTitle, groupCounters[m3uChannel.GroupTitle])
+				}
+				m3uChannelHash = newName
+			} else {
+				groupCounters[m3uChannel.GroupTitle]++
+
+				// Determine the format length for the group (default to 2 digits if none found)
+				numberLength := lastNumberLength[m3uChannel.GroupTitle]
+				if numberLength == 0 {
+					numberLength = 2
+				}
+
+				// Create the formatted name based on the last known number length
+				var newName string
+				if numberLength == 2 {
+					newName = fmt.Sprintf("%s%02d", m3uChannel.GroupTitle, groupCounters[m3uChannel.GroupTitle])
+				} else {
+					newName = fmt.Sprintf("%s%03d", m3uChannel.GroupTitle, groupCounters[m3uChannel.GroupTitle])
+				}
+
+				// Print the formatted channel name with newly assigned number
+				m3uChannelHash = newName
+			}
+
+		}
+
 		if val, ok := xepgChannelsValuesMap[m3uChannelHash]; ok {
 			channelExists = true
 			currentXEPGID = val.XEPG

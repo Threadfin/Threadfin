@@ -37,18 +37,22 @@ func parsePlaylist(filename, fileType string) (channels []interface{}, err error
 }
 
 // Streams filtern
-func filterThisStream(s interface{}) (status bool) {
+func filterThisStream(s interface{}) (status bool, liveEvent bool) {
 
 	status = false
 	var stream = s.(map[string]string)
 	var regexpYES = `[{]+[^.]+[}]`
 	var regexpNO = `!+[{]+[^.]+[}]`
 
+	liveEvent = false
+
 	for _, filter := range Data.Filter {
 
 		if filter.Rule == "" {
 			continue
 		}
+
+		liveEvent = filter.LiveEvent
 
 		var group, name, search string
 		var exclude, include string
@@ -122,24 +126,24 @@ func filterThisStream(s interface{}) (status bool) {
 			if len(exclude) > 0 {
 				var status = checkConditions(search, exclude, "exclude")
 				if status == false {
-					return false
+					return false, liveEvent
 				}
 			}
 
 			if len(include) > 0 {
 				var status = checkConditions(search, include, "include")
 				if status == false {
-					return false
+					return false, liveEvent
 				}
 			}
 
-			return true
+			return true, liveEvent
 
 		}
 
 	}
 
-	return false
+	return false, liveEvent
 }
 
 // Bedingungen für den Filter

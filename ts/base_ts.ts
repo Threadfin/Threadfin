@@ -107,6 +107,7 @@ function getLocalData(dataType, id): object {
     case "group-title":
       if (id == -1) {
         data["active"] = true
+        data["liveEvent"] = false
         data["caseSensitive"] = false
         data["description"] = ""
         data["exclude"] = ""
