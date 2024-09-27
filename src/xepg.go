@@ -434,25 +434,6 @@ func createXEPGDatabase() (err error) {
 					newName = fmt.Sprintf("%s%03d", m3uChannel.GroupTitle, groupCounters[m3uChannel.GroupTitle])
 				}
 				m3uChannelHash = newName
-			} else {
-				groupCounters[m3uChannel.GroupTitle]++
-
-				// Determine the format length for the group (default to 2 digits if none found)
-				numberLength := lastNumberLength[m3uChannel.GroupTitle]
-				if numberLength == 0 {
-					numberLength = 2
-				}
-
-				// Create the formatted name based on the last known number length
-				var newName string
-				if numberLength == 2 {
-					newName = fmt.Sprintf("%s%02d", m3uChannel.GroupTitle, groupCounters[m3uChannel.GroupTitle])
-				} else {
-					newName = fmt.Sprintf("%s%03d", m3uChannel.GroupTitle, groupCounters[m3uChannel.GroupTitle])
-				}
-
-				// Print the formatted channel name with newly assigned number
-				m3uChannelHash = newName
 			}
 
 		}
