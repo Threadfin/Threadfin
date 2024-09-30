@@ -899,10 +899,11 @@ func getProgramData(xepgChannel XEPGChannelStruct) (xepgXML XMLTV, err error) {
 	if strings.Contains(xmltvFile, "Threadfin Dummy") {
 		xmltv = createDummyProgram(xepgChannel)
 	} else {
-		fmt.Println("TRYING FILE: ", xepgChannel.XmltvFile)
-		err = getLocalXMLTV(xmltvFile, &xmltv)
-		if err != nil {
-			return
+		if xepgChannel.XmltvFile != "" {
+			err = getLocalXMLTV(xmltvFile, &xmltv)
+			if err != nil {
+				return
+			}
 		}
 	}
 
