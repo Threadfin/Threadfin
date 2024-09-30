@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net"
 	"net/http"
 	"net/url"
@@ -25,7 +25,7 @@ type ClientInfo struct {
 	Response ServerResponse `json:"response,omitempty"`
 }
 
-//ServerResponse : Response from server after client request
+// ServerResponse : Response from server after client request
 type ServerResponse struct {
 	Status    bool   `json:"status,omitempty"`
 	Reason    string `json:"reason,omitempty"`
@@ -113,7 +113,7 @@ func serverRequest() (err error) {
 		Updater.CMD = ""
 		defer resp.Body.Close()
 
-		body, _ := ioutil.ReadAll(resp.Body)
+		body, _ := io.ReadAll(resp.Body)
 
 		err = json.Unmarshal(body, &serverResponse)
 

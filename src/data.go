@@ -432,6 +432,7 @@ func saveFilter(request RequestStruct) (settings SettingsStruct, err error) {
 
 	defaultFilter.Active = true
 	defaultFilter.CaseSensitive = false
+	defaultFilter.LiveEvent = false
 
 	filterMap = Settings.Filter
 	newData = request.Filter
@@ -781,6 +782,7 @@ func createFilterRules() (err error) {
 			}
 
 			dataFilter.CaseSensitive = filter.CaseSensitive
+			dataFilter.LiveEvent = filter.LiveEvent
 			dataFilter.Rule = fmt.Sprintf("%s%s%s", filter.Filter, include, exclude)
 			dataFilter.Type = filter.Type
 
@@ -892,10 +894,13 @@ func buildDatabaseDVR() (err error) {
 				// Neuer Filter ab Version 1.3.0
 				var preview string
 				var status bool
+
 				if Settings.IgnoreFilters {
 					status = true
 				} else {
-					status = filterThisStream(stream)
+					var liveEvent bool
+					status, liveEvent = filterThisStream(stream)
+					s["liveEvent"] = strconv.FormatBool(liveEvent)
 				}
 
 				if name, ok := s["name"]; ok {

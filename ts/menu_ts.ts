@@ -1634,6 +1634,11 @@ function openPopUp(dataType, element) {
           content.appendRow("{{.filter.filterGroup.title}}", select)
           content.description("{{.filter.filterGroup.description}}")
 
+          var dbKey: string = "liveEvent"
+          var input = content.createCheckbox(dbKey)
+          input.checked = data[dbKey]
+          content.appendRow("{{.filter.liveEvent.title}}", input)
+
           // Groß- Kleinschreibung beachten
           var dbKey: string = "caseSensitive"
           var input = content.createCheckbox(dbKey)

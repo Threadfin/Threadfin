@@ -84,6 +84,11 @@
       "groupTitle": "Group Title",
       "customFilter": "Custom Filter"
     },
+    "liveEvent": {
+      "title": "Live Event Group",
+      "placeholder": "",
+      "description": ""
+    },
     "caseSensitive": {
       "title": "Case Sensitive",
       "placeholder": "",

@@ -175,6 +175,7 @@ type DataStruct struct {
 // Filter : Wird für die Filterregeln verwendet
 type Filter struct {
 	CaseSensitive bool
+	LiveEvent     bool
 	Rule          string
 	Type          string
 }
@@ -232,11 +233,13 @@ type M3UChannelStructXEPG struct {
 	UUIDKey     string `json:"_uuid.key,required"`
 	UUIDValue   string `json:"_uuid.value,required"`
 	Values      string `json:"_values,required"`
+	LiveEvent   string `json:"liveEvent,required"`
 }
 
 // FilterStruct : Filter Struktur
 type FilterStruct struct {
 	Active         bool   `json:"active"`
+	LiveEvent      bool   `json:"liveEvent"`
 	CaseSensitive  bool   `json:"caseSensitive"`
 	Description    string `json:"description"`
 	Exclude        string `json:"exclude"`

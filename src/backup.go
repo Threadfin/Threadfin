@@ -4,7 +4,6 @@ import (
 	b64 "encoding/base64"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -32,7 +31,7 @@ func ThreadfinAutoBackup() (err error) {
 	}
 
 	// Alte Backups löschen
-	files, err := ioutil.ReadDir(System.Folder.Backup)
+	files, err := os.ReadDir(System.Folder.Backup)
 
 	if err == nil {
 
