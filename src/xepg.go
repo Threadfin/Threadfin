@@ -313,6 +313,7 @@ func createXEPGDatabase() (err error) {
 	Data.Cache.Streams.Active = make([]string, 0, System.UnfilteredChannelLimit)
 	Data.XEPG.Channels = make(map[string]interface{}, System.UnfilteredChannelLimit)
 	Settings = SettingsStruct{}
+	fmt.Println("System.File.XEPG: ", System.File.XEPG)
 	Data.XEPG.Channels, err = loadJSONFileToMap(System.File.XEPG)
 	if err != nil {
 		ShowError(err, 1004)
@@ -1261,6 +1262,7 @@ func getLocalXMLTV(file string, xmltv *XMLTV) (err error) {
 		}
 
 		// XML Daten lesen
+		fmt.Println("Read XMLTV file: ", file)
 		content, err := readByteFromFile(file)
 
 		// Lokale XML Datei existiert nicht im Ordner: data
