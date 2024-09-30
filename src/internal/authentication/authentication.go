@@ -3,7 +3,6 @@ package authentication
 import (
 	"encoding/json"
 	"errors"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -465,7 +464,7 @@ func saveDatabase(tmpMap interface{}) (err error) {
 		return
 	}
 
-	err = ioutil.WriteFile(database, []byte(jsonString), 0600)
+	err = os.WriteFile(database, []byte(jsonString), 0600)
 	if err != nil {
 		return
 	}
@@ -474,7 +473,7 @@ func saveDatabase(tmpMap interface{}) (err error) {
 }
 
 func loadDatabase() (err error) {
-	jsonString, err := ioutil.ReadFile(database)
+	jsonString, err := os.ReadFile(database)
 	if err != nil {
 		return
 	}

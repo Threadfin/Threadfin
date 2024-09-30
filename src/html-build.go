@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -119,7 +118,7 @@ func getLocalPath(filename string) string {
 
 func writeStringToFile(filename, content string) error {
 
-	err := ioutil.WriteFile(getPlatformFile(filename), []byte(content), 0644)
+	err := os.WriteFile(getPlatformFile(filename), []byte(content), 0644)
 	if err != nil {
 		checkErr(err)
 		return err
