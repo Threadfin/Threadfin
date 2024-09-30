@@ -509,8 +509,8 @@ func createXEPGDatabase() (err error) {
 
 			// Kanalname aktualisieren, nur mit Kanal ID's möglich
 			if channelHasUUID {
-				programData, _ := getProgramData(xepgChannel)
-				if xepgChannel.XUpdateChannelName || strings.Contains(xepgChannel.TvgID, "threadfin-") || (m3uChannel.LiveEvent == "true" && len(programData.Program) == 3) {
+				// programData, _ := getProgramData(xepgChannel)
+				if xepgChannel.XUpdateChannelName || strings.Contains(xepgChannel.TvgID, "threadfin-") {
 					xepgChannel.XName = m3uChannel.Name
 				}
 			}
