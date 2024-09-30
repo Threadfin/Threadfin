@@ -346,9 +346,9 @@ func Threadfin(w http.ResponseWriter, r *http.Request) {
 		groupTitle = r.URL.Query().Get("group-title")
 
 		m3uFilePath := System.Folder.Data + "threadfin.m3u"
-
+		queries := r.URL.Query()
 		// Check if the m3u file exists
-		if groupTitle == "" {
+		if len(queries) == 0 {
 			if _, err := os.Stat(m3uFilePath); err == nil {
 				log.Println("Serving existing m3u file")
 				http.ServeFile(w, r, m3uFilePath)
