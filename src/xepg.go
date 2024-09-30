@@ -692,6 +692,7 @@ func mapping() (err error) {
 						if channelID, ok := chmap["id"].(string); ok {
 							xepgChannel.XmltvFile = file
 							xepgChannel.XMapping = channelID
+							xepgChannel.XActive = true
 
 							// Falls in der XMLTV Datei ein Logo existiert, wird dieses verwendet. Falls nicht, dann das Logo aus der M3U Datei
 							if icon, ok := chmap["icon"].(string); ok {
