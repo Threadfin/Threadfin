@@ -386,6 +386,7 @@ func createXEPGDatabase() (err error) {
 		if err != nil {
 			return
 		}
+
 		if channel.TvgName == "" {
 			channel.TvgName = channel.Name
 		}
@@ -501,9 +502,13 @@ func createXEPGDatabase() (err error) {
 
 			xepgChannel.TvgChno = m3uChannel.TvgChno
 
+			if m3uChannel.LiveEvent == "true" {
+				xepgChannel.Live = true
+			}
+
 			// Kanalname aktualisieren, nur mit Kanal ID's möglich
 			if channelHasUUID {
-				if xepgChannel.XUpdateChannelName || strings.Contains(xepgChannel.TvgID, "threadfin-") {
+				if xepgChannel.XUpdateChannelName || strings.Contains(xepgChannel.TvgID, "threadfin-") || m3uChannel.LiveEvent == "true" {
 					xepgChannel.XName = m3uChannel.Name
 				}
 			}
@@ -558,6 +563,10 @@ func createXEPGDatabase() (err error) {
 			newChannel.XmltvFile = ""
 			newChannel.XMapping = ""
 
+			if m3uChannel.LiveEvent == "true" {
+				newChannel.Live = true
+			}
+
 			if len(m3uChannel.UUIDKey) > 0 {
 				newChannel.UUIDKey = m3uChannel.UUIDKey
 				newChannel.UUIDValue = m3uChannel.UUIDValue
@@ -597,6 +606,12 @@ func mapping() (err error) {
 
 		if xepgChannel.TvgName == "" {
 			xepgChannel.TvgName = xepgChannel.Name
+		}
+
+		if xepgChannel.Live {
+			xepgChannel.XmltvFile = "Threadfin Dummy"
+			xepgChannel.XMapping = "PPV"
+			xepgChannel.XActive = true
 		}
 
 		if (xepgChannel.XBackupChannel1 != "" && xepgChannel.XBackupChannel1 != "-") || (xepgChannel.XBackupChannel2 != "" && xepgChannel.XBackupChannel2 != "-") || (xepgChannel.XBackupChannel3 != "" && xepgChannel.XBackupChannel3 != "-") {
@@ -692,10 +707,9 @@ func mapping() (err error) {
 
 				}
 
-				if Settings.Dummy && xepgChannel.XmltvFile == "-" {
+				if (Settings.Dummy && xepgChannel.XmltvFile == "-") || xepgChannel.Live {
 					xepgChannel.XmltvFile = "Threadfin Dummy"
 					xepgChannel.XMapping = "PPV"
-
 					xepgChannel.XActive = true
 				}
 			}
@@ -707,7 +721,7 @@ func mapping() (err error) {
 			var mapping = xepgChannel.XMapping
 			var file = xepgChannel.XmltvFile
 
-			if file != "Threadfin Dummy" {
+			if file != "Threadfin Dummy" && !xepgChannel.Live {
 
 				if value, ok := Data.XMLTV.Mapping[file].(map[string]interface{}); ok {
 
