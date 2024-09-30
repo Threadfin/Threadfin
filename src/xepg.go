@@ -895,8 +895,7 @@ func getProgramData(xepgChannel XEPGChannelStruct) (xepgXML XMLTV, err error) {
 	var channelID = xepgChannel.XMapping
 
 	var xmltv XMLTV
-
-	if xmltvFile == System.Folder.Data+"Threadfin Dummy" {
+	if strings.Contains(xmltvFile, "Threadfin Dummy") {
 		xmltv = createDummyProgram(xepgChannel)
 	} else {
 		err = getLocalXMLTV(xmltvFile, &xmltv)
