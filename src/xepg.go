@@ -236,7 +236,7 @@ func createXEPGMapping() {
 
 			//xmltv, err = getLocalXMLTV(file)
 			var xmltv XMLTV
-
+			fmt.Println("FILE: ", file)
 			err = getLocalXMLTV(file, &xmltv)
 			if err != nil {
 				Data.XMLTV.Files = append(Data.XMLTV.Files, Data.XMLTV.Files[i+1:]...)
