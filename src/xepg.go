@@ -608,10 +608,11 @@ func mapping() (err error) {
 			xepgChannel.TvgName = xepgChannel.Name
 		}
 
-		if xepgChannel.Live {
+		programData, _ := getProgramData(xepgChannel)
+
+		if xepgChannel.Live && len(programData.Program) == 3 {
 			xepgChannel.XmltvFile = "Threadfin Dummy"
 			xepgChannel.XMapping = "PPV"
-			xepgChannel.XActive = true
 		}
 
 		if (xepgChannel.XBackupChannel1 != "" && xepgChannel.XBackupChannel1 != "-") || (xepgChannel.XBackupChannel2 != "" && xepgChannel.XBackupChannel2 != "-") || (xepgChannel.XBackupChannel3 != "" && xepgChannel.XBackupChannel3 != "-") {
@@ -620,7 +621,7 @@ func mapping() (err error) {
 
 				err = json.Unmarshal([]byte(mapToJSON(stream)), &m3uChannel)
 				if err != nil {
-					return
+					return err
 				}
 
 				if m3uChannel.TvgName == "" {
@@ -755,21 +756,7 @@ func mapping() (err error) {
 
 						}
 
-					} else {
-
-						ShowError(fmt.Errorf(fmt.Sprintf("Missing EPG data: %s", xepgChannel.Name)), 0)
-						showWarning(2302)
-						// xepgChannel.XActive = false
-
 					}
-
-				} else {
-
-					var fileID = strings.TrimSuffix(getFilenameFromPath(file), path.Ext(getFilenameFromPath(file)))
-
-					ShowError(fmt.Errorf("Missing XMLTV file: %s", getProviderParameter(fileID, "xmltv", "name")), 0)
-					showWarning(2301)
-					// xepgChannel.XActive = false
 
 				}
 
