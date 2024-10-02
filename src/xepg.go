@@ -609,6 +609,10 @@ func mapping() (err error) {
 
 		programData, _ := getProgramData(xepgChannel)
 
+		if strings.Contains(xepgChannel.Name, "NFL") {
+			fmt.Println("CHANNEL NAME: ", xepgChannel.Name)
+			fmt.Println("LENGTH: ", len(programData.Program))
+		}
 		if xepgChannel.Live && len(programData.Program) <= 3 {
 			xepgChannel.XmltvFile = "Threadfin Dummy"
 			xepgChannel.XMapping = "PPV"
@@ -652,10 +656,10 @@ func mapping() (err error) {
 				var tvgID = xepgChannel.TvgID
 
 				// Default für neuen Kanal setzen
-				xepgChannel.XmltvFile = "-"
-				xepgChannel.XMapping = "-"
-
-				xepgChannel.XActive = false
+				if !xepgChannel.Live {
+					xepgChannel.XmltvFile = "-"
+					xepgChannel.XMapping = "-"
+				}
 
 				// Data.XEPG.Channels[xepg] = xepgChannel
 				for file, xmltvChannels := range Data.XMLTV.Mapping {
