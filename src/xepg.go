@@ -609,10 +609,6 @@ func mapping() (err error) {
 
 		programData, _ := getProgramData(xepgChannel)
 
-		if strings.Contains(xepgChannel.Name, "NFL") {
-			fmt.Println("CHANNEL NAME: ", xepgChannel.Name)
-			fmt.Println("LENGTH: ", len(programData.Program))
-		}
 		if xepgChannel.Live && len(programData.Program) <= 3 {
 			xepgChannel.XmltvFile = "Threadfin Dummy"
 			xepgChannel.XMapping = "PPV"
