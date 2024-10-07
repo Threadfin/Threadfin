@@ -54,6 +54,13 @@ func cleanUpStaleClients() {
 		for streamID, client := range playlist.Clients {
 			if client.Connection <= 0 {
 				delete(playlist.Clients, streamID)
+
+				// Clean up BufferInformation
+				if len(playlist.Clients) == 0 {
+					BufferInformation.Delete(key)
+				} else {
+					BufferInformation.Store(key, playlist)
+				}
 			}
 		}
 		return true
