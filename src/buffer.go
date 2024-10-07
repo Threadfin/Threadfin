@@ -1064,6 +1064,8 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 		}
 
 		var cmd = exec.Command(path, args...)
+		// Set this explicitly to avoid issues with VLC
+		cmd.Env = append(os.Environ(), "DISPLAY=:0")
 
 		debug = fmt.Sprintf("%s:%s %s", bufferType, path, args)
 		showDebug(debug, 1)

@@ -652,10 +652,10 @@ func mapping() (err error) {
 				var tvgID = xepgChannel.TvgID
 
 				// Default für neuen Kanal setzen
-				xepgChannel.XmltvFile = "-"
-				xepgChannel.XMapping = "-"
-
-				xepgChannel.XActive = false
+				if !xepgChannel.Live {
+					xepgChannel.XmltvFile = "-"
+					xepgChannel.XMapping = "-"
+				}
 
 				// Data.XEPG.Channels[xepg] = xepgChannel
 				for file, xmltvChannels := range Data.XMLTV.Mapping {

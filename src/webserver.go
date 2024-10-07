@@ -343,6 +343,14 @@ func Threadfin(w http.ResponseWriter, r *http.Request) {
 	if strings.Contains(path, "m3u/") {
 
 		requestType = "m3u"
+
+		err = urlAuth(r, requestType)
+		if err != nil {
+			ShowError(err, 000)
+			httpStatusError(w, r, 403)
+			return
+		}
+
 		groupTitle = r.URL.Query().Get("group-title")
 
 		m3uFilePath := System.Folder.Data + "threadfin.m3u"
@@ -373,14 +381,6 @@ func Threadfin(w http.ResponseWriter, r *http.Request) {
 			ShowError(err, 000)
 		}
 
-	}
-
-	// Authentifizierung überprüfen
-	err = urlAuth(r, requestType)
-	if err != nil {
-		ShowError(err, 000)
-		httpStatusError(w, r, 403)
-		return
 	}
 
 	contentType = http.DetectContentType([]byte(content))
