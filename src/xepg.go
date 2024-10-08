@@ -569,8 +569,13 @@ func createXEPGDatabase() (err error) {
 			newChannel.TvgLogo = m3uChannel.TvgLogo
 			newChannel.TvgName = m3uChannel.TvgName
 			newChannel.URL = m3uChannel.URL
-			newChannel.XmltvFile = ""
-			newChannel.XMapping = ""
+
+			programData, _ := getProgramData(newChannel)
+
+			if newChannel.Live && len(programData.Program) <= 3 {
+				newChannel.XmltvFile = "Threadfin Dummy"
+				newChannel.XMapping = "PPV"
+			}
 
 			if m3uChannel.LiveEvent == "true" {
 				newChannel.Live = true
@@ -614,13 +619,6 @@ func mapping() (err error) {
 
 		if xepgChannel.TvgName == "" {
 			xepgChannel.TvgName = xepgChannel.Name
-		}
-
-		programData, _ := getProgramData(xepgChannel)
-
-		if xepgChannel.Live && len(programData.Program) <= 3 {
-			xepgChannel.XmltvFile = "Threadfin Dummy"
-			xepgChannel.XMapping = "PPV"
 		}
 
 		if (xepgChannel.XBackupChannel1 != "" && xepgChannel.XBackupChannel1 != "-") || (xepgChannel.XBackupChannel2 != "" && xepgChannel.XBackupChannel2 != "-") || (xepgChannel.XBackupChannel3 != "" && xepgChannel.XBackupChannel3 != "-") {
