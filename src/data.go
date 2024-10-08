@@ -424,6 +424,8 @@ func deleteLocalProviderFiles(dataID, fileType string) {
 
 // Filtereinstellungen speichern (WebUI)
 func saveFilter(request RequestStruct) (settings SettingsStruct, err error) {
+	xepgMutex.Lock()
+	defer xepgMutex.Unlock()
 
 	var filterMap = make(map[int64]interface{})
 	var newData = make(map[int64]interface{})
