@@ -212,14 +212,14 @@ func updateXEPG(background bool) {
 
 // Mapping Menü für die XMLTV Dateien erstellen
 func createXEPGMapping() {
-	fmt.Println("Attempting to acquire xepgMutex in buildXEPG...")
+	fmt.Println("Attempting to acquire xepgMutex in createXEPGMapping...")
 	xepgMutex.Lock()
 	defer func() {
-		fmt.Println("Releasing xepgMutex in buildXEPG...")
+		fmt.Println("Releasing xepgMutex in createXEPGMapping...")
 		xepgMutex.Unlock()
 	}()
 
-	fmt.Println("Acquired xepgMutex in buildXEPG, starting processing...")
+	fmt.Println("Acquired xepgMutex in createXEPGMapping, starting processing...")
 
 	Data.XMLTV.Files = getLocalProviderFiles("xmltv")
 	Data.XMLTV.Mapping = make(map[string]interface{})
