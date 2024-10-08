@@ -442,7 +442,6 @@ func createXEPGDatabase() (err error) {
 		if val, ok := xepgChannelsValuesMap[m3uChannelHash]; ok {
 			channelExists = true
 			currentXEPGID = val.XEPG
-			fmt.Println("CURRENT XEPG ID: ", currentXEPGID)
 			if len(m3uChannel.UUIDValue) > 0 {
 				channelHasUUID = true
 			}
@@ -480,6 +479,8 @@ func createXEPGDatabase() (err error) {
 
 			}
 		}
+
+		fmt.Println("CURRENT XEPG ID: ", currentXEPGID)
 
 		switch channelExists {
 
