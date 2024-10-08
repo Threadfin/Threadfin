@@ -488,8 +488,6 @@ func createXEPGDatabase() (err error) {
 			}
 		}
 
-		fmt.Println("CURRENT XEPG ID: ", currentXEPGID)
-
 		switch channelExists {
 
 		case true:
@@ -588,12 +586,7 @@ func createXEPGDatabase() (err error) {
 			newChannel.XEPG = xepg
 			newChannel.XChannelID = xChannelID
 
-			fmt.Println("CHANNELS: ", Data.XEPG.Channels)
-			fmt.Println("XEPG: ", xepg)
-			fmt.Println("NEW CHANNEL: ", newChannel)
 			Data.XEPG.Channels[xepg] = newChannel
-			fmt.Println("FINAL: ", Data.XEPG.Channels[xepg])
-
 		}
 
 	}
