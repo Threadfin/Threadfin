@@ -28,14 +28,36 @@ import (
 
 func getActiveClientCount() (count int) {
 	count = 0
-	cleanUpStaleClients()
+	cleanUpStaleClients() // Ensure stale clients are removed first
+
 	BufferInformation.Range(func(key, value interface{}) bool {
-		playlist := value.(Playlist)
-		for _, client := range playlist.Clients {
+		playlist, ok := value.(Playlist)
+		if !ok {
+			fmt.Printf("Invalid type assertion for playlist: %v\n", value)
+			return true
+		}
+
+		for clientID, client := range playlist.Clients {
+			if client.Connection < 0 {
+				fmt.Printf("Client ID %d has negative connections: %d. Resetting to 0.\n", clientID, client.Connection)
+				client.Connection = 0
+				playlist.Clients[clientID] = client
+				BufferInformation.Store(key, playlist)
+			}
+			if client.Connection > 1 {
+				fmt.Printf("Client ID %d has suspiciously high connections: %d. Resetting to 1.\n", clientID, client.Connection)
+				client.Connection = 1
+				playlist.Clients[clientID] = client
+				BufferInformation.Store(key, playlist)
+			}
 			count += client.Connection
 		}
+
+		fmt.Printf("Playlist %s has %d active clients\n", playlist.PlaylistID, len(playlist.Clients))
 		return true
 	})
+
+	fmt.Printf("Total Active Client Count: %d\n", count)
 	return count
 }
 
@@ -50,39 +72,63 @@ func getActivePlaylistCount() (count int) {
 
 func cleanUpStaleClients() {
 	BufferInformation.Range(func(key, value interface{}) bool {
-		playlist := value.(Playlist)
-		for streamID, client := range playlist.Clients {
-			if client.Connection <= 0 {
-				delete(playlist.Clients, streamID)
+		playlist, ok := value.(Playlist)
+		if !ok {
+			fmt.Printf("Invalid type assertion for playlist: %v\n", value)
+			return true
+		}
 
-				// Clean up BufferInformation
-				if len(playlist.Clients) == 0 {
-					BufferInformation.Delete(key)
-				} else {
-					BufferInformation.Store(key, playlist)
-				}
+		for clientID, client := range playlist.Clients {
+			if client.Connection <= 0 {
+				fmt.Printf("Removing stale client ID %d from playlist %s\n", clientID, playlist.PlaylistID)
+				delete(playlist.Clients, clientID)
 			}
 		}
+		BufferInformation.Store(key, playlist)
 		return true
 	})
 }
 
-func createStreamID(stream map[int]ThisStream) (streamID int) {
+func getClientIP(r *http.Request) string {
+	// Check the X-Forwarded-For header first
+	forwarded := r.Header.Get("X-Forwarded-For")
+	if forwarded != "" {
+		// X-Forwarded-For may contain multiple IP addresses; return the first one
+		ips := strings.Split(forwarded, ",")
+		return strings.TrimSpace(ips[0])
+	}
 
-	var debug string
+	// Check the X-Real-IP header next
+	realIP := r.Header.Get("X-Real-IP")
+	if realIP != "" {
+		return realIP
+	}
 
+	// Fallback to RemoteAddr
+	ip := r.RemoteAddr
+	if strings.Contains(ip, ":") {
+		// Remove port if present
+		ip = strings.Split(ip, ":")[0]
+	}
+
+	return ip
+}
+
+func createStreamID(stream map[int]ThisStream, ip, userAgent string) (streamID int) {
 	streamID = 0
-	for i := 0; i <= len(stream); i++ {
+	uniqueIdentifier := fmt.Sprintf("%s-%s", ip, userAgent)
 
+	for i := 0; i <= len(stream); i++ {
 		if _, ok := stream[i]; !ok {
 			streamID = i
 			break
 		}
-
 	}
 
-	debug = fmt.Sprintf("Streaming Status:Stream ID = %d", streamID)
-	showDebug(debug, 1)
+	if _, ok := stream[streamID]; ok && stream[streamID].ClientID == uniqueIdentifier {
+		// Return the same ID if the combination already exists
+		return streamID
+	}
 
 	return
 }
@@ -138,7 +184,7 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 		playlist.HttpProxyPort = getProviderParameter(playlist.PlaylistID, playlistType, "http_proxy.port")
 
 		// Default-Werte für den Stream erstellen
-		streamID = createStreamID(playlist.Streams)
+		streamID = createStreamID(playlist.Streams, getClientIP(r), r.UserAgent())
 
 		client.Connection += 1
 
@@ -230,7 +276,7 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 			stream = ThisStream{}
 			client = ThisClient{}
 
-			streamID = createStreamID(playlist.Streams)
+			streamID = createStreamID(playlist.Streams, getClientIP(r), r.UserAgent())
 
 			client.Connection = 1
 			stream.URL = streamingURL
