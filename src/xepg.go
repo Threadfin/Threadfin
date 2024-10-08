@@ -311,6 +311,8 @@ func createXEPGDatabase() (err error) {
 	var allChannelNumbers = make([]float64, 0, System.UnfilteredChannelLimit)
 	Data.Cache.Streams.Active = make([]string, 0, System.UnfilteredChannelLimit)
 	Data.XEPG.Channels = make(map[string]interface{}, System.UnfilteredChannelLimit)
+	Data.XMLTV.Mapping = make(map[string]interface{})
+	Data.Cache.Streams.Active = make([]string, 0, System.UnfilteredChannelLimit)
 	Settings = SettingsStruct{}
 	Data.XEPG.Channels, err = loadJSONFileToMap(System.File.XEPG)
 	if err != nil {
