@@ -11,6 +11,8 @@ import (
 )
 
 func showInfo(str string) {
+	infoMutex.Lock()
+	defer infoMutex.Unlock()
 
 	if System.Flag.Info == true {
 		return
@@ -186,6 +188,8 @@ func printLogOnScreen(logMsg string, logType string) {
 }
 
 func logCleanUp() {
+	logMutex.Lock()
+	defer logMutex.Unlock()
 
 	var logEntriesRAM = Settings.LogEntriesRAM
 	var logs = WebScreenLog.Log

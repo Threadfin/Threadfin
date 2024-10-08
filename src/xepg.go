@@ -40,6 +40,8 @@ func checkXMLCompatibility(id string, body []byte) (err error) {
 
 // XEPG Daten erstellen
 func buildXEPG(background bool) {
+	xepgMutex.Lock()
+	defer xepgMutex.Unlock()
 
 	if System.ScanInProgress == 1 {
 		return
@@ -204,6 +206,8 @@ func updateXEPG(background bool) {
 
 // Mapping Menü für die XMLTV Dateien erstellen
 func createXEPGMapping() {
+	xepgMutex.Lock()
+	defer xepgMutex.Unlock()
 
 	Data.XMLTV.Files = getLocalProviderFiles("xmltv")
 	Data.XMLTV.Mapping = make(map[string]interface{})
