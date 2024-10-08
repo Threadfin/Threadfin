@@ -574,6 +574,9 @@ func createXEPGDatabase() (err error) {
 			if newChannel.Live && len(programData.Program) <= 3 {
 				newChannel.XmltvFile = "Threadfin Dummy"
 				newChannel.XMapping = "PPV"
+			} else {
+				newChannel.XmltvFile = "-"
+				newChannel.XActive = true
 			}
 
 			if m3uChannel.LiveEvent == "true" {
