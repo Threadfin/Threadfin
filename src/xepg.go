@@ -581,8 +581,8 @@ func createXEPGDatabase() (err error) {
 			fmt.Println("CHANNELS: ", Data.XEPG.Channels)
 			fmt.Println("XEPG: ", xepg)
 			fmt.Println("NEW CHANNEL: ", newChannel)
-			fmt.Println("FINAL: ", Data.XEPG.Channels[xepg])
 			Data.XEPG.Channels[xepg] = newChannel
+			fmt.Println("FINAL: ", Data.XEPG.Channels[xepg])
 
 		}
 
