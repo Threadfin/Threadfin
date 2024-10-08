@@ -578,6 +578,9 @@ func createXEPGDatabase() (err error) {
 			newChannel.XEPG = xepg
 			newChannel.XChannelID = xChannelID
 
+			fmt.Println("CHANNELS: ", Data.XEPG.Channels)
+			fmt.Println("XEPG: ", xepg)
+			fmt.Println("NEW CHANNEL: ", newChannel)
 			Data.XEPG.Channels[xepg] = newChannel
 
 		}
