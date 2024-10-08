@@ -424,15 +424,6 @@ func deleteLocalProviderFiles(dataID, fileType string) {
 
 // Filtereinstellungen speichern (WebUI)
 func saveFilter(request RequestStruct) (settings SettingsStruct, err error) {
-	fmt.Println("Attempting to acquire xepgMutex in buildXEPG...")
-	xepgMutex.Lock()
-	defer func() {
-		fmt.Println("Releasing xepgMutex in buildXEPG...")
-		xepgMutex.Unlock()
-	}()
-
-	fmt.Println("Acquired xepgMutex in buildXEPG, starting processing...")
-
 	var filterMap = make(map[int64]interface{})
 	var newData = make(map[int64]interface{})
 	var defaultFilter FilterStruct
