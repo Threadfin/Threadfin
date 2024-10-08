@@ -324,6 +324,10 @@ func createXEPGDatabase() (err error) {
 		return err
 	}
 
+	if Data.XEPG.Channels == nil {
+		Data.XEPG.Channels = make(map[string]interface{})
+	}
+
 	settings, err := loadJSONFileToMap(System.File.Settings)
 	if err != nil || len(settings) == 0 {
 		return
