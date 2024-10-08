@@ -40,8 +40,14 @@ func checkXMLCompatibility(id string, body []byte) (err error) {
 
 // XEPG Daten erstellen
 func buildXEPG(background bool) {
+	fmt.Println("Attempting to acquire xepgMutex in buildXEPG...")
 	xepgMutex.Lock()
-	defer xepgMutex.Unlock()
+	defer func() {
+		fmt.Println("Releasing xepgMutex in buildXEPG...")
+		xepgMutex.Unlock()
+	}()
+
+	fmt.Println("Acquired xepgMutex in buildXEPG, starting processing...")
 
 	if System.ScanInProgress == 1 {
 		return
