@@ -399,7 +399,7 @@ func WS(w http.ResponseWriter, r *http.Request) {
 		switch request.Cmd {
 		// Data read commands
 		case "getServerConfig":
-			//response.Config = Settings
+			// response.Config = Settings
 
 		case "updateLog":
 			response = setDefaultResponseData(response, false)
@@ -412,19 +412,14 @@ func WS(w http.ResponseWriter, r *http.Request) {
 			return
 
 		case "loadFiles":
-			//response.Response = Settings.Files
+			// response.Response = Settings.Files
 
 		// Data write commands
 		case "saveSettings":
-			var authenticationUpdate bool
-			var previousStoreBufferInRAM bool
-			systemMutex.Lock()
-			authenticationUpdate = Settings.AuthenticationWEB
-			previousStoreBufferInRAM = Settings.StoreBufferInRAM
-			systemMutex.Unlock()
+			var authenticationUpdate = Settings.AuthenticationWEB
+			var previousStoreBufferInRAM = Settings.StoreBufferInRAM
 			response.Settings, err = updateServerSettings(request)
 			if err == nil {
-				systemMutex.Lock()
 				response.OpenMenu = strconv.Itoa(indexOfString("settings", System.WEB.Menu))
 
 				if Settings.AuthenticationWEB == true && authenticationUpdate == false {
@@ -434,27 +429,149 @@ func WS(w http.ResponseWriter, r *http.Request) {
 				if Settings.StoreBufferInRAM != previousStoreBufferInRAM {
 					initBufferVFS(Settings.StoreBufferInRAM)
 				}
-				systemMutex.Unlock()
 			}
 
-			// other cases remain unchanged as they do not use shared resources
+		case "saveFilesM3U":
+			// Reset cache for urls.json
+			var filename = getPlatformFile(System.Folder.Config + "urls.json")
+			saveMapToJSONFile(filename, make(map[string]StreamInfo))
+			Data.Cache.StreamingURLS = make(map[string]StreamInfo)
 
+			err = saveFiles(request, "m3u")
+			if err == nil {
+				response.OpenMenu = strconv.Itoa(indexOfString("playlist", System.WEB.Menu))
+			}
+			updateUrlsJson()
+
+		case "updateFileM3U":
+			err = updateFile(request, "m3u")
+			if err == nil {
+				response.OpenMenu = strconv.Itoa(indexOfString("playlist", System.WEB.Menu))
+			}
+
+		case "saveFilesHDHR":
+			err = saveFiles(request, "hdhr")
+			if err == nil {
+				response.OpenMenu = strconv.Itoa(indexOfString("playlist", System.WEB.Menu))
+			}
+
+		case "updateFileHDHR":
+			err = updateFile(request, "hdhr")
+			if err == nil {
+				response.OpenMenu = strconv.Itoa(indexOfString("playlist", System.WEB.Menu))
+			}
+
+		case "saveFilesXMLTV":
+			err = saveFiles(request, "xmltv")
+			if err == nil {
+				response.OpenMenu = strconv.Itoa(indexOfString("xmltv", System.WEB.Menu))
+			}
+
+		case "updateFileXMLTV":
+			err = updateFile(request, "xmltv")
+			if err == nil {
+				response.OpenMenu = strconv.Itoa(indexOfString("xmltv", System.WEB.Menu))
+			}
+
+		case "saveFilter":
+			response.Settings, err = saveFilter(request)
+			if err == nil {
+				response.OpenMenu = strconv.Itoa(indexOfString("filter", System.WEB.Menu))
+			}
+
+		case "saveEpgMapping":
+			err = saveXEpgMapping(request)
+
+		case "saveUserData":
+			err = saveUserData(request)
+			if err == nil {
+				response.OpenMenu = strconv.Itoa(indexOfString("users", System.WEB.Menu))
+			}
+
+		case "saveNewUser":
+			err = saveNewUser(request)
+			if err == nil {
+				response.OpenMenu = strconv.Itoa(indexOfString("users", System.WEB.Menu))
+			}
+
+		case "resetLogs":
+			WebScreenLog.Log = make([]string, 0)
+			WebScreenLog.Errors = 0
+			WebScreenLog.Warnings = 0
+			response.OpenMenu = strconv.Itoa(indexOfString("log", System.WEB.Menu))
+
+		case "ThreadfinBackup":
+			file, errNew := ThreadfinBackup()
+			err = errNew
+			if err == nil {
+				response.OpenLink = fmt.Sprintf("%s://%s/download/%s", System.ServerProtocol.WEB, System.Domain, file)
+			}
+
+		case "ThreadfinRestore":
+			WebScreenLog.Log = make([]string, 0)
+			WebScreenLog.Errors = 0
+			WebScreenLog.Warnings = 0
+
+			if len(request.Base64) > 0 {
+				newWebURL, err := ThreadfinRestoreFromWeb(request.Base64)
+				if err != nil {
+					ShowError(err, 000)
+					response.Alert = err.Error()
+				}
+
+				if err == nil {
+					if len(newWebURL) > 0 {
+						response.Alert = "Backup was successfully restored.\nThe port of the sTeVe URL has changed, you have to restart Threadfin.\nAfter a restart, Threadfin can be reached again at the following URL:\n" + newWebURL
+					} else {
+						response.Alert = "Backup was successfully restored."
+						response.Reload = true
+					}
+					showInfo("Threadfin:" + "Backup successfully restored.")
+				}
+			}
+
+		case "uploadLogo":
+			if len(request.Base64) > 0 {
+				response.LogoURL, err = uploadLogo(request.Base64, request.Filename)
+				if err == nil {
+					if err = conn.WriteJSON(response); err != nil {
+						ShowError(err, 1022)
+					} else {
+						return
+					}
+				}
+			}
+
+		case "saveWizard":
+			nextStep, errNew := saveWizard(request)
+			err = errNew
+			if err == nil {
+				if nextStep == 10 {
+					System.ConfigurationWizard = false
+					response.Reload = true
+				} else {
+					response.Wizard = nextStep
+				}
+			}
+
+		case "probeChannel":
+			resolution, frameRate, audioChannels, _ := probeChannel(request)
+			response.ProbeInfo = ProbeInfoStruct{Resolution: resolution, FrameRate: frameRate, AudioChannel: audioChannels}
+
+		default:
+			fmt.Println("+ + + + + + + + + + +", request.Cmd)
 		}
 
 		if err != nil {
 			response.Status = false
 			response.Error = err.Error()
-			systemMutex.Lock()
 			response.Settings = Settings
-			systemMutex.Unlock()
 		}
 
 		response = setDefaultResponseData(response, true)
-		systemMutex.Lock()
 		if System.ConfigurationWizard == true {
 			response.ConfigurationWizard = System.ConfigurationWizard
 		}
-		systemMutex.Unlock()
 
 		if err = conn.WriteJSON(response); err != nil {
 			ShowError(err, 1022)
