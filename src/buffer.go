@@ -57,7 +57,6 @@ func getActiveClientCount() (count int) {
 		return true
 	})
 
-	fmt.Printf("Total Active Client Count: %d\n", count)
 	return count
 }
 
