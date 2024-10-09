@@ -660,12 +660,6 @@ func mapping() (err error) {
 
 				var tvgID = xepgChannel.TvgID
 
-				// Default für neuen Kanal setzen
-				if !xepgChannel.Live {
-					xepgChannel.XmltvFile = "-"
-					xepgChannel.XMapping = "-"
-				}
-
 				// Data.XEPG.Channels[xepg] = xepgChannel
 				for file, xmltvChannels := range Data.XMLTV.Mapping {
 					channelsMap, ok := xmltvChannels.(map[string]interface{})
@@ -784,12 +778,10 @@ func mapping() (err error) {
 			}
 
 			if len(xepgChannel.XmltvFile) == 0 {
-				xepgChannel.XmltvFile = "-"
 				xepgChannel.XActive = true
 			}
 
 			if len(xepgChannel.XMapping) == 0 {
-				xepgChannel.XMapping = "-"
 				xepgChannel.XActive = true
 			}
 
