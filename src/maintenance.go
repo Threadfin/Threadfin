@@ -24,8 +24,9 @@ func maintenance() {
 		var t = time.Now()
 
 		// Aktualisierung der Playlist und XMLTV Dateien
+		systemMutex.Lock()
 		if System.ScanInProgress == 0 {
-
+			systemMutex.Unlock()
 			for _, schedule := range Settings.Update {
 
 				if schedule == t.Format("1504") {
@@ -52,12 +53,19 @@ func maintenance() {
 						ShowError(err, 000)
 					}
 
-					if Settings.CacheImages == false && System.ImageCachingInProgress == 0 {
+					systemMutex.Lock()
+					if !Settings.CacheImages && System.ImageCachingInProgress == 0 {
+						systemMutex.Unlock()
 						removeChildItems(System.Folder.ImagesCache)
+					} else {
+						systemMutex.Unlock()
 					}
 
 					// XEPG Dateien erstellen
+					systemMutex.Lock()
 					Data.Cache.XMLTV = make(map[string]XMLTV)
+					systemMutex.Unlock()
+
 					buildXEPG(false)
 
 				}
@@ -65,10 +73,16 @@ func maintenance() {
 			}
 
 			// Update Threadfin (Binary)
+			systemMutex.Lock()
 			if System.TimeForAutoUpdate == t.Format("1504") {
+				systemMutex.Unlock()
 				BinaryUpdate()
+			} else {
+				systemMutex.Unlock()
 			}
 
+		} else {
+			systemMutex.Unlock()
 		}
 
 		time.Sleep(60 * time.Second)
