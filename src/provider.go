@@ -341,7 +341,14 @@ func downloadFileFromServer(providerURL string, proxyUrl string) (filename strin
 		}
 	}
 
-	resp, err := httpClient.Get(providerURL)
+	req, err := http.NewRequest("GET", providerURL, nil)
+	if err != nil {
+		return
+	}
+
+	req.Header.Set("User-Agent", Settings.UserAgent)
+
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return
 	}
