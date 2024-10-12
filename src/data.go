@@ -964,7 +964,13 @@ func buildDatabaseDVR() (err error) {
 	sort.Strings(Data.Playlist.M3U.Groups.Text)
 	sort.Strings(Data.Playlist.M3U.Groups.Value)
 
-	if len(Data.Streams.Active) == 0 && len(Data.Streams.All) <= System.UnfilteredChannelLimit && len(Settings.Filter) == 0 {
+        // Changes ChannelLimit to allow more channels if the player/client is not Plex (Restricted to 480 Channels Max)
+        var ChannelLimit = System.PlexChannelLimit
+        if !Settings.PlexPlayer{
+               ChannelLimit = System.UnfilteredChannelLimit
+           }
+
+        if len(Data.Streams.Active) == 0 && len(Data.Streams.All) <= ChannelLimit && len(Settings.Filter) == 0 {
 		Data.Streams.Active = Data.Streams.All
 		Data.Streams.Inactive = make([]interface{}, 0)
 
