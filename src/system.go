@@ -121,7 +121,7 @@ func loadSettings() (settings SettingsStruct, err error) {
 	dataMap["xmltv"] = make(map[string]interface{})
 	dataMap["m3u"] = make(map[string]interface{})
 	dataMap["hdhr"] = make(map[string]interface{})
-
+        defaults["plexPlayer"] = true
 	defaults["api"] = false
 	defaults["authentication.api"] = false
 	defaults["authentication.m3u"] = false
