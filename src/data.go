@@ -967,7 +967,7 @@ func buildDatabaseDVR() (err error) {
         // Changes ChannelLimit to allow more channels if the player/client is not Plex (Restricted to 480 Channels Max)
         var ChannelLimit = System.PlexChannelLimit
         if !Settings.PlexPlayer{
-               ChannelLimit = System.UnfilteredChannelLimit
+               ChannelLimit = Settings.SystemChannelLimit
            }
 
         if len(Data.Streams.Active) == 0 && len(Data.Streams.All) <= ChannelLimit && len(Settings.Filter) == 0 {

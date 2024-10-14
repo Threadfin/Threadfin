@@ -59,6 +59,7 @@ type RequestStruct struct {
 		DummyChannel             *string   `json:"dummyChannel,omitempty"`
 		IgnoreFilters            *bool     `json:"ignoreFilters,omitempty"`
                 PlexPlayer               *bool     `json:"plexPlayer,omitempty"`		
+                SystemChannelLimit       *int      `json:"systemChannelLimit,omitempty"`
 	} `json:"settings,omitempty"`
 
 	// Upload Logo

@@ -324,10 +324,32 @@ func Threadfin(w http.ResponseWriter, r *http.Request) {
 		setGlobalDomain(r.Host)
 	}
 
-	// XMLTV Datei
-	if strings.Contains(path, "xmltv/") {
+        // Verify security first and just once.
+        if strings.Contains(path, "xmltv/") {
+                requestType = "xml" }
+        if strings.Contains(path, "m3u/") {
+                requestType = "m3u" }
 
-		requestType = "xml"
+        err = urlAuth(r, requestType)
+            if err != nil {
+               ShowError(err, 000)
+               httpStatusError(w, r, 403)
+               return
+            }
+
+
+	// XMLTV Datei
+/*	if strings.Contains(path, "xmltv/") {
+
+		requestType = "xml"*/
+        if requestType == "xml"{
+/*               // verify security
+                err = urlAuth(r, requestType)
+                if err != nil {
+                      ShowError(err, 000)
+                      httpStatusError(w, r, 403)
+                      return
+                }*/
 
 		file = System.Folder.Data + getFilenameFromPath(path)
 
@@ -340,16 +362,18 @@ func Threadfin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// M3U Datei
-	if strings.Contains(path, "m3u/") {
+/*	if strings.Contains(path, "m3u/") {
 
-		requestType = "m3u"
+		requestType = "m3u"*/
 
-		err = urlAuth(r, requestType)
+	if requestType == "m3u"{
+
+/*		err = urlAuth(r, requestType)
 		if err != nil {
 			ShowError(err, 000)
 			httpStatusError(w, r, 403)
 			return
-		}
+		}*/
 
 		groupTitle = r.URL.Query().Get("group-title")
 

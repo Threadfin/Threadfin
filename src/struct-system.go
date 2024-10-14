@@ -339,7 +339,8 @@ type SettingsStruct struct {
 	Dummy                     bool                  `json:"dummy"`
 	DummyChannel              string                `json:"dummyChannel"`
 	IgnoreFilters             bool                  `json:"ignoreFilters"`
-        PlexPlayer                bool                  `json:"plexPlayer"`	
+        PlexPlayer                bool                  `json:"plexPlayer"`
+        SystemChannelLimit        int                   `json:"systemChannelLimit"`
 }
 
 // LanguageUI : Sprache für das WebUI
