@@ -54,7 +54,7 @@ func Init() (err error) {
 	System.ServerProtocol.WEB = "http"
 	System.ServerProtocol.XML = "http"
 	System.PlexChannelLimit = 480
-	System.UnfilteredChannelLimit = 480
+	System.UnfilteredChannelLimit = 999
 	System.Compatibility = "0.1.0"
 
 	// FFmpeg Default Einstellungen
