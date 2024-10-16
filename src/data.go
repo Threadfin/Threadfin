@@ -799,9 +799,19 @@ func buildDatabaseDVR() (err error) {
 
 	System.ScanInProgress = 1
 
-	Data.Streams.All = make([]interface{}, 0, System.UnfilteredChannelLimit)
+        // Changes ChannelLimit to allow more channels if the player/client is not Plex (Restricted to 480 Channels Max)
+        var ChannelLimit = System.PlexChannelLimit
+        if !Settings.PlexPlayer{
+               ChannelLimit = Settings.SystemChannelLimit
+           }
+
+
+/*	Data.Streams.All = make([]interface{}, 0, System.UnfilteredChannelLimit)
 	Data.Streams.Active = make([]interface{}, 0, System.UnfilteredChannelLimit)
-	Data.Streams.Inactive = make([]interface{}, 0, System.UnfilteredChannelLimit)
+	Data.Streams.Inactive = make([]interface{}, 0, System.UnfilteredChannelLimit)*/
+        Data.Streams.All = make([]interface{}, 0, ChannelLimit)
+        Data.Streams.Active = make([]interface{}, 0, ChannelLimit)
+        Data.Streams.Inactive = make([]interface{}, 0, ChannelLimit)
 	Data.Playlist.M3U.Groups.Text = []string{}
 	Data.Playlist.M3U.Groups.Value = []string{}
 	Data.StreamPreviewUI.Active = []string{}
@@ -965,10 +975,12 @@ func buildDatabaseDVR() (err error) {
 	sort.Strings(Data.Playlist.M3U.Groups.Value)
 
         // Changes ChannelLimit to allow more channels if the player/client is not Plex (Restricted to 480 Channels Max)
-        var ChannelLimit = System.PlexChannelLimit
+/*        var ChannelLimit = System.PlexChannelLimit
         if !Settings.PlexPlayer{
                ChannelLimit = Settings.SystemChannelLimit
            }
+	// modified because I didn't knew the System.UnfilteredChannelLimit was used earlier in the procedure...
+*/
 
         if len(Data.Streams.Active) == 0 && len(Data.Streams.All) <= ChannelLimit && len(Settings.Filter) == 0 {
 		Data.Streams.Active = Data.Streams.All

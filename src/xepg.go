@@ -308,9 +308,20 @@ func createXEPGMapping() {
 // XEPG Datenbank erstellen / aktualisieren
 func createXEPGDatabase() (err error) {
 
-	var allChannelNumbers = make([]float64, 0, System.UnfilteredChannelLimit)
+        // Changes ChannelLimit to allow more channels if the player/client is not Plex (Restricted to 480 Channels Max)
+        var ChannelLimit = System.PlexChannelLimit
+        if !Settings.PlexPlayer{
+               ChannelLimit = Settings.SystemChannelLimit
+           }
+
+/*	var allChannelNumbers = make([]float64, 0, System.UnfilteredChannelLimit)
 	Data.Cache.Streams.Active = make([]string, 0, System.UnfilteredChannelLimit)
 	Data.XEPG.Channels = make(map[string]interface{}, System.UnfilteredChannelLimit)
+*/
+        var allChannelNumbers = make([]float64, 0, ChannelLimit)
+        Data.Cache.Streams.Active = make([]string, 0, ChannelLimit)
+        Data.XEPG.Channels = make(map[string]interface{}, ChannelLimit)
+
 	Settings = SettingsStruct{}
 	Data.XEPG.Channels, err = loadJSONFileToMap(System.File.XEPG)
 	if err != nil {
@@ -378,7 +389,8 @@ func createXEPGDatabase() (err error) {
 	}
 
 	// Make a map of the db channels based on their previously downloaded attributes -- filename, group, title, etc
-	var xepgChannelsValuesMap = make(map[string]XEPGChannelStruct, System.UnfilteredChannelLimit)
+//	var xepgChannelsValuesMap = make(map[string]XEPGChannelStruct, System.UnfilteredChannelLimit)
+        var xepgChannelsValuesMap = make(map[string]XEPGChannelStruct, ChannelLimit)
 	for _, v := range Data.XEPG.Channels {
 		var channel XEPGChannelStruct
 		err = json.Unmarshal([]byte(mapToJSON(v)), &channel)
