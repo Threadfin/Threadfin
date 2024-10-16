@@ -580,19 +580,17 @@ func createXEPGDatabase() (err error) {
 			newChannel.TvgLogo = m3uChannel.TvgLogo
 			newChannel.TvgName = m3uChannel.TvgName
 			newChannel.URL = m3uChannel.URL
+			newChannel.Live, _ = strconv.ParseBool(m3uChannel.LiveEvent)
 
 			programData, _ := getProgramData(newChannel)
 
 			if newChannel.Live && len(programData.Program) <= 3 {
 				newChannel.XmltvFile = "Threadfin Dummy"
 				newChannel.XMapping = "PPV"
+				newChannel.XActive = true
 			} else {
 				newChannel.XmltvFile = ""
 				newChannel.XMapping = ""
-			}
-
-			if m3uChannel.LiveEvent == "true" {
-				newChannel.Live = true
 			}
 
 			if len(m3uChannel.UUIDKey) > 0 {
