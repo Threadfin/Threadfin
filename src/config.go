@@ -39,6 +39,13 @@ var BufferClients sync.Map
 // Lock : Lock Map
 var Lock = sync.RWMutex{}
 
+var (
+	xepgMutex   sync.Mutex
+	infoMutex   sync.Mutex
+	logMutex    sync.Mutex
+	systemMutex sync.Mutex
+)
+
 // Init : Systeminitialisierung
 func Init() (err error) {
 

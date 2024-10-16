@@ -19,8 +19,13 @@ import (
 
 // StartWebserver : Startet den Webserver
 func StartWebserver() (err error) {
-
-	var port = Settings.Port
+	systemMutex.Lock()
+	port := Settings.Port
+	ipAddress := System.IPAddress
+	if Settings.BindIpAddress != "" {
+		ipAddress = Settings.BindIpAddress
+	}
+	systemMutex.Unlock()
 
 	http.HandleFunc("/", Index)
 	http.HandleFunc("/stream/", Stream)
@@ -34,29 +39,19 @@ func StartWebserver() (err error) {
 	http.HandleFunc("/data_images/", DataImages)
 	http.HandleFunc("/ppv/enable", enablePPV)
 	http.HandleFunc("/ppv/disable", disablePPV)
+	http.HandleFunc("/auto/", Auto)
 
-	//http.HandleFunc("/auto/", Auto)
-
-	ipAddress := System.IPAddress
-	if Settings.BindIpAddress != "" {
-		ipAddress = Settings.BindIpAddress
-	}
-
-	showInfo("DVR IP:" + ipAddress + ":" + Settings.Port)
-
-	var ips = len(System.IPAddressesV4) + len(System.IPAddressesV6) - 1
+	systemMutex.Lock()
+	ips := len(System.IPAddressesV4) + len(System.IPAddressesV6) - 1
 	switch ips {
-
 	case 0:
 		showHighlight(fmt.Sprintf("Web Interface:%s://%s:%s/web/", System.ServerProtocol.WEB, ipAddress, Settings.Port))
-
 	case 1:
 		showHighlight(fmt.Sprintf("Web Interface:%s://%s:%s/web/ | Threadfin is also available via the other %d IP.", System.ServerProtocol.WEB, ipAddress, Settings.Port, ips))
-
 	default:
 		showHighlight(fmt.Sprintf("Web Interface:%s://%s:%s/web/ | Threadfin is also available via the other %d IP's.", System.ServerProtocol.WEB, ipAddress, Settings.Port, len(System.IPAddressesV4)+len(System.IPAddressesV6)-1))
-
 	}
+	systemMutex.Unlock()
 
 	if err = http.ListenAndServe(ipAddress+":"+port, nil); err != nil {
 		ShowError(err, 1001)
@@ -68,71 +63,60 @@ func StartWebserver() (err error) {
 
 // Index : Web Server /
 func Index(w http.ResponseWriter, r *http.Request) {
-
 	var err error
 	var response []byte
 	var path = r.URL.Path
-	var debug string
 
+	systemMutex.Lock()
 	if Settings.HttpThreadfinDomain != "" {
 		setGlobalDomain(fmt.Sprintf("%s:%s", Settings.HttpThreadfinDomain, Settings.Port))
 	} else {
 		setGlobalDomain(r.Host)
 	}
-
-	debug = fmt.Sprintf("Web Server Request:Path: %s", path)
-	showDebug(debug, 2)
+	systemMutex.Unlock()
 
 	switch path {
-
 	case "/discover.json":
 		response, err = getDiscover()
 		w.Header().Set("Content-Type", "application/json")
-
 	case "/lineup_status.json":
 		response, err = getLineupStatus()
 		w.Header().Set("Content-Type", "application/json")
-
 	case "/lineup.json":
-		if Settings.AuthenticationPMS == true {
-
+		systemMutex.Lock()
+		if Settings.AuthenticationPMS {
+			systemMutex.Unlock()
 			_, err := basicAuth(r, "authentication.pms")
 			if err != nil {
 				ShowError(err, 000)
 				httpStatusError(w, r, 403)
 				return
 			}
-
+		} else {
+			systemMutex.Unlock()
 		}
-
 		response, err = getLineup()
 		w.Header().Set("Content-Type", "application/json")
-
 	case "/device.xml", "/capability":
 		response, err = getCapability()
 		w.Header().Set("Content-Type", "application/xml")
-
 	default:
 		response, err = getCapability()
 		w.Header().Set("Content-Type", "application/xml")
 	}
 
 	if err == nil {
-
 		w.WriteHeader(200)
 		w.Write(response)
 		return
-
 	}
 
 	httpStatusError(w, r, 500)
-
 	return
 }
 
 // Stream : Web Server /stream/
 func Stream(w http.ResponseWriter, r *http.Request) {
-
 	var path = strings.Replace(r.RequestURI, "/stream/", "", 1)
 	streamInfo, err := getStreamInfo(path)
 	if err != nil {
@@ -141,172 +125,56 @@ func Stream(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if r.Method == "HEAD" {
-		client := &http.Client{}
-		req, err := http.NewRequest("HEAD", streamInfo.URL, nil)
-		if err != nil {
-			ShowError(err, 1501)
-			httpStatusError(w, r, 405)
-			return
-		}
+	systemMutex.Lock()
+	forceHttps := Settings.ForceHttps
+	systemMutex.Unlock()
 
-		resp, err := client.Do(req)
-		if err != nil {
-			ShowError(err, 1502)
-			httpStatusError(w, r, 405)
-			return
-		}
-		defer resp.Body.Close()
-
-		// Copy headers from the source HEAD response to the outgoing response
-		for key, values := range resp.Header {
-			for _, value := range values {
-				w.Header().Add(key, value)
-			}
-		}
-
-		return
-	}
-
-	if Settings.ForceHttps {
+	if forceHttps {
 		u, err := url.Parse(streamInfo.URL)
 		if err == nil {
 			u.Scheme = "https"
-			host_split := strings.Split(u.Host, ":")
-			if len(host_split) > 0 {
-				u.Host = host_split[0]
+			hostSplit := strings.Split(u.Host, ":")
+			if len(hostSplit) > 0 {
+				u.Host = hostSplit[0]
 			}
 			streamInfo.URL = fmt.Sprintf("https://%s:%d%s?%s", u.Host, Settings.HttpsPort, u.Path, u.RawQuery)
 		}
 	}
 
-	// If an UDPxy host is set, and the stream URL is multicast (i.e. starts with 'udp://@'),
-	// then streamInfo.URL needs to be rewritten to point to UDPxy.
-	if Settings.UDPxy != "" && strings.HasPrefix(streamInfo.URL, "udp://@") {
-		streamInfo.URL = fmt.Sprintf("http://%s/udp/%s/", Settings.UDPxy, strings.TrimPrefix(streamInfo.URL, "udp://@"))
-	}
-
 	switch Settings.Buffer {
-
 	case "-":
 		showInfo(fmt.Sprintf("Buffer:false [%s]", Settings.Buffer))
-
 	case "threadfin":
 		if strings.Index(streamInfo.URL, "rtsp://") != -1 || strings.Index(streamInfo.URL, "rtp://") != -1 {
 			err = errors.New("RTSP and RTP streams are not supported")
 			ShowError(err, 2004)
-
 			showInfo("Streaming URL:" + streamInfo.URL)
 			http.Redirect(w, r, streamInfo.URL, 302)
-
-			showInfo("Streaming Info:URL was passed to the client")
 			return
 		}
-
 		showInfo(fmt.Sprintf("Buffer:true [%s]", Settings.Buffer))
-
 	default:
 		showInfo(fmt.Sprintf("Buffer:true [%s]", Settings.Buffer))
-
-	}
-
-	if Settings.Buffer != "-" {
-		showInfo(fmt.Sprintf("Buffer Size:%d KB", Settings.BufferSize))
 	}
 
 	showInfo(fmt.Sprintf("Channel Name:%s", streamInfo.Name))
 	showInfo(fmt.Sprintf("Client User-Agent:%s", r.Header.Get("User-Agent")))
 
-	// Prüfen ob der Buffer verwendet werden soll
 	switch Settings.Buffer {
-
 	case "-":
-		providerSettings, ok := Settings.Files.M3U[streamInfo.PlaylistID].(map[string]interface{})
-		if !ok {
-			return
-		}
-
-		proxyIP, ok := providerSettings["http_proxy.ip"].(string)
-		if !ok {
-			return
-		}
-
-		proxyPort, ok := providerSettings["http_proxy.port"].(string)
-		if !ok {
-			return
-		}
-
-		if proxyIP != "" && proxyPort != "" {
-			showInfo("Streaming Info: Streaming through proxy.")
-
-			proxyURL, err := url.Parse(fmt.Sprintf("http://%s:%s", proxyIP, proxyPort))
-			if err != nil {
-				return
-			}
-
-			httpClient := &http.Client{
-				Transport: &http.Transport{
-					Proxy: http.ProxyURL(proxyURL),
-				},
-			}
-
-			resp, err := httpClient.Get(streamInfo.URL)
-			if err != nil {
-				http.Error(w, "Failed to fetch stream", http.StatusInternalServerError)
-				return
-			}
-			defer resp.Body.Close()
-
-			for key, values := range resp.Header {
-				for _, value := range values {
-					w.Header().Add(key, value)
-				}
-			}
-
-			w.WriteHeader(resp.StatusCode)
-			_, err = io.Copy(w, resp.Body)
-			if err != nil {
-				http.Error(w, "Failed to stream response", http.StatusInternalServerError)
-				return
-			}
-		} else {
-			showInfo("Streaming URL:" + streamInfo.URL)
-			w.Header().Set("Access-Control-Allow-Origin", "*")
-			http.Redirect(w, r, streamInfo.URL, 302)
-
-			showInfo("Streaming Info:URL was passed to the client.")
-			showInfo("Streaming Info:Threadfin is no longer involved, the client connects directly to the streaming server.")
-		}
-
+		showInfo("Streaming URL:" + streamInfo.URL)
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		http.Redirect(w, r, streamInfo.URL, 302)
 	default:
 		bufferingStream(streamInfo.PlaylistID, streamInfo.URL, streamInfo.BackupChannel1URL, streamInfo.BackupChannel2URL, streamInfo.BackupChannel3URL, streamInfo.Name, w, r)
 	}
-
 	return
 }
 
 // Auto : HDHR routing (wird derzeit nicht benutzt)
 func Auto(w http.ResponseWriter, r *http.Request) {
-
 	var channelID = strings.Replace(r.RequestURI, "/auto/v", "", 1)
 	fmt.Println(channelID)
-
-	/*
-		switch Settings.Buffer {
-
-		case true:
-			var playlistID, streamURL, err = getStreamByChannelID(channelID)
-			if err == nil {
-				bufferingStream(playlistID, streamURL, w, r)
-			} else {
-				httpStatusError(w, r, 404)
-			}
-
-		case false:
-			httpStatusError(w, r, 423)
-		}
-	*/
-
 	return
 }
 
@@ -318,18 +186,21 @@ func Threadfin(w http.ResponseWriter, r *http.Request) {
 	var path = strings.TrimPrefix(r.URL.Path, "/")
 	var groups = []string{}
 
+	systemMutex.Lock()
 	if Settings.HttpThreadfinDomain != "" {
 		setGlobalDomain(fmt.Sprintf("%s:%s", Settings.HttpThreadfinDomain, Settings.Port))
 	} else {
 		setGlobalDomain(r.Host)
 	}
+	systemMutex.Unlock()
 
 	// XMLTV Datei
 	if strings.Contains(path, "xmltv/") {
 
 		requestType = "xml"
-
+		systemMutex.Lock()
 		file = System.Folder.Data + getFilenameFromPath(path)
+		systemMutex.Unlock()
 
 		content, err = readStringFromFile(file)
 		if err != nil {
@@ -353,7 +224,10 @@ func Threadfin(w http.ResponseWriter, r *http.Request) {
 
 		groupTitle = r.URL.Query().Get("group-title")
 
+		systemMutex.Lock()
 		m3uFilePath := System.Folder.Data + "threadfin.m3u"
+		systemMutex.Unlock()
+
 		queries := r.URL.Query()
 		// Check if the m3u file exists
 		if len(queries) == 0 {
@@ -366,11 +240,13 @@ func Threadfin(w http.ResponseWriter, r *http.Request) {
 
 		log.Println("M3U file does not exist, building new one")
 
+		systemMutex.Lock()
 		if !System.Dev {
 			// false: Dateiname wird im Header gesetzt
 			// true: M3U wird direkt im Browser angezeigt
 			w.Header().Set("Content-Disposition", "attachment; filename="+getFilenameFromPath(path))
 		}
+		systemMutex.Unlock()
 
 		if len(groupTitle) > 0 {
 			groups = strings.Split(groupTitle, ",")
@@ -399,7 +275,9 @@ func Threadfin(w http.ResponseWriter, r *http.Request) {
 func Images(w http.ResponseWriter, r *http.Request) {
 
 	var path = strings.TrimPrefix(r.URL.Path, "/")
-	var filePath = System.Folder.ImagesCache + getFilenameFromPath(path)
+	systemMutex.Lock()
+	filePath := System.Folder.ImagesCache + getFilenameFromPath(path)
+	systemMutex.Unlock()
 
 	content, err := readByteFromFile(filePath)
 	if err != nil {
@@ -419,7 +297,9 @@ func Images(w http.ResponseWriter, r *http.Request) {
 func DataImages(w http.ResponseWriter, r *http.Request) {
 
 	var path = strings.TrimPrefix(r.URL.Path, "/")
-	var filePath = System.Folder.ImagesUpload + getFilenameFromPath(path)
+	systemMutex.Lock()
+	filePath := System.Folder.ImagesUpload + getFilenameFromPath(path)
+	systemMutex.Unlock()
 
 	content, err := readByteFromFile(filePath)
 	if err != nil {
@@ -444,25 +324,29 @@ func WS(w http.ResponseWriter, r *http.Request) {
 
 	var newToken string
 
-	/*
-		if r.Header.Get("Origin") != "http://"+r.Host {
-			httpStatusError(w, r, 403)
-			return
-		}
-	*/
+	upgrader := websocket.Upgrader{
+		ReadBufferSize:  1024,
+		WriteBufferSize: 1024,
+		CheckOrigin: func(r *http.Request) bool {
+			// Implement any custom origin validation logic here, if needed.
+			return true
+		},
+	}
 
-	conn, err := websocket.Upgrade(w, r, w.Header(), 1024, 1024)
+	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		ShowError(err, 0)
 		http.Error(w, "Could not open websocket connection", http.StatusBadRequest)
 		return
 	}
 
+	systemMutex.Lock()
 	if Settings.HttpThreadfinDomain != "" {
 		setGlobalDomain(fmt.Sprintf("%s:%s", Settings.HttpThreadfinDomain, Settings.Port))
 	} else {
 		setGlobalDomain(r.Host)
 	}
+	systemMutex.Unlock()
 
 	for {
 
@@ -472,6 +356,7 @@ func WS(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		systemMutex.Lock()
 		if System.ConfigurationWizard == false {
 
 			switch Settings.AuthenticationWEB {
@@ -490,7 +375,6 @@ func WS(w http.ResponseWriter, r *http.Request) {
 
 				newToken, err = tokenAuthentication(token)
 				if err != nil {
-
 					response.Status = false
 					response.Reload = true
 					response.Error = err.Error()
@@ -500,6 +384,7 @@ func WS(w http.ResponseWriter, r *http.Request) {
 						ShowError(err, 1102)
 					}
 
+					systemMutex.Unlock()
 					return
 				}
 
@@ -509,11 +394,12 @@ func WS(w http.ResponseWriter, r *http.Request) {
 			}
 
 		}
+		systemMutex.Unlock()
 
 		switch request.Cmd {
-		// Daten lesen
+		// Data read commands
 		case "getServerConfig":
-			//response.Config = Settings
+			// response.Config = Settings
 
 		case "updateLog":
 			response = setDefaultResponseData(response, false)
@@ -526,15 +412,14 @@ func WS(w http.ResponseWriter, r *http.Request) {
 			return
 
 		case "loadFiles":
-			//response.Response = Settings.Files
+			// response.Response = Settings.Files
 
-		// Daten schreiben
+		// Data write commands
 		case "saveSettings":
 			var authenticationUpdate = Settings.AuthenticationWEB
 			var previousStoreBufferInRAM = Settings.StoreBufferInRAM
 			response.Settings, err = updateServerSettings(request)
 			if err == nil {
-
 				response.OpenMenu = strconv.Itoa(indexOfString("settings", System.WEB.Menu))
 
 				if Settings.AuthenticationWEB == true && authenticationUpdate == false {
@@ -544,11 +429,9 @@ func WS(w http.ResponseWriter, r *http.Request) {
 				if Settings.StoreBufferInRAM != previousStoreBufferInRAM {
 					initBufferVFS(Settings.StoreBufferInRAM)
 				}
-
 			}
 
 		case "saveFilesM3U":
-
 			// Reset cache for urls.json
 			var filename = getPlatformFile(System.Folder.Config + "urls.json")
 			saveMapToJSONFile(filename, make(map[string]StreamInfo))
@@ -630,7 +513,6 @@ func WS(w http.ResponseWriter, r *http.Request) {
 			WebScreenLog.Warnings = 0
 
 			if len(request.Base64) > 0 {
-
 				newWebURL, err := ThreadfinRestoreFromWeb(request.Base64)
 				if err != nil {
 					ShowError(err, 000)
@@ -638,7 +520,6 @@ func WS(w http.ResponseWriter, r *http.Request) {
 				}
 
 				if err == nil {
-
 					if len(newWebURL) > 0 {
 						response.Alert = "Backup was successfully restored.\nThe port of the sTeVe URL has changed, you have to restart Threadfin.\nAfter a restart, Threadfin can be reached again at the following URL:\n" + newWebURL
 					} else {
@@ -647,38 +528,30 @@ func WS(w http.ResponseWriter, r *http.Request) {
 					}
 					showInfo("Threadfin:" + "Backup successfully restored.")
 				}
-
 			}
 
 		case "uploadLogo":
 			if len(request.Base64) > 0 {
 				response.LogoURL, err = uploadLogo(request.Base64, request.Filename)
-
 				if err == nil {
-
 					if err = conn.WriteJSON(response); err != nil {
 						ShowError(err, 1022)
 					} else {
 						return
 					}
-
 				}
-
 			}
 
 		case "saveWizard":
 			nextStep, errNew := saveWizard(request)
-
 			err = errNew
 			if err == nil {
-
 				if nextStep == 10 {
 					System.ConfigurationWizard = false
 					response.Reload = true
 				} else {
 					response.Wizard = nextStep
 				}
-
 			}
 
 		case "probeChannel":
@@ -687,13 +560,6 @@ func WS(w http.ResponseWriter, r *http.Request) {
 
 		default:
 			fmt.Println("+ + + + + + + + + + +", request.Cmd)
-
-			var requestMap = make(map[string]interface{}) // Debug
-			_ = requestMap
-			if System.Dev == true {
-				fmt.Println(mapToJSON(requestMap))
-			}
-
 		}
 
 		if err != nil {
@@ -729,28 +595,29 @@ func Web(w http.ResponseWriter, r *http.Request) {
 
 	var language LanguageUI
 
+	systemMutex.Lock()
 	if Settings.HttpThreadfinDomain != "" {
 		setGlobalDomain(fmt.Sprintf("%s:%s", Settings.HttpThreadfinDomain, Settings.Port))
 	} else {
 		setGlobalDomain(r.Host)
 	}
+	systemMutex.Unlock()
 
+	systemMutex.Lock()
 	if System.Dev == true {
-
 		lang, err = loadJSONFileToMap(fmt.Sprintf("html/lang/%s.json", Settings.Language))
+		systemMutex.Unlock()
 		if err != nil {
 			ShowError(err, 000)
 		}
-
 	} else {
-
+		systemMutex.Unlock()
 		var languageFile = "html/lang/en.json"
 
 		if value, ok := webUI[languageFile].(string); ok {
 			content = GetHTMLString(value)
 			lang = jsonToMap(content)
 		}
-
 	}
 
 	err = json.Unmarshal([]byte(mapToJSON(lang)), &language)
@@ -761,33 +628,30 @@ func Web(w http.ResponseWriter, r *http.Request) {
 
 	if getFilenameFromPath(requestFile) == "html" {
 
-		switch System.ConfigurationWizard {
-
-		case true:
+		systemMutex.Lock()
+		if System.ConfigurationWizard == true {
 			file = requestFile + "configuration.html"
 			Settings.AuthenticationWEB = false
-
-		case false:
+		} else {
 			file = requestFile + "index.html"
-
 		}
 
 		if System.ScanInProgress == 1 {
 			file = requestFile + "maintenance.html"
 		}
+		authenticationWebEnabled := Settings.AuthenticationWEB
+		systemMutex.Unlock()
 
-		switch Settings.AuthenticationWEB {
-		case true:
-
+		if authenticationWebEnabled == true {
 			var username, password, confirm string
 			switch r.Method {
 			case "POST":
-				var allUsers, _ = authentication.GetAllUserData()
+				var allUserData, _ = authentication.GetAllUserData()
 
 				username = r.FormValue("username")
 				password = r.FormValue("password")
 
-				if len(allUsers) == 0 {
+				if len(allUserData) == 0 {
 					confirm = r.FormValue("confirm")
 				}
 
@@ -850,10 +714,11 @@ func Web(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
+			systemMutex.Lock()
 			if len(allUserData) == 0 && Settings.AuthenticationWEB == true {
 				file = requestFile + "create-first-user.html"
 			}
-
+			systemMutex.Unlock()
 		}
 
 		requestFile = file
@@ -867,7 +732,6 @@ func Web(w http.ResponseWriter, r *http.Request) {
 			}
 
 		} else {
-
 			httpStatusError(w, r, 404)
 			return
 		}
@@ -890,10 +754,12 @@ func Web(w http.ResponseWriter, r *http.Request) {
 
 	contentType = getContentType(requestFile)
 
+	systemMutex.Lock()
 	if System.Dev == true {
 		// Lokale Webserver Dateien werden geladen, nur für die Entwicklung
 		content, _ = readStringFromFile(requestFile)
 	}
+	systemMutex.Unlock()
 
 	w.Header().Add("Content-Type", contentType)
 	w.WriteHeader(200)

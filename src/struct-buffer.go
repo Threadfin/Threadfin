@@ -69,6 +69,8 @@ type ThisStream struct {
 
 	// Lokale Temp Datein
 	OldSegments []string
+
+	ClientID string
 }
 
 // Segment : URL Segmente (HLS / M3U8)
