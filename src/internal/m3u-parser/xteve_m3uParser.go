@@ -15,11 +15,15 @@ func MakeInterfaceFromM3U(byteStream []byte) (allChannels []interface{}, err err
 	var channelName string
 	var uuids []string
 
+	// Precompile regular expressions outside the loop
+	var exceptForParameter = `[a-z-A-Z&=]*(".*?")`
+	var exceptForChannelName = `,([^\n]*|,[^\r]*)`
+	parameterRegexp := regexp.MustCompile(exceptForParameter)
+	channelNameRegexp := regexp.MustCompile(exceptForChannelName)
+
 	var parseMetaData = func(channel string) (stream map[string]string) {
 
 		stream = make(map[string]string)
-		var exceptForParameter = `[a-z-A-Z&=]*(".*?")`
-		var exceptForChannelName = `,([^\n]*|,[^\r]*)`
 		var lines = strings.Split(strings.Replace(channel, "\r\n", "\n", -1), "\n")
 
 		// Remove lines starting with # and empty lines
@@ -35,8 +39,7 @@ func MakeInterfaceFromM3U(byteStream []byte) (allChannels []interface{}, err err
 
 			// Parse the first line (#EXTINF line) for metadata
 			var value string
-			var p = regexp.MustCompile(exceptForParameter)
-			var streamParameter = p.FindAllString(lines[0], -1)
+			var streamParameter = parameterRegexp.FindAllString(lines[0], -1)
 			for _, p := range streamParameter {
 				lines[0] = strings.Replace(lines[0], p, "", 1)
 				p = strings.Replace(p, `"`, "", -1)
@@ -57,8 +60,7 @@ func MakeInterfaceFromM3U(byteStream []byte) (allChannels []interface{}, err err
 			}
 
 			// Parse channel name
-			n := regexp.MustCompile(exceptForChannelName)
-			var name = n.FindAllString(lines[0], 1)
+			var name = channelNameRegexp.FindAllString(lines[0], 1)
 
 			if len(name) > 0 {
 				channelName = name[0]
@@ -134,6 +136,7 @@ func MakeInterfaceFromM3U(byteStream []byte) (allChannels []interface{}, err err
 
 	return
 }
+
 
 func indexOfString(element string, data []string) int {
 
