@@ -447,6 +447,10 @@
       "description": "FFmpeg options.<br>Only change if you know what you are doing.<br>Leave blank to set default settings.",
       "placeholder": "Leave blank to set default settings"
     },
+    "ffmpegForceHttp": {
+      "title": "Force HTTP for FFMPEG",
+      "description": "If checked, will rewrite the m3u to use http instead of https. Use this for https links in ffmpeg"
+    },
     "vlcPath": {
       "title": "VLC / CVLC Binary Path",
       "description": "Path to VLC / CVLC binary.",

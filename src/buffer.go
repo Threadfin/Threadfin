@@ -1008,6 +1008,12 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 		switch Settings.Buffer {
 
 		case "ffmpeg":
+
+			if Settings.FFmpegForceHttp {
+				url = strings.Replace(url, "https://", "http://", -1)
+				showInfo("Forcing URL to HTTP for FFMPEG: " + url)
+			}
+
 			path = Settings.FFmpegPath
 			options = Settings.FFmpegOptions
 
