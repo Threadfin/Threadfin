@@ -6,14 +6,15 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"sync"
 )
 
 // MakeInterfaceFromM3U :
 func MakeInterfaceFromM3U(byteStream []byte) (allChannels []interface{}, err error) {
 
 	var content = string(byteStream)
-	var channelName string
-	var uuids []string
+	uuids := &SafeList{}
+	var mu sync.Mutex // To protect shared resources like uuids and allChannels
 
 	// Precompile regular expressions outside the loop
 	var exceptForParameter = `[a-z-A-Z&=]*(".*?")`
@@ -22,7 +23,7 @@ func MakeInterfaceFromM3U(byteStream []byte) (allChannels []interface{}, err err
 	channelNameRegexp := regexp.MustCompile(exceptForChannelName)
 
 	var parseMetaData = func(channel string) (stream map[string]string) {
-
+		var channelName string
 		stream = make(map[string]string)
 		var lines = strings.Split(strings.Replace(channel, "\r\n", "\n", -1), "\n")
 
@@ -97,10 +98,10 @@ func MakeInterfaceFromM3U(byteStream []byte) (allChannels []interface{}, err err
 		// Search for a unique ID in the stream
 		for key, value := range stream {
 			if strings.Contains(strings.ToLower(key), "tvg-id") {
-				if indexOfString(value, uuids) != -1 {
+				if uuids.Contains(value) {
 					break
 				}
-				uuids = append(uuids, value)
+				uuids.Append(value)
 				stream["_uuid.key"] = key
 				stream["_uuid.value"] = value
 				break
@@ -123,11 +124,32 @@ func MakeInterfaceFromM3U(byteStream []byte) (allChannels []interface{}, err err
 
 		channels = append(channels[:0], channels[1:]...)
 
+		var wg sync.WaitGroup                                        // WaitGroup to wait for all goroutines to finish
+		allChannelsCh := make(chan map[string]string, len(channels)) // Buffered channel for storing streams
+
+		// Launch goroutines to process channels in parallel
 		for _, channel := range channels {
-			var stream = parseMetaData(channel)
-			if len(stream) > 0 && stream != nil {
-				allChannels = append(allChannels, stream)
-			}
+			wg.Add(1)
+			go func(channel string) {
+				defer wg.Done()
+				stream := parseMetaData(channel)
+				if len(stream) > 0 && stream != nil {
+					allChannelsCh <- stream // Send the stream to the channel
+				}
+			}(channel)
+		}
+
+		// Close the channel after all goroutines have finished
+		go func() {
+			wg.Wait()
+			close(allChannelsCh)
+		}()
+
+		// Collect the results from the channel
+		for stream := range allChannelsCh {
+			mu.Lock()
+			allChannels = append(allChannels, stream)
+			mu.Unlock()
 		}
 
 	} else {
@@ -135,16 +157,4 @@ func MakeInterfaceFromM3U(byteStream []byte) (allChannels []interface{}, err err
 	}
 
 	return
-}
-
-
-func indexOfString(element string, data []string) int {
-
-	for k, v := range data {
-		if element == v {
-			return k
-		}
-	}
-
-	return -1
 }
