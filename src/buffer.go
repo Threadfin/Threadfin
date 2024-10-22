@@ -152,7 +152,7 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 	// Check whether the playlist is already in use
 	if p, ok := BufferInformation.Load(playlistID); !ok {
 		var playlistType string
-		fmt.Println("PLAYLIST: ", p)
+
 		// Playlist wird noch nicht verwendet, Default-Werte für die Playlist erstellen
 		playlist.Folder = System.Folder.Temp + playlistID + string(os.PathSeparator)
 		playlist.PlaylistID = playlistID
@@ -307,6 +307,8 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 
 		playlist.Streams[streamID] = stream
 		BufferInformation.Store(playlistID, playlist)
+
+		fmt.Println("BUFFER: ", playlist.Buffer)
 
 		switch playlist.Buffer {
 
