@@ -118,6 +118,7 @@
   "playlist": {
     "table": {
       "playlist": "Playlist",
+      "buffer": "Buffer",
       "tuner": "Tuner",
       "lastUpdate": "Last Update",
       "availability": "Availability",
@@ -156,6 +157,11 @@
       "title": "HDHomeRun IP",
       "placeholder": "IP address and port (192.168.1.10:5004)",
       "description": ""
+    },
+    "buffer": {
+      "title": "Buffer",
+      "placeholder": "",
+      "description": "Buffer for the streams. <br>Only available with activated tuner."
     },
     "tuner": {
       "title": "Tuner / Streams",

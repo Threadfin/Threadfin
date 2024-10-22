@@ -10,6 +10,7 @@ type Playlist struct {
 	Tuner         int
 	HttpProxyIP   string
 	HttpProxyPort string
+	Buffer        string
 
 	Clients map[int]ThisClient
 	Streams map[int]ThisStream

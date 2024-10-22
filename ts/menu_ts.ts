@@ -1384,6 +1384,16 @@ function openPopUp(dataType, element) {
       input.setAttribute("placeholder", "{{.playlist.fileM3U.placeholder}}")
       content.appendRow("{{.playlist.fileM3U.title}}", input)
 
+      var text: string[] = ["-", "FFmpeg", "VLC"]
+      var values: string[] = ["-", "ffmpeg", "vlc"]
+      var selected = SERVER["settings"]["buffer"]
+      if (data["buffer"] != undefined) {
+        selected = data["buffer"]
+      }
+      var select = content.createSelect(text, values, selected, "buffer")
+      select.setAttribute("id", "buffer")
+      content.appendRow("{{.playlist.buffer.title}}", select)
+
       // Tuner
       if (SERVER["settings"]["buffer"] != "-") {
         var text: string[] = new Array()
@@ -1474,6 +1484,16 @@ function openPopUp(dataType, element) {
       var input = content.createInput("text", dbKey, data[dbKey])
       input.setAttribute("placeholder", "{{.playlist.fileHDHR.placeholder}}")
       content.appendRow("{{.playlist.fileHDHR.title}}", input)
+
+      var text: string[] = ["-", "FFmpeg", "VLC"]
+      var values: string[] = ["-", "ffmpeg", "vlc"]
+      var selected = SERVER["settings"]["buffer"]
+      if (data["buffer"] != undefined) {
+        selected = data["buffer"]
+      }
+      var select = content.createSelect(text, values, selected, "buffer")
+      select.setAttribute("id", "buffer")
+      content.appendRow("{{.playlist.buffer.title}}", select)
 
       // Tuner
       if (SERVER["settings"]["buffer"] != "-") {
