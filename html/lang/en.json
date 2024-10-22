@@ -118,6 +118,7 @@
   "playlist": {
     "table": {
       "playlist": "Playlist",
+      "buffer": "Buffer",
       "tuner": "Tuner",
       "lastUpdate": "Last Update",
       "availability": "Availability",
@@ -156,6 +157,11 @@
       "title": "HDHomeRun IP",
       "placeholder": "IP address and port (192.168.1.10:5004)",
       "description": ""
+    },
+    "buffer": {
+      "title": "Buffer",
+      "placeholder": "",
+      "description": "Buffer for the streams. <br>Only available with activated tuner."
     },
     "tuner": {
       "title": "Tuner / Streams",
@@ -446,6 +452,10 @@
       "title": "FFmpeg Options",
       "description": "FFmpeg options.<br>Only change if you know what you are doing.<br>Leave blank to set default settings.",
       "placeholder": "Leave blank to set default settings"
+    },
+    "ffmpegForceHttp": {
+      "title": "Force HTTP for FFMPEG",
+      "description": "If checked, will rewrite the m3u to use http instead of https. Use this for https links in ffmpeg"
     },
     "vlcPath": {
       "title": "VLC / CVLC Binary Path",

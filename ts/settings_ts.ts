@@ -117,6 +117,20 @@ class SettingsCategory {
         setting.appendChild(tdRight)
         break
 
+      case "ffmpeg.forceHttp":
+        var tdLeft = document.createElement("TD")
+        tdLeft.innerHTML = "{{.settings.ffmpegForceHttp.title}}" + ":"
+
+        var tdRight = document.createElement("TD")
+        var input = content.createCheckbox(settingsKey)
+        input.checked = data
+        input.setAttribute("onchange", "javascript: this.className = 'changed'")
+        tdRight.appendChild(input)
+
+        setting.appendChild(tdLeft)
+        setting.appendChild(tdRight)
+        break
+
       case "vlc.path":
         var tdLeft = document.createElement("TD")
         tdLeft.innerHTML = "{{.settings.vlcPath.title}}" + ":"
@@ -694,6 +708,10 @@ class SettingsCategory {
 
       case "ffmpeg.options":
         text = "{{.settings.ffmpegOptions.description}}"
+        break
+
+      case "ffmpeg.forceHttp":
+        text = "{{.settings.ffmpegForceHttp.description}}"
         break
 
       case "vlc.path":

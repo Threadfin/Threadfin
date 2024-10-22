@@ -296,6 +296,7 @@ type SettingsStruct struct {
 	EpgSource         string   `json:"epgSource"`
 	FFmpegOptions     string   `json:"ffmpeg.options"`
 	FFmpegPath        string   `json:"ffmpeg.path"`
+	FFmpegForceHttp   bool     `json:"ffmpeg.forceHttp"`
 	VLCOptions        string   `json:"vlc.options"`
 	VLCPath           string   `json:"vlc.path"`
 	FileM3U           []string `json:"file,omitempty"`  // Beim Wizard wird die M3U in ein Slice gespeichert

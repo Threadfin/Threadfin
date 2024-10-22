@@ -140,10 +140,21 @@ func Stream(w http.ResponseWriter, r *http.Request) {
 			streamInfo.URL = fmt.Sprintf("https://%s:%d%s?%s", u.Host, Settings.HttpsPort, u.Path, u.RawQuery)
 		}
 	}
+	var playListBuffer string
+	systemMutex.Lock()
+	playListInterface := Settings.Files.M3U[streamInfo.PlaylistID]
+	if playListMap, ok := playListInterface.(map[string]interface{}); ok {
+		playListBuffer = playListMap["buffer"].(string)
+	}
+	systemMutex.Unlock()
 
-	switch Settings.Buffer {
+	if playListBuffer == "" {
+		playListBuffer = Settings.Buffer
+	}
+
+	switch playListBuffer {
 	case "-":
-		showInfo(fmt.Sprintf("Buffer:false [%s]", Settings.Buffer))
+		showInfo(fmt.Sprintf("Buffer:false [%s]", playListBuffer))
 	case "threadfin":
 		if strings.Index(streamInfo.URL, "rtsp://") != -1 || strings.Index(streamInfo.URL, "rtp://") != -1 {
 			err = errors.New("RTSP and RTP streams are not supported")
@@ -152,15 +163,15 @@ func Stream(w http.ResponseWriter, r *http.Request) {
 			http.Redirect(w, r, streamInfo.URL, 302)
 			return
 		}
-		showInfo(fmt.Sprintf("Buffer:true [%s]", Settings.Buffer))
+		showInfo(fmt.Sprintf("Buffer:true [%s]", playListBuffer))
 	default:
-		showInfo(fmt.Sprintf("Buffer:true [%s]", Settings.Buffer))
+		showInfo(fmt.Sprintf("Buffer:true [%s]", playListBuffer))
 	}
 
 	showInfo(fmt.Sprintf("Channel Name:%s", streamInfo.Name))
 	showInfo(fmt.Sprintf("Client User-Agent:%s", r.Header.Get("User-Agent")))
 
-	switch Settings.Buffer {
+	switch playListBuffer {
 	case "-":
 		showInfo("Streaming URL:" + streamInfo.URL)
 		w.Header().Set("Access-Control-Allow-Origin", "*")
