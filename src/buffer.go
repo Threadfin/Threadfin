@@ -152,7 +152,7 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 	// Check whether the playlist is already in use
 	if p, ok := BufferInformation.Load(playlistID); !ok {
 		var playlistType string
-		fmt.Println("PLAYLIST: ", p)
+
 		// Playlist wird noch nicht verwendet, Default-Werte für die Playlist erstellen
 		playlist.Folder = System.Folder.Temp + playlistID + string(os.PathSeparator)
 		playlist.PlaylistID = playlistID
@@ -175,6 +175,20 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 			playlistType = "hdhr"
 
 		}
+
+		var playListBuffer string
+		systemMutex.Lock()
+		playListInterface := Settings.Files.M3U[playlistID]
+		if playListMap, ok := playListInterface.(map[string]interface{}); ok {
+			playListBuffer = playListMap["buffer"].(string)
+		}
+		systemMutex.Unlock()
+
+		if playListBuffer == "" {
+			playListBuffer = Settings.Buffer
+		}
+
+		playlist.Buffer = playListBuffer
 
 		playlist.Tuner = getTuner(playlistID, playlistType)
 
@@ -1311,7 +1325,19 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 
 func getTuner(id, playlistType string) (tuner int) {
 
-	switch Settings.Buffer {
+	var playListBuffer string
+	systemMutex.Lock()
+	playListInterface := Settings.Files.M3U[id]
+	if playListMap, ok := playListInterface.(map[string]interface{}); ok {
+		playListBuffer = playListMap["buffer"].(string)
+	}
+	systemMutex.Unlock()
+
+	if playListBuffer == "" {
+		playListBuffer = Settings.Buffer
+	}
+
+	switch playListBuffer {
 
 	case "-":
 		tuner = Settings.Tuner
