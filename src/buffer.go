@@ -176,6 +176,20 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 
 		}
 
+		var playListBuffer string
+		systemMutex.Lock()
+		playListInterface := Settings.Files.M3U[playlistID]
+		if playListMap, ok := playListInterface.(map[string]interface{}); ok {
+			playListBuffer = playListMap["buffer"].(string)
+		}
+		systemMutex.Unlock()
+
+		if playListBuffer == "" {
+			playListBuffer = Settings.Buffer
+		}
+
+		playlist.Buffer = playListBuffer
+
 		playlist.Tuner = getTuner(playlistID, playlistType)
 
 		playlist.PlaylistName = getProviderParameter(playlist.PlaylistID, playlistType, "name")
@@ -307,8 +321,6 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 
 		playlist.Streams[streamID] = stream
 		BufferInformation.Store(playlistID, playlist)
-
-		fmt.Println("BUFFER: ", playlist.Buffer)
 
 		switch playlist.Buffer {
 
@@ -1313,7 +1325,19 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 
 func getTuner(id, playlistType string) (tuner int) {
 
-	switch Settings.Buffer {
+	var playListBuffer string
+	systemMutex.Lock()
+	playListInterface := Settings.Files.M3U[id]
+	if playListMap, ok := playListInterface.(map[string]interface{}); ok {
+		playListBuffer = playListMap["buffer"].(string)
+	}
+	systemMutex.Unlock()
+
+	if playListBuffer == "" {
+		playListBuffer = Settings.Buffer
+	}
+
+	switch playListBuffer {
 
 	case "-":
 		tuner = Settings.Tuner
