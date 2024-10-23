@@ -140,11 +140,16 @@ func Stream(w http.ResponseWriter, r *http.Request) {
 			streamInfo.URL = fmt.Sprintf("https://%s:%d%s?%s", u.Host, Settings.HttpsPort, u.Path, u.RawQuery)
 		}
 	}
+
 	var playListBuffer string
 	systemMutex.Lock()
 	playListInterface := Settings.Files.M3U[streamInfo.PlaylistID]
 	if playListMap, ok := playListInterface.(map[string]interface{}); ok {
-		playListBuffer = playListMap["buffer"].(string)
+		if bufferValue, exists := playListMap["buffer"]; exists && bufferValue != nil {
+			if buffer, ok := bufferValue.(string); ok {
+				playListBuffer = buffer
+			}
+		}
 	}
 	systemMutex.Unlock()
 
