@@ -214,6 +214,14 @@ func Threadfin(w http.ResponseWriter, r *http.Request) {
 	if strings.Contains(path, "xmltv/") {
 
 		requestType = "xml"
+
+		err = urlAuth(r, requestType)
+		if err != nil {
+			ShowError(err, 000)
+			httpStatusError(w, r, 403)
+			return
+		}
+
 		systemMutex.Lock()
 		file = System.Folder.Data + getFilenameFromPath(path)
 		systemMutex.Unlock()
@@ -230,6 +238,13 @@ func Threadfin(w http.ResponseWriter, r *http.Request) {
 	if strings.Contains(path, "m3u/") {
 
 		requestType = "m3u"
+
+		err = urlAuth(r, requestType)
+		if err != nil {
+			ShowError(err, 000)
+			httpStatusError(w, r, 403)
+			return
+		}
 
 		groupTitle = r.URL.Query().Get("group-title")
 
@@ -266,13 +281,6 @@ func Threadfin(w http.ResponseWriter, r *http.Request) {
 			ShowError(err, 000)
 		}
 
-	}
-
-	err = urlAuth(r, requestType)
-	if err != nil {
-		ShowError(err, 000)
-		httpStatusError(w, r, 403)
-		return
 	}
 
 	contentType = http.DetectContentType([]byte(content))
