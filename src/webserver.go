@@ -231,13 +231,6 @@ func Threadfin(w http.ResponseWriter, r *http.Request) {
 
 		requestType = "m3u"
 
-		err = urlAuth(r, requestType)
-		if err != nil {
-			ShowError(err, 000)
-			httpStatusError(w, r, 403)
-			return
-		}
-
 		groupTitle = r.URL.Query().Get("group-title")
 
 		systemMutex.Lock()
@@ -273,6 +266,13 @@ func Threadfin(w http.ResponseWriter, r *http.Request) {
 			ShowError(err, 000)
 		}
 
+	}
+
+	err = urlAuth(r, requestType)
+	if err != nil {
+		ShowError(err, 000)
+		httpStatusError(w, r, 403)
+		return
 	}
 
 	contentType = http.DetectContentType([]byte(content))
