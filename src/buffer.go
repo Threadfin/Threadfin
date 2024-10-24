@@ -19,7 +19,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/avfs/avfs/vfs/memfs"
@@ -360,7 +359,7 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 
 						var clients = c.(ClientConnection)
 
-						if clients.Error != nil || (timeOut > 200 && (playlist.Streams[streamID].BackupChannel1URL == "" && playlist.Streams[streamID].BackupChannel2URL == "" && playlist.Streams[streamID].BackupChannel3URL == "")) {
+						if clients.Error != nil || (timeOut > 500 && (playlist.Streams[streamID].BackupChannel1URL == "" && playlist.Streams[streamID].BackupChannel2URL == "" && playlist.Streams[streamID].BackupChannel3URL == "")) {
 							killClientConnection(streamID, stream.PlaylistID, false)
 							return
 						}
@@ -1450,18 +1449,4 @@ func debugResponse(resp *http.Response) {
 	showDebug(debug, debugLevel)
 
 	return
-}
-
-func terminateProcessGracefully(cmd *exec.Cmd) {
-	if cmd.Process != nil {
-		// Send a SIGTERM to the process
-		if err := cmd.Process.Signal(syscall.SIGTERM); err != nil {
-			// If an error occurred while trying to send the SIGTERM, you might resort to a SIGKILL.
-			ShowError(err, 0)
-			cmd.Process.Kill()
-		}
-
-		// Optionally, you can wait for the process to finish too
-		cmd.Wait()
-	}
 }
