@@ -1014,7 +1014,7 @@ func createLiveProgram(xepgChannel XEPGChannelStruct, channelId string) []*Progr
 	var currentTime = time.Now()
 	localLocation := currentTime.Location() // Central Time (CT)
 
-	startTime := time.Date(currentTime.Year(), currentTime.Month(), currentTime.Day(), 12, 0, 0, currentTime.Nanosecond(), localLocation)
+	startTime := time.Date(currentTime.Year(), currentTime.Month(), currentTime.Day(), 0, 0, 0, currentTime.Nanosecond(), localLocation)
 	stopTime := time.Date(currentTime.Year(), currentTime.Month(), currentTime.Day(), 23, 59, 59, currentTime.Nanosecond(), localLocation)
 
 	name := ""
@@ -1024,14 +1024,22 @@ func createLiveProgram(xepgChannel XEPGChannelStruct, channelId string) []*Progr
 		name = xepgChannel.TvgName
 	}
 
-	re := regexp.MustCompile(`(\d{1,2}[./]\d{1,2})[-\s](\d{1,2}:\d{2}\s*(AM|PM))`)
+	// Search for Datetime or Time
+	// Datetime examples: '12/31-11:59 PM', '1.1 6:30 AM', '09/15-10:00PM', '7/4 12:00 PM', '3.21 3:45 AM', '6/30-8:00 AM'
+	// Time examples: '11:59 PM', '6:30 AM', '11:59PM'
+	re := regexp.MustCompile(`((\d{1,2}[./]\d{1,2})[-\s])*(\d{1,2}:\d{2}\s*(AM|PM))`)
 	matches := re.FindStringSubmatch(name)
 	layout := "2006.1.2 3:04 PM"
 	if len(matches) > 0 {
 
+		// The string contains a date, so normalize it
 		if strings.Contains(matches[0], "/") {
 			matches[0] = strings.Replace(matches[0], "/", ".", 1)
 			matches[0] = strings.Replace(matches[0], "-", " ", 1)
+			layout = "2006.1.2 3:04PM"
+		} else if !strings.Contains(matches[0], ".") && !strings.Contains(matches[0], "/") {
+			// If the string doesn't contain a date, assume that the time applies to today
+			matches[0] = fmt.Sprintf("%d.%d %s", currentTime.Month(), currentTime.Day(), matches[0])
 			layout = "2006.1.2 3:04PM"
 		}
 
