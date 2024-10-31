@@ -72,7 +72,13 @@ func New(path, cacheURL string, caching bool) (c *Cache, err error) {
 			} else if c.caching && http_domain != "" {
 				u, err := url.Parse(cacheURL)
 				if err == nil {
-					cacheURL = fmt.Sprintf("http://%s:%s%s", http_domain, http_port, u.Path)
+					var baseUrl = ""
+					if strings.Contains(http_domain, ":") {
+						baseUrl = http_domain
+					} else {
+						baseUrl = fmt.Sprintf("%s:%s", http_domain, http_port)
+					}
+					cacheURL = fmt.Sprintf("http://%s%s", baseUrl, u.Path)
 				}
 			}
 			return cacheURL

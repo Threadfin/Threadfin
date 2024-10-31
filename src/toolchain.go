@@ -24,7 +24,7 @@ import (
 
 // --- System Tools ---
 
-// Prüft ob der Ordner existiert, falls nicht, wir der Ordner erstellt
+// Checks if the folder exists, if not, the folder is created
 func checkFolder(path string) (err error) {
 
 	var debug string
@@ -454,4 +454,12 @@ func getMD5(str string) string {
 	md5Hasher.Write([]byte(str))
 
 	return hex.EncodeToString(md5Hasher.Sum(nil))
+}
+
+func getBaseUrl(host string, port string) string {
+	if strings.Contains(host, ":") {
+		return host
+	} else {
+		return fmt.Sprintf("%s:%s", host, port)
+	}
 }
