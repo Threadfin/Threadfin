@@ -57,7 +57,7 @@ class MainMenuItem extends MainMenu {
         break
 
       case "filter":
-        this.tableHeader = ["{{.filter.table.name}}", "{{.filter.table.type}}", "{{.filter.table.filter}}"]
+        this.tableHeader = ["{{.filter.table.startingNumber}}","{{.filter.table.name}}", "{{.filter.table.type}}", "{{.filter.table.filter}}"]
         break
 
       case "users":
@@ -236,6 +236,12 @@ class Content {
 
           tr.setAttribute('onclick', 'javascript: openPopUp("' + data[key]["type"] + '", this)')
 
+          var cell: Cell = new Cell()
+          cell.child = true
+          cell.childType = "P"
+          cell.value = data[key]["startingNumber"]
+          tr.appendChild(cell.createCell())
+          
           var cell: Cell = new Cell()
           cell.child = true
           cell.childType = "P"
@@ -1068,7 +1074,7 @@ class ShowContent extends Content {
 
       case "filter":
         showPreview(true)
-        sortTable(0)
+        sortTable(1)
         break
 
       default:

@@ -42,7 +42,7 @@ class MainMenuItem extends MainMenu {
                 this.tableHeader = ["{{.xmltv.table.guide}}", "{{.xmltv.table.lastUpdate}}", "{{.xmltv.table.availability}} %", "{{.xmltv.table.channels}}", "{{.xmltv.table.programs}}"];
                 break;
             case "filter":
-                this.tableHeader = ["{{.filter.table.name}}", "{{.filter.table.type}}", "{{.filter.table.filter}}"];
+                this.tableHeader = ["{{.filter.table.startingNumber}}", "{{.filter.table.name}}", "{{.filter.table.type}}", "{{.filter.table.filter}}"];
                 break;
             case "users":
                 this.tableHeader = ["{{.users.table.username}}", "{{.users.table.password}}", "{{.users.table.web}}", "{{.users.table.pms}}", "{{.users.table.m3u}}", "{{.users.table.xml}}", "{{.users.table.api}}"];
@@ -184,6 +184,11 @@ class Content {
                     var tr = document.createElement("TR");
                     tr.id = key;
                     tr.setAttribute('onclick', 'javascript: openPopUp("' + data[key]["type"] + '", this)');
+                    var cell = new Cell();
+                    cell.child = true;
+                    cell.childType = "P";
+                    cell.value = data[key]["startingNumber"];
+                    tr.appendChild(cell.createCell());
                     var cell = new Cell();
                     cell.child = true;
                     cell.childType = "P";
@@ -852,7 +857,7 @@ class ShowContent extends Content {
                 break;
             case "filter":
                 showPreview(true);
-                sortTable(0);
+                sortTable(1);
                 break;
             default:
                 COLUMN_TO_SORT = -1;

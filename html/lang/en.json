@@ -53,6 +53,7 @@
   },
   "filter": {
     "table": {
+      "startingNumber": "Start Ch.",
       "name": "Filter Name",
       "type": "Filter Type",
       "filter": "Filter"
