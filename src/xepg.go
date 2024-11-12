@@ -1040,7 +1040,13 @@ func createLiveProgram(xepgChannel XEPGChannelStruct, channelId string) []*Progr
 		} else if !strings.Contains(matches[0], ".") && !strings.Contains(matches[0], "/") {
 			// If the string doesn't contain a date, assume that the time applies to today
 			matches[0] = fmt.Sprintf("%d.%d %s", currentTime.Month(), currentTime.Day(), matches[0])
+		}
+
+		// Format the expected layout based on if the time is '2:00PM' or '2PM'
+		if strings.Contains(matches[0], ":") {
 			layout = "2006.1.2 3:04PM"
+		} else {
+			layout = "2006.1.2 3PM"
 		}
 
 		timeString := matches[0]
