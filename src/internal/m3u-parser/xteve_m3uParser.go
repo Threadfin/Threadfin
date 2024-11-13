@@ -92,17 +92,14 @@ func MakeInterfaceFromM3U(byteStream []byte) (allChannels []interface{}, err err
 			stream["_values"] = value
 		}
 
-		// Search for a unique ID in the stream
-		for key, value := range stream {
-			if strings.Contains(strings.ToLower(key), "tvg-id") {
-				if indexOfString(value, uuids) != -1 {
-					break
-				}
-				uuids = append(uuids, value)
-				stream["_uuid.key"] = key
-				stream["_uuid.value"] = value
+		uniqueId := findID(stream)
+		for key, value := range uniqueId {
+			if indexOfString(value, uuids) != -1 {
 				break
 			}
+			uuids = append(uuids, value)
+			stream["_uuid.key"] = key
+			stream["_uuid.value"] = value
 		}
 
 		return
@@ -144,4 +141,25 @@ func indexOfString(element string, data []string) int {
 	}
 
 	return -1
+}
+
+func findID(data map[string]string) map[string]string {
+	result := make(map[string]string)
+	// First look for an ID field that isn't tvg-id
+	for key, value := range data {
+		lowerKey := strings.ToLower(key)
+		if strings.Contains(lowerKey, "id") && lowerKey != "tvg-id" {
+			result[key] = value
+			return result
+		}
+	}
+	// If there isn't a non-tvg-id key, then find the tvg-id
+	for key, value := range data {
+		lowerKey := strings.ToLower(key)
+		if lowerKey == "tvg-id" {
+			result[key] = value
+			return result
+		}
+	}
+	return result
 }
