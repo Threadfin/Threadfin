@@ -1025,9 +1025,9 @@ func createLiveProgram(xepgChannel XEPGChannelStruct, channelId string) []*Progr
 	}
 
 	// Search for Datetime or Time
-	// Datetime examples: '12/31-11:59 PM', '1.1 6:30 AM', '09/15-10:00PM', '7/4 12:00 PM', '3.21 3:45 AM', '6/30-8:00 AM'
-	// Time examples: '11:59 PM', '6:30 AM', '11:59PM'
-	re := regexp.MustCompile(`((\d{1,2}[./]\d{1,2})[-\s])*(\d{1,2}:\d{2}\s*(AM|PM))`)
+	// Datetime examples: '12/31-11:59 PM', '1.1 6:30 AM', '09/15-10:00PM', '7/4 12:00 PM', '3.21 3:45 AM', '6/30-8:00 AM', '4/15 3AM'
+	// Time examples: '11:59 PM', '6:30 AM', '11:59PM', '1PM'
+	re := regexp.MustCompile(`((\d{1,2}[./]\d{1,2})[-\s])*(\d{1,2}(:\d{2})*\s*(AM|PM))`)
 	matches := re.FindStringSubmatch(name)
 	layout := "2006.1.2 3:04 PM"
 	if len(matches) > 0 {
@@ -1040,7 +1040,13 @@ func createLiveProgram(xepgChannel XEPGChannelStruct, channelId string) []*Progr
 		} else if !strings.Contains(matches[0], ".") && !strings.Contains(matches[0], "/") {
 			// If the string doesn't contain a date, assume that the time applies to today
 			matches[0] = fmt.Sprintf("%d.%d %s", currentTime.Month(), currentTime.Day(), matches[0])
+		}
+
+		// Format the expected layout based on if the time is '2:00PM' or '2PM'
+		if strings.Contains(matches[0], ":") {
 			layout = "2006.1.2 3:04PM"
+		} else {
+			layout = "2006.1.2 3PM"
 		}
 
 		timeString := matches[0]
