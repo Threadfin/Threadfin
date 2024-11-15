@@ -410,7 +410,8 @@ func createXEPGDatabase() (err error) {
 		if channel.TvgName == "" {
 			channel.TvgName = channel.Name
 		}
-		channelHash := channel.TvgID
+
+		channelHash := channel.TvgName + channel.FileM3UID
 		xepgChannelsValuesMap[channelHash] = channel
 	}
 
@@ -437,7 +438,7 @@ func createXEPGDatabase() (err error) {
 		Data.Cache.Streams.Active = append(Data.Cache.Streams.Active, m3uChannel.Name+m3uChannel.FileM3UID)
 
 		// Try to find the channel based on matching all known values.  If that fails, then move to full channel scan
-		m3uChannelHash := m3uChannel.TvgID
+		m3uChannelHash := m3uChannel.TvgName + m3uChannel.FileM3UID
 		if m3uChannel.LiveEvent == "true" {
 			match := re.FindString(m3uChannel.Name)
 			if match != "" {
@@ -467,15 +468,14 @@ func createXEPGDatabase() (err error) {
 		} else {
 			// XEPG Datenbank durchlaufen um nach dem Kanal zu suchen.  Run through the XEPG database to search for the channel (full scan)
 			for _, dxc := range xepgChannelsValuesMap {
-				if m3uChannel.FileM3UID == dxc.FileM3UID {
+				if m3uChannel.FileM3UID == dxc.FileM3UID && !isInInactiveList(dxc.URL) {
 
 					dxc.FileM3UID = m3uChannel.FileM3UID
 					dxc.FileM3UName = m3uChannel.FileM3UName
 
 					// Vergleichen des Streams anhand einer UUID in der M3U mit dem Kanal in der Databank.  Compare the stream using a UUID in the M3U with the channel in the database
 					if len(dxc.UUIDValue) > 0 && len(m3uChannel.UUIDValue) > 0 {
-
-						if dxc.UUIDValue == m3uChannel.UUIDValue && dxc.UUIDKey == m3uChannel.UUIDKey && dxc.TvgID == m3uChannel.TvgID {
+						if dxc.UUIDValue == m3uChannel.UUIDValue {
 
 							channelExists = true
 							channelHasUUID = true
@@ -483,17 +483,7 @@ func createXEPGDatabase() (err error) {
 							break
 
 						}
-
-					} else {
-						// Vergleichen des Streams mit dem Kanal in der Databank anhand des Kanalnamens.  Compare the stream to the channel in the database using the channel name
-						if dxc.Name == m3uChannel.Name {
-							channelExists = true
-							currentXEPGID = dxc.XEPG
-							break
-						}
-
 					}
-
 				}
 
 			}
@@ -515,9 +505,6 @@ func createXEPGDatabase() (err error) {
 
 			// Streaming URL aktualisieren
 			xepgChannel.URL = m3uChannel.URL
-
-			// Name aktualisieren, anhand des Names wird überprüft ob der Kanal noch in einer Playlist verhanden. Funktion: cleanupXEPG
-			xepgChannel.Name = m3uChannel.Name
 
 			xepgChannel.TvgChno = m3uChannel.TvgChno
 
@@ -582,20 +569,68 @@ func createXEPGDatabase() (err error) {
 			newChannel.URL = m3uChannel.URL
 			newChannel.Live, _ = strconv.ParseBool(m3uChannel.LiveEvent)
 
+			for file, xmltvChannels := range Data.XMLTV.Mapping {
+				channelsMap, ok := xmltvChannels.(map[string]interface{})
+				if !ok {
+					continue
+				}
+				if channel, ok := channelsMap[m3uChannel.TvgID]; ok {
+
+					filters := []FilterStruct{}
+					for _, filter := range Settings.Filter {
+						filter_json, _ := json.Marshal(filter)
+						f := FilterStruct{}
+						json.Unmarshal(filter_json, &f)
+						filters = append(filters, f)
+					}
+					for _, filter := range filters {
+						if newChannel.GroupTitle == filter.Filter {
+							category := &Category{}
+							category.Value = filter.Category
+							category.Lang = "en"
+							newChannel.XCategory = filter.Category
+						}
+					}
+
+					chmap, okk := channel.(map[string]interface{})
+					if !okk {
+						continue
+					}
+
+					if channelID, ok := chmap["id"].(string); ok {
+						newChannel.XmltvFile = file
+						newChannel.XMapping = channelID
+						newChannel.XActive = true
+
+						// Falls in der XMLTV Datei ein Logo existiert, wird dieses verwendet. Falls nicht, dann das Logo aus der M3U Datei
+						if icon, ok := chmap["icon"].(string); ok {
+							if len(icon) > 0 {
+								newChannel.TvgLogo = icon
+							}
+						}
+
+						break
+
+					}
+
+				}
+
+			}
+
 			programData, _ := getProgramData(newChannel)
 
 			if newChannel.Live && len(programData.Program) <= 3 {
 				newChannel.XmltvFile = "Threadfin Dummy"
 				newChannel.XMapping = "PPV"
 				newChannel.XActive = true
-			} else {
-				newChannel.XmltvFile = ""
-				newChannel.XMapping = ""
 			}
 
 			if len(m3uChannel.UUIDKey) > 0 {
 				newChannel.UUIDKey = m3uChannel.UUIDKey
 				newChannel.UUIDValue = m3uChannel.UUIDValue
+			} else {
+				newChannel.UUIDKey = ""
+				newChannel.UUIDValue = ""
 			}
 
 			newChannel.XName = m3uChannel.Name
@@ -604,8 +639,10 @@ func createXEPGDatabase() (err error) {
 			newChannel.XChannelID = xChannelID
 
 			Data.XEPG.Channels[xepg] = newChannel
-		}
+			channelHash := newChannel.TvgName + newChannel.FileM3UID
+			xepgChannelsValuesMap[channelHash] = newChannel
 
+		}
 	}
 
 	showInfo("XEPG:" + "Save DB file")
@@ -905,11 +942,11 @@ func createXMLTVFile() (err error) {
 
 // Programmdaten erstellen (createXMLTVFile)
 func getProgramData(xepgChannel XEPGChannelStruct) (xepgXML XMLTV, err error) {
-
 	var xmltvFile = System.Folder.Data + xepgChannel.XmltvFile
 	var channelID = xepgChannel.XMapping
 
 	var xmltv XMLTV
+
 	if strings.Contains(xmltvFile, "Threadfin Dummy") {
 		xmltv = createDummyProgram(xepgChannel)
 	} else {
@@ -1054,6 +1091,9 @@ func createLiveProgram(xepgChannel XEPGChannelStruct, channelId string) []*Progr
 			timeString += " ET"
 		}
 		timeString = strings.Replace(timeString, " ET", "", 1) // Remove "ET" from the time string
+
+		timeString = strings.Replace(timeString, " AM", "AM", -1)
+		timeString = strings.Replace(timeString, " PM", "PM", -1)
 
 		// Use LoadLocation to properly account for DST
 		nyLocation, _ := time.LoadLocation("America/New_York") // ET location
@@ -1312,6 +1352,31 @@ func getLocalXMLTV(file string, xmltv *XMLTV) (err error) {
 	}
 
 	return
+}
+
+func isInInactiveList(channelURL string) bool {
+	for _, channel := range Data.Streams.Inactive {
+		// Type assert channel to map[string]interface{}
+		chMap, ok := channel.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		urlValue, exists := chMap["url"]
+		if !exists {
+			continue
+		}
+
+		urlStr, ok := urlValue.(string)
+		if !ok {
+			continue
+		}
+
+		if urlStr == channelURL {
+			return true
+		}
+	}
+	return false
 }
 
 // M3U Datei erstellen

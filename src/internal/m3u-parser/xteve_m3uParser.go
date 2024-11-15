@@ -12,10 +12,10 @@ import (
 func MakeInterfaceFromM3U(byteStream []byte) (allChannels []interface{}, err error) {
 
 	var content = string(byteStream)
-	var channelName string
-	var uuids []string
 
 	var parseMetaData = func(channel string) (stream map[string]string) {
+		var channelName string // Declare inside the function
+		var uuids []string
 
 		stream = make(map[string]string)
 		var exceptForParameter = `[a-z-A-Z&=]*(".*?")`
@@ -92,9 +92,9 @@ func MakeInterfaceFromM3U(byteStream []byte) (allChannels []interface{}, err err
 			stream["_values"] = value
 		}
 
-		// Search for a unique ID in the stream
+		// Assign a unique ID to the stream
 		for key, value := range stream {
-			if strings.Contains(strings.ToLower(key), "tvg-id") {
+			if strings.Contains(strings.ToLower(key), "tvg-name") {
 				if indexOfString(value, uuids) != -1 {
 					break
 				}
