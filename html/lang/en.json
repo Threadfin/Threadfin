@@ -53,6 +53,7 @@
   },
   "filter": {
     "table": {
+      "startingNumber": "Start Ch.",
       "name": "Filter Name",
       "type": "Filter Type",
       "filter": "Filter"
@@ -525,6 +526,16 @@
       "title": "User Agent",
       "description": "User Agent for HTTP requests. For every HTTP connection, this value is used for the user agent. Should only be changed if Threadfin is blocked.",
       "placeholder": "Threadfin"
+    },
+    "userOrigin": {
+      "title": "User Header Origin",
+      "description": "User Header Origin for HTTP requests. For every HTTP connection, this value is used for the user header origin. Should only be changed if Threadfin is blocked.",
+      "placeholder": "HTTP Origin"
+    },
+    "userReferer": {
+      "title": "User Header Referer",
+      "description": "User Header Referer for HTTP requests. For every HTTP connection, this value is used for the user header referer. Should only be changed if Threadfin is blocked.",
+      "placeholder": "HTTP Referer"
     },
     "backupPath": {
       "title": "Location for automatic backups",

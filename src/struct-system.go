@@ -322,6 +322,8 @@ type SettingsStruct struct {
 	Update                    []string              `json:"update"`
 	UpdateURL                 string                `json:"update.url,omitempty"`
 	UserAgent                 string                `json:"user.agent"`
+	UserOrigin                string                `json:"user.origin"`
+	UserReferer               string                `json:"user.referer"`
 	UUID                      string                `json:"uuid"`
 	UDPxy                     string                `json:"udpxy"`
 	Version                   string                `json:"version"`
