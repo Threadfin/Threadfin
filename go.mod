@@ -1,17 +1,19 @@
 module threadfin
 
-go 1.18
+go 1.22
+
+toolchain go1.23.3
 
 require (
-	github.com/avfs/avfs v0.30.0
-	github.com/gorilla/websocket v1.5.0
-	github.com/hashicorp/go-version v1.6.0
+	github.com/avfs/avfs v0.35.0
+	github.com/gorilla/websocket v1.5.3
+	github.com/hashicorp/go-version v1.7.0
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0
-	github.com/koron/go-ssdp v0.0.3
-	golang.org/x/text v0.3.7
+	github.com/koron/go-ssdp v0.0.4
+	golang.org/x/text v0.20.0
 )
 
 require (
-	golang.org/x/net v0.0.0-20220517181318-183a9ca12b87 // indirect
-	golang.org/x/sys v0.0.0-20220519141025-dcacdad47464 // indirect
+	golang.org/x/net v0.31.0 // indirect
+	golang.org/x/sys v0.27.0 // indirect
 )
