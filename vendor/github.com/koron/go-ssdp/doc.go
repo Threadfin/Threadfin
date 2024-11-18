@@ -1,4 +1,4 @@
 /*
-Package ssdp provides SSDP advertiser or so.
+Package ssdp provides ...
 */
 package ssdp

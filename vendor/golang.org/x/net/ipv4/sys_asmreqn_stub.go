@@ -3,6 +3,7 @@
 // license that can be found in the LICENSE file.
 
 //go:build !darwin && !freebsd && !linux
+// +build !darwin,!freebsd,!linux
 
 package ipv4
 

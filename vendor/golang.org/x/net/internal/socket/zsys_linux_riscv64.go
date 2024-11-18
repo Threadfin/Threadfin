@@ -2,6 +2,7 @@
 // cgo -godefs defs_linux.go
 
 //go:build riscv64
+// +build riscv64
 
 package socket
 

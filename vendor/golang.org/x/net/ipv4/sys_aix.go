@@ -4,6 +4,7 @@
 
 // Added for go1.11 compatibility
 //go:build aix
+// +build aix
 
 package ipv4
 

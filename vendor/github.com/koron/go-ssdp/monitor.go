@@ -9,9 +9,6 @@ import (
 	"net"
 	"net/http"
 	"sync"
-
-	"github.com/koron/go-ssdp/internal/multicast"
-	"github.com/koron/go-ssdp/internal/ssdplog"
 )
 
 // Monitor monitors SSDP's alive and byebye messages.
@@ -20,17 +17,17 @@ type Monitor struct {
 	Bye    ByeHandler
 	Search SearchHandler
 
-	conn *multicast.Conn
+	conn *multicastConn
 	wg   sync.WaitGroup
 }
 
 // Start starts to monitor SSDP messages.
 func (m *Monitor) Start() error {
-	conn, err := multicast.Listen(multicast.RecvAddrResolver)
+	conn, err := multicastListen(recvAddrResolver)
 	if err != nil {
 		return err
 	}
-	ssdplog.Printf("monitoring on %s", conn.LocalAddr().String())
+	logf("monitoring on %s", conn.LocalAddr().String())
 	m.conn = conn
 	m.wg.Add(1)
 	go func() {
@@ -41,8 +38,7 @@ func (m *Monitor) Start() error {
 }
 
 func (m *Monitor) serve() error {
-	// TODO: update listening interfaces of m.conn
-	err := m.conn.ReadPackets(0, func(addr net.Addr, data []byte) error {
+	err := m.conn.readPackets(0, func(addr net.Addr, data []byte) error {
 		msg := make([]byte, len(data))
 		copy(msg, data)
 		go m.handleRaw(addr, msg)
@@ -66,7 +62,7 @@ func (m *Monitor) handleRaw(addr net.Addr, raw []byte) error {
 		return m.handleNotify(addr, raw)
 	}
 	n := bytes.Index(raw, []byte("\r\n"))
-	ssdplog.Printf("unexpected method: %q", string(raw[:n]))
+	logf("unexpected method: %q", string(raw[:n]))
 	return nil
 }
 
