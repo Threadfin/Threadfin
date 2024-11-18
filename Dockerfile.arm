@@ -1,6 +1,6 @@
 # First stage. Building a binary
 # -----------------------------------------------------------------------------
-FROM arm64v8/golang:1.23 AS builder
+FROM arm64v8/golang:1.18 AS builder
 
 # Download the source code
 RUN apt-get update && apt-get install -y git
