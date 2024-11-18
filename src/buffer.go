@@ -226,6 +226,12 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 			stream = playlist.Streams[id]
 			client = playlist.Clients[id]
 
+			stream.BackupChannel1URL = backupStreamingURL1
+			stream.BackupChannel2URL = backupStreamingURL2
+			stream.BackupChannel3URL = backupStreamingURL3
+			stream.ChannelName = channelName
+			stream.Status = false
+
 			if streamingURL == stream.URL {
 
 				streamID = id
@@ -318,6 +324,9 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 		stream.Folder = playlist.Folder + stream.MD5 + string(os.PathSeparator)
 		stream.PlaylistID = playlistID
 		stream.PlaylistName = playlist.PlaylistName
+		stream.BackupChannel1URL = backupStreamingURL1
+		stream.BackupChannel2URL = backupStreamingURL2
+		stream.BackupChannel3URL = backupStreamingURL3
 
 		playlist.Streams[streamID] = stream
 		BufferInformation.Store(playlistID, playlist)
@@ -1001,15 +1010,15 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 			if backupNumber >= 1 && backupNumber <= 3 {
 				switch backupNumber {
 				case 1:
-					url = playlist.Streams[streamID].BackupChannel1URL
+					url = stream.BackupChannel1URL
 					showHighlight("START OF BACKUP 1 STREAM")
 					showInfo("Backup Channel 1 URL: " + url)
 				case 2:
-					url = playlist.Streams[streamID].BackupChannel2URL
+					url = stream.BackupChannel2URL
 					showHighlight("START OF BACKUP 2 STREAM")
 					showInfo("Backup Channel 2 URL: " + url)
 				case 3:
-					url = playlist.Streams[streamID].BackupChannel3URL
+					url = stream.BackupChannel3URL
 					showHighlight("START OF BACKUP 3 STREAM")
 					showInfo("Backup Channel 3 URL: " + url)
 				}
@@ -1041,10 +1050,9 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 		}
 
 		var addErrorToStream = func(err error) {
-
 			if !useBackup || (useBackup && backupNumber >= 0 && backupNumber <= 3) {
 				backupNumber = backupNumber + 1
-				if playlist.Streams[streamID].BackupChannel1URL != "" || playlist.Streams[streamID].BackupChannel2URL != "" || playlist.Streams[streamID].BackupChannel3URL != "" {
+				if stream.BackupChannel1URL != "" || stream.BackupChannel2URL != "" || stream.BackupChannel3URL != "" {
 					thirdPartyBuffer(streamID, playlistID, true, backupNumber)
 				}
 				return
@@ -1327,7 +1335,6 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 		cmd.Wait()
 
 		err = errors.New(bufferType + " error")
-		killClientConnection(streamID, playlistID, false)
 		addErrorToStream(err)
 		ShowError(err, 1204)
 
