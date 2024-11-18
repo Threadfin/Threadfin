@@ -1,6 +1,6 @@
 module threadfin
 
-go 1.23
+go 1.23.3
 
 require (
 	github.com/avfs/avfs v0.35.0
