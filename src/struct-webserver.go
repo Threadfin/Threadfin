@@ -42,6 +42,8 @@ type RequestStruct struct {
 		UDPxy                    *string   `json:"udpxy,omitempty"`
 		Update                   *[]string `json:"update,omitempty"`
 		UserAgent                *string   `json:"user.agent,omitempty"`
+		UserOrigin               string    `json:"user.origin"`
+		UserReferer              string    `json:"user.referer"`
 		XepgReplaceMissingImages *bool     `json:"xepg.replace.missing.images,omitempty"`
 		XepgReplaceChannelTitle  *bool     `json:"xepg.replace.channel.title,omitempty"`
 		ThreadfinAutoUpdate      *bool     `json:"ThreadfinAutoUpdate,omitempty"`
