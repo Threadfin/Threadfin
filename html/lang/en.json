@@ -482,6 +482,11 @@
       "title": "Force HTTPS",
       "description": "With image caching enabled, if checked, will rewrite M3U and EPG urls to include https protocol as well as https port (default is 443)"
     },
+    "forceHttpsImages":
+    {
+      "title": "Force HTTPS for Images only",
+      "description": "With image caching enabled, if checked, will rewrite channel logo urls to include https protocol as well as https port (default is 443)"
+    },
     "httpsPort":
     {
       "title": "HTTPS Port",

@@ -332,6 +332,8 @@ type SettingsStruct struct {
 	ThreadfinAutoUpdate       bool                  `json:"ThreadfinAutoUpdate"`
 	StoreBufferInRAM          bool                  `json:"storeBufferInRAM"`
 	ForceHttps                bool                  `json:"forceHttps"`
+	ForceHttpsImages          bool                  `json:"forceHttpsImages"`
+	ForceHttpsForImages       bool                  `json:"ForceHttpsForImages"`
 	HttpsPort                 int                   `json:"httpsPort"`
 	BindIpAddress             string                `json:"bindIpAddress"`
 	HttpsThreadfinDomain      string                `json:"httpsThreadfinDomain"`

@@ -342,6 +342,20 @@ class SettingsCategory {
         setting.appendChild(tdRight)
         break
 
+      case "forceHttpsImages":
+        var tdLeft = document.createElement("TD")
+        tdLeft.innerHTML = "{{.settings.forceHttpsImages.title}}" + ":"
+
+        var tdRight = document.createElement("TD")
+        var input = content.createCheckbox(settingsKey)
+        input.checked = data
+        input.setAttribute("onchange", "javascript: this.className = 'changed'")
+        tdRight.appendChild(input)
+
+        setting.appendChild(tdLeft)
+        setting.appendChild(tdRight)
+        break
+
       case "httpsPort":
           var tdLeft = document.createElement("TD")
           tdLeft.innerHTML = "{{.settings.httpsPort.title}}" + ":"
@@ -692,6 +706,10 @@ class SettingsCategory {
 
       case "forceHttps":
         text = "{{.settings.forceHttps.description}}"
+        break
+      
+      case "forceHttpsImages":
+        text = "{{.settings.forceHttpsImages.description}}"
         break
 
       case "httpsPort":

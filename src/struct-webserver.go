@@ -51,6 +51,7 @@ type RequestStruct struct {
 		SchemeXML                *string   `json:"scheme.xml,omitempty"`
 		StoreBufferInRAM         *bool     `json:"storeBufferInRAM,omitempty"`
 		ForceHttps               *bool     `json:"forceHttps,omitempty"`
+		ForceHttpsImages         *bool     `json:"forceHttpsImages,omitempty"`
 		HttpsPort                *int      `json:"httpsPort,omitempty"`
 		HttpsThreadfinDomain     *string   `json:"httpsThreadfinDomain,omitempty"`
 		HttpThreadfinDomain      *string   `json:"httpThreadfinDomain,omitempty"`
