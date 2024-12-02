@@ -1123,11 +1123,11 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 					}
 
 					var headers string
-					if len(Settings.UserReferer) != 0 {
-						headers += fmt.Sprintf("Referer: %s\r\n", Settings.UserReferer)
+					if len(playlist.HttpUserReferer) != 0 {
+						headers += fmt.Sprintf("Referer: %s\r\n", playlist.HttpUserReferer)
 					}
-					if len(Settings.UserOrigin) != 0 {
-						headers += fmt.Sprintf("Origin: %s\r\n", Settings.UserOrigin)
+					if len(playlist.HttpUserOrigin) != 0 {
+						headers += fmt.Sprintf("Origin: %s\r\n", playlist.HttpUserOrigin)
 					}
 					if headers != "" {
 						args = append(args, "-headers", headers)
@@ -1145,8 +1145,8 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 						args = append(args, fmt.Sprintf(":http-user-agent=%s", Settings.UserAgent))
 					}
 
-					if len(Settings.UserReferer) != 0 {
-						args = append(args, fmt.Sprintf(":http-referrer=%s", Settings.UserReferer))
+					if len(playlist.HttpUserReferer) != 0 {
+						args = append(args, fmt.Sprintf(":http-referrer=%s", playlist.HttpUserReferer))
 					}
 
 					if playlist.HttpProxyIP != "" && playlist.HttpProxyPort != "" {
