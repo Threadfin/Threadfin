@@ -257,7 +257,7 @@ func buildM3U(groups []string) (m3u string, err error) {
 
 		logo := ""
 		ForceHttpsForImages := Settings.ForceHttps
-		if(ForceHttpsForImages == false){
+		if !ForceHttpsForImages {
 			ForceHttpsForImages = Settings.ForceHttpsImages
 		}
 		if channel.TvgLogo != "" {

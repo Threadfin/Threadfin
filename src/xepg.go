@@ -52,7 +52,7 @@ func buildXEPG(background bool) {
 		return
 	}
 	ForceHttpsForImages = Settings.ForceHttps
-	if(ForceHttpsForImages == false){
+	if !ForceHttpsForImages {
 		ForceHttpsForImages = Settings.ForceHttpsImages
 	}
 
