@@ -61,28 +61,6 @@ class SettingsCategory {
                 setting.appendChild(tdLeft);
                 setting.appendChild(tdRight);
                 break;
-            case "user.origin":
-                var tdLeft = document.createElement("TD");
-                tdLeft.innerHTML = "{{.settings.userOrigin.title}}" + ":";
-                var tdRight = document.createElement("TD");
-                var input = content.createInput("text", "user.origin", data);
-                input.setAttribute("placeholder", "{{.settings.userOrigin.placeholder}}");
-                input.setAttribute("onchange", "javascript: this.className = 'changed'");
-                tdRight.appendChild(input);
-                setting.appendChild(tdLeft);
-                setting.appendChild(tdRight);
-                break;
-            case "user.referer":
-                var tdLeft = document.createElement("TD");
-                tdLeft.innerHTML = "{{.settings.userReferer.title}}" + ":";
-                var tdRight = document.createElement("TD");
-                var input = content.createInput("text", "user.referer", data);
-                input.setAttribute("placeholder", "{{.settings.userReferer.placeholder}}");
-                input.setAttribute("onchange", "javascript: this.className = 'changed'");
-                tdRight.appendChild(input);
-                setting.appendChild(tdLeft);
-                setting.appendChild(tdRight);
-                break;
             case "buffer.timeout":
                 var tdLeft = document.createElement("TD");
                 tdLeft.innerHTML = "{{.settings.bufferTimeout.title}}" + ":";

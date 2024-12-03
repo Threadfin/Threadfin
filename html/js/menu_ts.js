@@ -847,7 +847,6 @@ class ShowContent extends Content {
                 rows.forEach(tr => {
                     inactivetable.appendChild(tr);
                 });
-                savePopupData("mapping", "", false, 0);
             }
         }
         switch (menuKey) {
@@ -1154,6 +1153,16 @@ function openPopUp(dataType, element) {
             input.setAttribute("placeholder", "{{.playlist.http_proxy_port.placeholder}}");
             content.appendRow("{{.playlist.http_proxy_port.title}}", input);
             content.description("{{.playlist.http_proxy_port.description}}");
+            var dbKey = "http_headers.origin";
+            var input = content.createInput("text", dbKey, data[dbKey]);
+            input.setAttribute("placeholder", "{{.playlist.http_user_origin.placeholder}}");
+            content.appendRow("{{.playlist.http_user_origin.title}}", input);
+            content.description("{{.playlist.http_user_origin.description}}");
+            var dbKey = "http_headers.referer";
+            var input = content.createInput("text", dbKey, data[dbKey]);
+            input.setAttribute("placeholder", "{{.playlist.http_user_referer.placeholder}}");
+            content.appendRow("{{.playlist.http_user_referer.title}}", input);
+            content.description("{{.playlist.http_user_referer.description}}");
             // Interaktion
             content.createInteraction();
             // Löschen

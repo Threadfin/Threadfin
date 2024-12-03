@@ -178,6 +178,16 @@
       "title": "HTTP Proxy Port",
       "placeholder": "8888",
       "description": "Port to be used by HTTP Proxy"
+    },
+    "http_user_origin": {
+      "title": "User Header Origin",
+      "description": "User Header Origin for HTTP requests. For every HTTP connection, this value is used for the user header origin. Should only be changed if Threadfin is blocked.",
+      "placeholder": "HTTP Origin"
+    },
+    "http_user_referer": {
+      "title": "User Header Referer",
+      "description": "User Header Referer for HTTP requests. For every HTTP connection, this value is used for the user header referer. Should only be changed if Threadfin is blocked.",
+      "placeholder": "HTTP Referer"
     }
   },
   "xmltv": {
@@ -526,16 +536,6 @@
       "title": "User Agent",
       "description": "User Agent for HTTP requests. For every HTTP connection, this value is used for the user agent. Should only be changed if Threadfin is blocked.",
       "placeholder": "Threadfin"
-    },
-    "userOrigin": {
-      "title": "User Header Origin",
-      "description": "User Header Origin for HTTP requests. For every HTTP connection, this value is used for the user header origin. Should only be changed if Threadfin is blocked.",
-      "placeholder": "HTTP Origin"
-    },
-    "userReferer": {
-      "title": "User Header Referer",
-      "description": "User Header Referer for HTTP requests. For every HTTP connection, this value is used for the user header referer. Should only be changed if Threadfin is blocked.",
-      "placeholder": "HTTP Referer"
     },
     "backupPath": {
       "title": "Location for automatic backups",

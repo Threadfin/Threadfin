@@ -167,8 +167,9 @@ type DataStruct struct {
 	}
 
 	XEPG struct {
-		Channels  map[string]interface{}
-		XEPGCount int64
+		Channels         map[string]interface{}
+		ChannelsFiltered map[string]interface{}
+		XEPGCount        int64
 	}
 }
 
@@ -216,24 +217,26 @@ type XEPGChannelStruct struct {
 	BackupChannel1URL  string `json:"backup_channel_1_url"`
 	BackupChannel2URL  string `json:"backup_channel_2_url"`
 	BackupChannel3URL  string `json:"backup_channel_3_url"`
+	ChannelUniqueID    string `json:"channelUniqueID"`
 }
 
 // M3UChannelStructXEPG : M3U Struktur für XEPG
 type M3UChannelStructXEPG struct {
-	FileM3UID   string `json:"_file.m3u.id,required"`
-	FileM3UName string `json:"_file.m3u.name,required"`
-	FileM3UPath string `json:"_file.m3u.path,required"`
-	GroupTitle  string `json:"group-title,required"`
-	Name        string `json:"name,required"`
-	TvgID       string `json:"tvg-id,required"`
-	TvgLogo     string `json:"tvg-logo,required"`
-	TvgChno     string `json:"tvg-chno"`
-	TvgName     string `json:"tvg-name,required"`
-	URL         string `json:"url,required"`
-	UUIDKey     string `json:"_uuid.key,required"`
-	UUIDValue   string `json:"_uuid.value,required"`
-	Values      string `json:"_values,required"`
-	LiveEvent   string `json:"liveEvent,required"`
+	FileM3UID       string `json:"_file.m3u.id,required"`
+	FileM3UName     string `json:"_file.m3u.name,required"`
+	FileM3UPath     string `json:"_file.m3u.path,required"`
+	GroupTitle      string `json:"group-title,required"`
+	Name            string `json:"name,required"`
+	TvgID           string `json:"tvg-id,required"`
+	TvgLogo         string `json:"tvg-logo,required"`
+	TvgChno         string `json:"tvg-chno"`
+	TvgName         string `json:"tvg-name,required"`
+	URL             string `json:"url,required"`
+	UUIDKey         string `json:"_uuid.key,required"`
+	UUIDValue       string `json:"_uuid.value,required"`
+	Values          string `json:"_values,required"`
+	LiveEvent       string `json:"liveEvent,required"`
+	ChannelUniqueID string `json:"channelUniqueID"`
 }
 
 // FilterStruct : Filter Struktur
