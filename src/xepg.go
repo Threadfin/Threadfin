@@ -569,7 +569,6 @@ func createXEPGDatabase() (err error) {
 					continue
 				}
 				if channel, ok := channelsMap[m3uChannel.TvgID]; ok {
-
 					filters := []FilterStruct{}
 					for _, filter := range Settings.Filter {
 						filter_json, _ := json.Marshal(filter)
@@ -640,6 +639,7 @@ func createXEPGDatabase() (err error) {
 	}
 
 	showInfo("XEPG:" + "Save DB file")
+
 	err = saveMapToJSONFile(System.File.XEPG, Data.XEPG.Channels)
 	if err != nil {
 		return
@@ -1413,8 +1413,8 @@ func cleanupXEPG() {
 				xepgChannel.TvgName = xepgChannel.Name
 			}
 
-			m3uChannelHash := xepgChannel.Name + xepgChannel.FileM3UID
-			if xepgChannel.Live == true {
+			m3uChannelHash := xepgChannel.TvgName + xepgChannel.FileM3UID
+			if xepgChannel.Live {
 				hash := md5.Sum([]byte(xepgChannel.URL + xepgChannel.FileM3UID))
 				m3uChannelHash = hex.EncodeToString(hash[:])
 			}
