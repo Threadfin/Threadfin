@@ -110,8 +110,8 @@ func getProviderData(fileType, fileID string) (err error) {
 				return err
 			}
 
-			var m3uContent string
-			m3uContent = "#EXTM3U\n"
+			var m3uContent strings.Builder
+			m3uContent.WriteString("#EXTM3U\n")
 
 			for _, channel := range newM3u {
 				channelMap := channel.(map[string]string)
@@ -124,10 +124,10 @@ func getProviderData(fileType, fileID string) (err error) {
 					channelMap["name"],
 				)
 
-				m3uContent += extinf + "\n" + channelMap["url"] + "\n"
+				m3uContent.WriteString(extinf + "\n" + channelMap["url"] + "\n")
 			}
 
-			m3uBytes := []byte(m3uContent)
+			m3uBytes := []byte(m3uContent.String())
 			body = m3uBytes
 
 		case "hdhr":
