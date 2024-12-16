@@ -197,6 +197,9 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 		playlist.HttpProxyIP = getProviderParameter(playlist.PlaylistID, playlistType, "http_proxy.ip")
 		playlist.HttpProxyPort = getProviderParameter(playlist.PlaylistID, playlistType, "http_proxy.port")
 
+		playlist.HttpUserOrigin = getProviderParameter(playlist.PlaylistID, playlistType, "http_headers.origin")
+		playlist.HttpUserReferer = getProviderParameter(playlist.PlaylistID, playlistType, "http_headers.referer")
+
 		// Default-Werte für den Stream erstellen
 		streamID = createStreamID(playlist.Streams, getClientIP(r), r.UserAgent())
 
