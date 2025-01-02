@@ -24,6 +24,7 @@ jobs:
          go mod tidy && go mod vendor
          echo "Building Linux"
          env GOOS=linux GOARCH=arm64 go build -o dist/Threadfin_linux_arm64
+         env GOOS=linux GOARCH=arm go build -o dist/Threadfin_linux_arm
          env GOOS=linux GOARCH=amd64 go build -o dist/Threadfin_linux_amd64
          echo "Building FreeBSD"
          env GOOS=freebsd GOARCH=amd64 go build -o dist/Threadfin_freebsd_amd64
