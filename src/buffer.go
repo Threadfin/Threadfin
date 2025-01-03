@@ -356,7 +356,7 @@ func bufferingStream(playlistID string, streamingURL string, backupStream1 *Back
 
 		}
 
-		showInfo(fmt.Sprintf("Streaming Status:Playlist: %s - Tuner: %d / %d", playlist.PlaylistName, len(playlist.Streams), playlist.Tuner))
+		showInfo(fmt.Sprintf("Streaming Status 1:Playlist: %s - Tuner: %d / %d", playlist.PlaylistName, len(playlist.Streams), playlist.Tuner))
 
 		var clients ClientConnection
 		clients.Connection = 1
@@ -533,6 +533,7 @@ func bufferingStream(playlistID string, streamingURL string, backupStream1 *Back
 			} else {
 
 				// Stream nicht vorhanden
+				showDebug("Streaming Status:Stream not found. Killing Connection", 3)
 				killClientConnection(streamID, stream.PlaylistID, false)
 				showInfo(fmt.Sprintf("Streaming Status:Playlist: %s - Tuner: %d / %d", playlist.PlaylistName, len(playlist.Streams), playlist.Tuner))
 				return
@@ -1090,6 +1091,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 		}
 
 		err := checkVFSFolder(tmpFolder, bufferVFS)
+		log.Println("ERR: ", err)
 		if err != nil {
 			ShowError(err, 0)
 			killClientConnection(streamID, playlistID, false)
@@ -1112,7 +1114,9 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 
 		f, err := bufferVFS.Create(tmpFile)
 		f.Close()
+		log.Println("ERR: ", err)
 		if err != nil {
+			ShowError(err, 0)
 			killClientConnection(streamID, playlistID, false)
 			addErrorToStream(err)
 			return
@@ -1180,7 +1184,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 		// Set this explicitly to avoid issues with VLC
 		cmd.Env = append(os.Environ(), "DISPLAY=:0")
 
-		debug = fmt.Sprintf("%s:%s %s", bufferType, path, args)
+		debug = fmt.Sprintf("BUFFER DEBUG: %s:%s %s", bufferType, path, args)
 		showDebug(debug, 1)
 
 		// Byte-Daten vom Prozess

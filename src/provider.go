@@ -3,7 +3,6 @@ package src
 import (
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"strings"
@@ -320,7 +319,6 @@ func getProviderData(fileType, fileID string) (err error) {
 }
 
 func downloadFileFromServer(providerURL string, proxyUrl string) (filename string, body []byte, err error) {
-	log.Println("PROXY URL: ", proxyUrl)
 	_, err = url.ParseRequestURI(providerURL)
 	if err != nil {
 		return

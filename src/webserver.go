@@ -147,7 +147,7 @@ func Stream(w http.ResponseWriter, r *http.Request) {
 	if playListInterface == nil {
 		playListInterface = Settings.Files.HDHR[streamInfo.PlaylistID]
 	}
-	log.Println("PlayListInterface: ", playListInterface)
+
 	if playListMap, ok := playListInterface.(map[string]interface{}); ok {
 		if bufferValue, exists := playListMap["buffer"]; exists && bufferValue != nil {
 			if buffer, ok := bufferValue.(string); ok {
@@ -182,7 +182,6 @@ func Stream(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		http.Redirect(w, r, streamInfo.URL, 302)
 	default:
-		showInfo("Streaming URL:" + streamInfo.URL)
 		bufferingStream(streamInfo.PlaylistID, streamInfo.URL, streamInfo.BackupChannel1, streamInfo.BackupChannel2, streamInfo.BackupChannel3, streamInfo.Name, w, r)
 	}
 	return
@@ -442,7 +441,7 @@ func WS(w http.ResponseWriter, r *http.Request) {
 		// Data write commands
 		case "saveSettings":
 			var authenticationUpdate = Settings.AuthenticationWEB
-			var previousStoreBufferInRAM = Settings.StoreBufferInRAM
+			// var previousStoreBufferInRAM = Settings.StoreBufferInRAM
 			response.Settings, err = updateServerSettings(request)
 			if err == nil {
 				response.OpenMenu = strconv.Itoa(indexOfString("settings", System.WEB.Menu))
@@ -451,9 +450,9 @@ func WS(w http.ResponseWriter, r *http.Request) {
 					response.Reload = true
 				}
 
-				if Settings.StoreBufferInRAM != previousStoreBufferInRAM {
-					initBufferVFS()
-				}
+				// if Settings.StoreBufferInRAM != previousStoreBufferInRAM {
+				initBufferVFS()
+				// }
 			}
 
 		case "saveFilesM3U":
