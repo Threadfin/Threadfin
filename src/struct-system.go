@@ -183,41 +183,41 @@ type Filter struct {
 
 // XEPGChannelStruct : XEPG Struktur
 type XEPGChannelStruct struct {
-	FileM3UID          string `json:"_file.m3u.id"`
-	FileM3UName        string `json:"_file.m3u.name"`
-	FileM3UPath        string `json:"_file.m3u.path"`
-	GroupTitle         string `json:"group-title"`
-	Name               string `json:"name"`
-	TvgID              string `json:"tvg-id"`
-	TvgLogo            string `json:"tvg-logo"`
-	TvgName            string `json:"tvg-name"`
-	TvgChno            string `json:"tvg-chno"`
-	URL                string `json:"url"`
-	UUIDKey            string `json:"_uuid.key"`
-	UUIDValue          string `json:"_uuid.value,omitempty"`
-	Values             string `json:"_values"`
-	XActive            bool   `json:"x-active"`
-	XCategory          string `json:"x-category"`
-	XChannelID         string `json:"x-channelID"`
-	XEPG               string `json:"x-epg"`
-	XGroupTitle        string `json:"x-group-title"`
-	XMapping           string `json:"x-mapping"`
-	XmltvFile          string `json:"x-xmltv-file"`
-	XPpvExtra          string `json:"x-ppv-extra"`
-	XBackupChannel1    string `json:"x-backup-channel-1"`
-	XBackupChannel2    string `json:"x-backup-channel-2"`
-	XBackupChannel3    string `json:"x-backup-channel-3"`
-	XHideChannel       bool   `json:"x-hide-channel"`
-	XName              string `json:"x-name"`
-	XUpdateChannelIcon bool   `json:"x-update-channel-icon"`
-	XUpdateChannelName bool   `json:"x-update-channel-name"`
-	XDescription       string `json:"x-description"`
-	Live               bool   `json:"live"`
-	IsBackupChannel    bool   `json:"is_backup_channel"`
-	BackupChannel1URL  string `json:"backup_channel_1_url"`
-	BackupChannel2URL  string `json:"backup_channel_2_url"`
-	BackupChannel3URL  string `json:"backup_channel_3_url"`
-	ChannelUniqueID    string `json:"channelUniqueID"`
+	FileM3UID          string        `json:"_file.m3u.id"`
+	FileM3UName        string        `json:"_file.m3u.name"`
+	FileM3UPath        string        `json:"_file.m3u.path"`
+	GroupTitle         string        `json:"group-title"`
+	Name               string        `json:"name"`
+	TvgID              string        `json:"tvg-id"`
+	TvgLogo            string        `json:"tvg-logo"`
+	TvgName            string        `json:"tvg-name"`
+	TvgChno            string        `json:"tvg-chno"`
+	URL                string        `json:"url"`
+	UUIDKey            string        `json:"_uuid.key"`
+	UUIDValue          string        `json:"_uuid.value,omitempty"`
+	Values             string        `json:"_values"`
+	XActive            bool          `json:"x-active"`
+	XCategory          string        `json:"x-category"`
+	XChannelID         string        `json:"x-channelID"`
+	XEPG               string        `json:"x-epg"`
+	XGroupTitle        string        `json:"x-group-title"`
+	XMapping           string        `json:"x-mapping"`
+	XmltvFile          string        `json:"x-xmltv-file"`
+	XPpvExtra          string        `json:"x-ppv-extra"`
+	XBackupChannel1    string        `json:"x-backup-channel-1"`
+	XBackupChannel2    string        `json:"x-backup-channel-2"`
+	XBackupChannel3    string        `json:"x-backup-channel-3"`
+	XHideChannel       bool          `json:"x-hide-channel"`
+	XName              string        `json:"x-name"`
+	XUpdateChannelIcon bool          `json:"x-update-channel-icon"`
+	XUpdateChannelName bool          `json:"x-update-channel-name"`
+	XDescription       string        `json:"x-description"`
+	Live               bool          `json:"live"`
+	IsBackupChannel    bool          `json:"is_backup_channel"`
+	BackupChannel1     *BackupStream `json:"backup_channel_1"`
+	BackupChannel2     *BackupStream `json:"backup_channel_2"`
+	BackupChannel3     *BackupStream `json:"backup_channel_3"`
+	ChannelUniqueID    string        `json:"channelUniqueID"`
 }
 
 // M3UChannelStructXEPG : M3U Struktur für XEPG
@@ -262,14 +262,14 @@ type StreamingURLS struct {
 
 // StreamInfo : Informationen zum Kanal für die streaming URL
 type StreamInfo struct {
-	ChannelNumber     string `json:"channelNumber,required"`
-	Name              string `json:"name,required"`
-	PlaylistID        string `json:"playlistID,required"`
-	URL               string `json:"url,required"`
-	BackupChannel1URL string `json:"backup_channel_1_url,required"`
-	BackupChannel2URL string `json:"backup_channel_2_url,required"`
-	BackupChannel3URL string `json:"backup_channel_3_url,required"`
-	URLid             string `json:"urlID,required"`
+	ChannelNumber  string        `json:"channelNumber,required"`
+	Name           string        `json:"name,required"`
+	PlaylistID     string        `json:"playlistID,required"`
+	URL            string        `json:"url,required"`
+	BackupChannel1 *BackupStream `json:"backup_channel_1,required"`
+	BackupChannel2 *BackupStream `json:"backup_channel_2,required"`
+	BackupChannel3 *BackupStream `json:"backup_channel_3,required"`
+	URLid          string        `json:"urlID,required"`
 }
 
 // Notification : Notifikationen im Webinterface
@@ -325,8 +325,6 @@ type SettingsStruct struct {
 	Update                    []string              `json:"update"`
 	UpdateURL                 string                `json:"update.url,omitempty"`
 	UserAgent                 string                `json:"user.agent"`
-	UserOrigin                string                `json:"user.origin"`
-	UserReferer               string                `json:"user.referer"`
 	UUID                      string                `json:"uuid"`
 	UDPxy                     string                `json:"udpxy"`
 	Version                   string                `json:"version"`

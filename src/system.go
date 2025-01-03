@@ -199,7 +199,7 @@ func loadSettings() (settings SettingsStruct, err error) {
 	}
 
 	// Initialze virutal filesystem for the Buffer
-	initBufferVFS(settings.StoreBufferInRAM)
+	initBufferVFS()
 
 	settings.Version = System.DBVersion
 
@@ -311,7 +311,7 @@ func setDeviceID() {
 }
 
 // Provider Streaming-URL zu Threadfin Streaming-URL konvertieren
-func createStreamingURL(streamingType, playlistID, channelNumber, channelName, url string, backup_url_1 string, backup_url_2 string, backup_url_3 string) (streamingURL string, err error) {
+func createStreamingURL(streamingType, playlistID, channelNumber, channelName, url string, backup_channel_1 *BackupStream, backup_channel_2 *BackupStream, backup_channel_3 *BackupStream) (streamingURL string, err error) {
 
 	var streamInfo StreamInfo
 	var serverProtocol string
@@ -327,9 +327,9 @@ func createStreamingURL(streamingType, playlistID, channelNumber, channelName, u
 
 	} else {
 		streamInfo.URL = url
-		streamInfo.BackupChannel1URL = backup_url_1
-		streamInfo.BackupChannel2URL = backup_url_2
-		streamInfo.BackupChannel3URL = backup_url_3
+		streamInfo.BackupChannel1 = backup_channel_1
+		streamInfo.BackupChannel2 = backup_channel_2
+		streamInfo.BackupChannel3 = backup_channel_3
 		streamInfo.Name = channelName
 		streamInfo.PlaylistID = playlistID
 		streamInfo.ChannelNumber = channelNumber
@@ -378,9 +378,9 @@ func getStreamInfo(urlID string) (streamInfo StreamInfo, err error) {
 
 	if s, ok := Data.Cache.StreamingURLS[urlID]; ok {
 		s.URL = strings.Trim(s.URL, "\r\n")
-		s.BackupChannel1URL = strings.Trim(s.BackupChannel1URL, "\r\n")
-		s.BackupChannel2URL = strings.Trim(s.BackupChannel2URL, "\r\n")
-		s.BackupChannel3URL = strings.Trim(s.BackupChannel3URL, "\r\n")
+		s.BackupChannel1 = s.BackupChannel1
+		s.BackupChannel2 = s.BackupChannel2
+		s.BackupChannel3 = s.BackupChannel3
 
 		streamInfo = s
 	} else {

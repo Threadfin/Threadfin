@@ -144,6 +144,10 @@ func Stream(w http.ResponseWriter, r *http.Request) {
 	var playListBuffer string
 	systemMutex.Lock()
 	playListInterface := Settings.Files.M3U[streamInfo.PlaylistID]
+	if playListInterface == nil {
+		playListInterface = Settings.Files.HDHR[streamInfo.PlaylistID]
+	}
+	log.Println("PlayListInterface: ", playListInterface)
 	if playListMap, ok := playListInterface.(map[string]interface{}); ok {
 		if bufferValue, exists := playListMap["buffer"]; exists && bufferValue != nil {
 			if buffer, ok := bufferValue.(string); ok {
@@ -152,10 +156,6 @@ func Stream(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	systemMutex.Unlock()
-
-	if playListBuffer == "" {
-		playListBuffer = Settings.Buffer
-	}
 
 	switch playListBuffer {
 	case "-":
@@ -182,7 +182,8 @@ func Stream(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		http.Redirect(w, r, streamInfo.URL, 302)
 	default:
-		bufferingStream(streamInfo.PlaylistID, streamInfo.URL, streamInfo.BackupChannel1URL, streamInfo.BackupChannel2URL, streamInfo.BackupChannel3URL, streamInfo.Name, w, r)
+		showInfo("Streaming URL:" + streamInfo.URL)
+		bufferingStream(streamInfo.PlaylistID, streamInfo.URL, streamInfo.BackupChannel1, streamInfo.BackupChannel2, streamInfo.BackupChannel3, streamInfo.Name, w, r)
 	}
 	return
 }
@@ -451,7 +452,7 @@ func WS(w http.ResponseWriter, r *http.Request) {
 				}
 
 				if Settings.StoreBufferInRAM != previousStoreBufferInRAM {
-					initBufferVFS(Settings.StoreBufferInRAM)
+					initBufferVFS()
 				}
 			}
 

@@ -1120,28 +1120,16 @@ function openPopUp(dataType, element) {
             select.setAttribute("id", "buffer");
             content.appendRow("{{.playlist.buffer.title}}", select);
             // Tuner
-            if (SERVER["settings"]["buffer"] != "-") {
-                var text = new Array();
-                var values = new Array();
-                for (var i = 1; i <= 100; i++) {
-                    text.push(i.toString());
-                    values.push(i.toString());
-                }
-                var dbKey = "tuner";
-                var select = content.createSelect(text, values, data[dbKey], dbKey);
-                select.setAttribute("onfocus", "javascript: return;");
-                content.appendRow("{{.playlist.tuner.title}}", select);
+            var text = new Array();
+            var values = new Array();
+            for (var i = 1; i <= 100; i++) {
+                text.push(i.toString());
+                values.push(i.toString());
             }
-            else {
-                var dbKey = "tuner";
-                if (data[dbKey] == undefined) {
-                    data[dbKey] = 1;
-                }
-                var input = content.createInput("text", dbKey, data[dbKey]);
-                input.setAttribute("readonly", "true");
-                input.className = "notAvailable";
-                content.appendRow("{{.playlist.tuner.title}}", input);
-            }
+            var dbKey = "tuner";
+            var select = content.createSelect(text, values, data[dbKey], dbKey);
+            select.setAttribute("onfocus", "javascript: return;");
+            content.appendRow("{{.playlist.tuner.title}}", select);
             content.description("{{.playlist.tuner.description}}");
             var dbKey = "http_proxy.ip";
             var input = content.createInput("text", dbKey, data[dbKey]);
@@ -1219,28 +1207,16 @@ function openPopUp(dataType, element) {
             select.setAttribute("id", "buffer");
             content.appendRow("{{.playlist.buffer.title}}", select);
             // Tuner
-            if (SERVER["settings"]["buffer"] != "-") {
-                var text = new Array();
-                var values = new Array();
-                for (var i = 1; i <= 100; i++) {
-                    text.push(i.toString());
-                    values.push(i.toString());
-                }
-                var dbKey = "tuner";
-                var select = content.createSelect(text, values, data[dbKey], dbKey);
-                select.setAttribute("onfocus", "javascript: return;");
-                content.appendRow("{{.playlist.tuner.title}}", select);
+            var text = new Array();
+            var values = new Array();
+            for (var i = 1; i <= 100; i++) {
+                text.push(i.toString());
+                values.push(i.toString());
             }
-            else {
-                var dbKey = "tuner";
-                if (data[dbKey] == undefined) {
-                    data[dbKey] = 1;
-                }
-                var input = content.createInput("text", dbKey, data[dbKey]);
-                input.setAttribute("readonly", "true");
-                input.className = "notAvailable";
-                content.appendRow("{{.playlist.tuner.title}}", input);
-            }
+            var dbKey = "tuner";
+            var select = content.createSelect(text, values, data[dbKey], dbKey);
+            select.setAttribute("onfocus", "javascript: return;");
+            content.appendRow("{{.playlist.tuner.title}}", select);
             content.description("{{.playlist.tuner.description}}");
             var dbKey = "http_proxy.ip";
             var input = content.createInput("text", dbKey, data[dbKey]);

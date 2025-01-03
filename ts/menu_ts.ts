@@ -1400,30 +1400,18 @@ function openPopUp(dataType, element) {
       content.appendRow("{{.playlist.buffer.title}}", select)
 
       // Tuner
-      if (SERVER["settings"]["buffer"] != "-") {
-        var text: string[] = new Array()
-        var values: string[] = new Array()
+      var text: string[] = new Array()
+      var values: string[] = new Array()
 
-        for (var i = 1; i <= 100; i++) {
-          text.push(i.toString())
-          values.push(i.toString())
-        }
-
-        var dbKey: string = "tuner"
-        var select = content.createSelect(text, values, data[dbKey], dbKey)
-        select.setAttribute("onfocus", "javascript: return;")
-        content.appendRow("{{.playlist.tuner.title}}", select)
-      } else {
-        var dbKey: string = "tuner"
-        if (data[dbKey] == undefined) {
-          data[dbKey] = 1
-        }
-        var input = content.createInput("text", dbKey, data[dbKey])
-        input.setAttribute("readonly", "true")
-        input.className = "notAvailable"
-        content.appendRow("{{.playlist.tuner.title}}", input)
+      for (var i = 1; i <= 100; i++) {
+        text.push(i.toString())
+        values.push(i.toString())
       }
 
+      var dbKey: string = "tuner"
+      var select = content.createSelect(text, values, data[dbKey], dbKey)
+      select.setAttribute("onfocus", "javascript: return;")
+      content.appendRow("{{.playlist.tuner.title}}", select)
       content.description("{{.playlist.tuner.description}}")
 
       var dbKey: string = "http_proxy.ip"
@@ -1513,30 +1501,18 @@ function openPopUp(dataType, element) {
       content.appendRow("{{.playlist.buffer.title}}", select)
 
       // Tuner
-      if (SERVER["settings"]["buffer"] != "-") {
-        var text: string[] = new Array()
-        var values: string[] = new Array()
+      var text: string[] = new Array()
+      var values: string[] = new Array()
 
-        for (var i = 1; i <= 100; i++) {
-          text.push(i.toString())
-          values.push(i.toString())
-        }
-
-        var dbKey: string = "tuner"
-        var select = content.createSelect(text, values, data[dbKey], dbKey)
-        select.setAttribute("onfocus", "javascript: return;")
-        content.appendRow("{{.playlist.tuner.title}}", select)
-      } else {
-        var dbKey: string = "tuner"
-        if (data[dbKey] == undefined) {
-          data[dbKey] = 1
-        }
-        var input = content.createInput("text", dbKey, data[dbKey])
-        input.setAttribute("readonly", "true")
-        input.className = "notAvailable"
-        content.appendRow("{{.playlist.tuner.title}}", input)
+      for (var i = 1; i <= 100; i++) {
+        text.push(i.toString())
+        values.push(i.toString())
       }
 
+      var dbKey: string = "tuner"
+      var select = content.createSelect(text, values, data[dbKey], dbKey)
+      select.setAttribute("onfocus", "javascript: return;")
+      content.appendRow("{{.playlist.tuner.title}}", select)
       content.description("{{.playlist.tuner.description}}")
 
       var dbKey: string = "http_proxy.ip"
