@@ -1375,6 +1375,9 @@ func getTuner(id, playlistType string) (tuner int) {
 	var playListBuffer string
 	systemMutex.Lock()
 	playListInterface := Settings.Files.M3U[id]
+	if playListInterface == nil {
+		playListInterface = Settings.Files.HDHR[id]
+	}
 	if playListMap, ok := playListInterface.(map[string]interface{}); ok {
 		playListBuffer = playListMap["buffer"].(string)
 	}
