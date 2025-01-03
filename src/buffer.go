@@ -355,7 +355,8 @@ func bufferingStream(playlistID string, streamingURL string, backupStream1 *Back
 			break
 
 		}
-
+		log.Println("PLAYLIST: ", playlist)
+		log.Println("PLAYLIST TUNER: ", playlist.Tuner)
 		showInfo(fmt.Sprintf("Streaming Status 1:Playlist: %s - Tuner: %d / %d", playlist.PlaylistName, len(playlist.Streams), playlist.Tuner))
 
 		var clients ClientConnection
