@@ -184,6 +184,9 @@ func bufferingStream(playlistID string, streamingURL string, backupStream1 *Back
 		var playListBuffer string
 		systemMutex.Lock()
 		playListInterface := Settings.Files.M3U[playlistID]
+		if playListInterface == nil {
+			playListInterface = Settings.Files.HDHR[playlistID]
+		}
 		if playListMap, ok := playListInterface.(map[string]interface{}); ok {
 			playListBuffer = playListMap["buffer"].(string)
 		}
