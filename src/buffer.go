@@ -280,11 +280,11 @@ func bufferingStream(playlistID string, streamingURL string, backupStream1 *Back
 				log.Println("BACKUP STREAM 3: ", backupStream3)
 				// If there are backup URLs, use them
 				if backupStream1 != nil {
-					bufferingStream(playlistID, backupStream1.URL, nil, backupStream2, backupStream3, channelName, w, r)
+					bufferingStream(backupStream1.PlaylistID, backupStream1.URL, nil, backupStream2, backupStream3, channelName, w, r)
 				} else if backupStream2 != nil && backupStream1 == nil {
-					bufferingStream(playlistID, backupStream2.URL, nil, nil, backupStream3, channelName, w, r)
+					bufferingStream(backupStream2.PlaylistID, backupStream2.URL, nil, nil, backupStream3, channelName, w, r)
 				} else if backupStream3 != nil && backupStream1 == nil && backupStream2 == nil {
-					bufferingStream(playlistID, backupStream3.URL, nil, nil, nil, channelName, w, r)
+					bufferingStream(backupStream3.PlaylistID, backupStream3.URL, nil, nil, nil, channelName, w, r)
 				}
 
 				showInfo(fmt.Sprintf("Streaming Status:Playlist: %s - No new connections available. Tuner = %d", playlist.PlaylistName, playlist.Tuner))
@@ -1241,7 +1241,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 
 		f, err = bufferVFS.OpenFile(tmpFile, os.O_APPEND|os.O_WRONLY, 0600)
 		if err != nil {
-			// panic(err)
+			panic(err)
 		}
 		defer f.Close()
 

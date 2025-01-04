@@ -147,7 +147,7 @@ func Stream(w http.ResponseWriter, r *http.Request) {
 	if playListInterface == nil {
 		playListInterface = Settings.Files.HDHR[streamInfo.PlaylistID]
 	}
-	log.Println("PLAYLIST INTERFACE: ", playListInterface)
+
 	if playListMap, ok := playListInterface.(map[string]interface{}); ok {
 		if bufferValue, exists := playListMap["buffer"]; exists && bufferValue != nil {
 			if buffer, ok := bufferValue.(string); ok {
