@@ -23,8 +23,12 @@ import (
 	"time"
 
 	"github.com/avfs/avfs/vfs/memfs"
-	"github.com/avfs/avfs/vfs/osfs"
 )
+
+type BackupStream struct {
+	PlaylistID string
+	URL        string
+}
 
 func getActiveClientCount() (count int) {
 	count = 0
@@ -132,7 +136,7 @@ func createStreamID(stream map[int]ThisStream, ip, userAgent string) (streamID i
 	return
 }
 
-func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStreamingURL2, backupStreamingURL3, channelName string, w http.ResponseWriter, r *http.Request) {
+func bufferingStream(playlistID string, streamingURL string, backupStream1 *BackupStream, backupStream2 *BackupStream, backupStream3 *BackupStream, channelName string, w http.ResponseWriter, r *http.Request) {
 
 	time.Sleep(time.Duration(Settings.BufferTimeout) * time.Millisecond)
 
@@ -179,14 +183,13 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 		var playListBuffer string
 		systemMutex.Lock()
 		playListInterface := Settings.Files.M3U[playlistID]
+		if playListInterface == nil {
+			playListInterface = Settings.Files.HDHR[playlistID]
+		}
 		if playListMap, ok := playListInterface.(map[string]interface{}); ok {
 			playListBuffer = playListMap["buffer"].(string)
 		}
 		systemMutex.Unlock()
-
-		if playListBuffer == "" {
-			playListBuffer = Settings.Buffer
-		}
 
 		playlist.Buffer = playListBuffer
 
@@ -206,9 +209,9 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 		client.Connection += 1
 
 		stream.URL = streamingURL
-		stream.BackupChannel1URL = backupStreamingURL1
-		stream.BackupChannel2URL = backupStreamingURL2
-		stream.BackupChannel3URL = backupStreamingURL3
+		stream.BackupChannel1 = backupStream1
+		stream.BackupChannel2 = backupStream2
+		stream.BackupChannel3 = backupStream3
 		stream.ChannelName = channelName
 		stream.Status = false
 
@@ -229,9 +232,9 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 			stream = playlist.Streams[id]
 			client = playlist.Clients[id]
 
-			stream.BackupChannel1URL = backupStreamingURL1
-			stream.BackupChannel2URL = backupStreamingURL2
-			stream.BackupChannel3URL = backupStreamingURL3
+			stream.BackupChannel1 = backupStream1
+			stream.BackupChannel2 = backupStream2
+			stream.BackupChannel3 = backupStream3
 			stream.ChannelName = channelName
 			stream.Status = false
 
@@ -271,6 +274,14 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 
 			// Prüfen ob die Playlist noch einen weiteren Stream erlaubt (Tuner)
 			if len(playlist.Streams) >= playlist.Tuner {
+				// If there are backup URLs, use them
+				if backupStream1 != nil {
+					bufferingStream(backupStream1.PlaylistID, backupStream1.URL, nil, backupStream2, backupStream3, channelName, w, r)
+				} else if backupStream2 != nil && backupStream1 == nil {
+					bufferingStream(backupStream2.PlaylistID, backupStream2.URL, nil, nil, backupStream3, channelName, w, r)
+				} else if backupStream3 != nil && backupStream1 == nil && backupStream2 == nil {
+					bufferingStream(backupStream3.PlaylistID, backupStream3.URL, nil, nil, nil, channelName, w, r)
+				}
 
 				showInfo(fmt.Sprintf("Streaming Status:Playlist: %s - No new connections available. Tuner = %d", playlist.PlaylistName, playlist.Tuner))
 
@@ -305,9 +316,9 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 			stream.URL = streamingURL
 			stream.ChannelName = channelName
 			stream.Status = false
-			stream.BackupChannel1URL = backupStreamingURL1
-			stream.BackupChannel2URL = backupStreamingURL2
-			stream.BackupChannel3URL = backupStreamingURL3
+			stream.BackupChannel1 = backupStream1
+			stream.BackupChannel2 = backupStream2
+			stream.BackupChannel3 = backupStream3
 
 			playlist.Streams[streamID] = stream
 			playlist.Clients[streamID] = client
@@ -327,9 +338,9 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 		stream.Folder = playlist.Folder + stream.MD5 + string(os.PathSeparator)
 		stream.PlaylistID = playlistID
 		stream.PlaylistName = playlist.PlaylistName
-		stream.BackupChannel1URL = backupStreamingURL1
-		stream.BackupChannel2URL = backupStreamingURL2
-		stream.BackupChannel3URL = backupStreamingURL3
+		stream.BackupChannel1 = backupStream1
+		stream.BackupChannel2 = backupStream2
+		stream.BackupChannel3 = backupStream3
 
 		playlist.Streams[streamID] = stream
 		BufferInformation.Store(playlistID, playlist)
@@ -344,7 +355,7 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 
 		}
 
-		showInfo(fmt.Sprintf("Streaming Status:Playlist: %s - Tuner: %d / %d", playlist.PlaylistName, len(playlist.Streams), playlist.Tuner))
+		showInfo(fmt.Sprintf("Streaming Status 1:Playlist: %s - Tuner: %d / %d", playlist.PlaylistName, len(playlist.Streams), playlist.Tuner))
 
 		var clients ClientConnection
 		clients.Connection = 1
@@ -372,7 +383,7 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 
 						var clients = c.(ClientConnection)
 
-						if clients.Error != nil || (timeOut > 200 && (playlist.Streams[streamID].BackupChannel1URL == "" && playlist.Streams[streamID].BackupChannel2URL == "" && playlist.Streams[streamID].BackupChannel3URL == "")) {
+						if clients.Error != nil || (timeOut > 200 && (playlist.Streams[streamID].BackupChannel1 == nil && playlist.Streams[streamID].BackupChannel2 == nil && playlist.Streams[streamID].BackupChannel3 == nil)) {
 							killClientConnection(streamID, stream.PlaylistID, false)
 							return
 						}
@@ -521,6 +532,7 @@ func bufferingStream(playlistID, streamingURL, backupStreamingURL1, backupStream
 			} else {
 
 				// Stream nicht vorhanden
+				showDebug("Streaming Status:Stream not found. Killing Connection", 3)
 				killClientConnection(streamID, stream.PlaylistID, false)
 				showInfo(fmt.Sprintf("Streaming Status:Playlist: %s - Tuner: %d / %d", playlist.PlaylistName, len(playlist.Streams), playlist.Tuner))
 				return
@@ -1001,7 +1013,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 		var playlist = p.(Playlist)
 		var debug, path, options, bufferType string
 		var tmpSegment = 1
-		var bufferSize = Settings.BufferSize * 1024
+		var bufferSize = 4 * 1024
 		var stream = playlist.Streams[streamID]
 		var buf bytes.Buffer
 		var fileSize = 0
@@ -1013,15 +1025,15 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 			if backupNumber >= 1 && backupNumber <= 3 {
 				switch backupNumber {
 				case 1:
-					url = stream.BackupChannel1URL
+					url = stream.BackupChannel1.URL
 					showHighlight("START OF BACKUP 1 STREAM")
 					showInfo("Backup Channel 1 URL: " + url)
 				case 2:
-					url = stream.BackupChannel2URL
+					url = stream.BackupChannel2.URL
 					showHighlight("START OF BACKUP 2 STREAM")
 					showInfo("Backup Channel 2 URL: " + url)
 				case 3:
-					url = stream.BackupChannel3URL
+					url = stream.BackupChannel3.URL
 					showHighlight("START OF BACKUP 3 STREAM")
 					showInfo("Backup Channel 3 URL: " + url)
 				}
@@ -1055,7 +1067,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 		var addErrorToStream = func(err error) {
 			if !useBackup || (useBackup && backupNumber >= 0 && backupNumber <= 3) {
 				backupNumber = backupNumber + 1
-				if stream.BackupChannel1URL != "" || stream.BackupChannel2URL != "" || stream.BackupChannel3URL != "" {
+				if stream.BackupChannel1 != nil || stream.BackupChannel2 != nil || stream.BackupChannel3 != nil {
 					thirdPartyBuffer(streamID, playlistID, true, backupNumber)
 				}
 				return
@@ -1101,6 +1113,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 		f, err := bufferVFS.Create(tmpFile)
 		f.Close()
 		if err != nil {
+			ShowError(err, 0)
 			killClientConnection(streamID, playlistID, false)
 			addErrorToStream(err)
 			return
@@ -1168,7 +1181,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 		// Set this explicitly to avoid issues with VLC
 		cmd.Env = append(os.Environ(), "DISPLAY=:0")
 
-		debug = fmt.Sprintf("%s:%s %s", bufferType, path, args)
+		debug = fmt.Sprintf("BUFFER DEBUG: %s:%s %s", bufferType, path, args)
 		showDebug(debug, 1)
 
 		// Byte-Daten vom Prozess
@@ -1242,7 +1255,11 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 				case <-t:
 					return
 				default:
-					t <- timeout
+					// Check if the channel is closed before sending
+					select {
+					case t <- timeout:
+					default:
+					}
 				}
 
 			}
@@ -1255,7 +1272,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 			case timeout := <-t:
 				if timeout >= 20 && tmpSegment == 1 {
 					cmd.Process.Kill()
-					err = errors.New("Timout")
+					err = errors.New("Timeout")
 					ShowError(err, 4006)
 					killClientConnection(streamID, playlistID, false)
 					addErrorToStream(err)
@@ -1355,14 +1372,13 @@ func getTuner(id, playlistType string) (tuner int) {
 	var playListBuffer string
 	systemMutex.Lock()
 	playListInterface := Settings.Files.M3U[id]
+	if playListInterface == nil {
+		playListInterface = Settings.Files.HDHR[id]
+	}
 	if playListMap, ok := playListInterface.(map[string]interface{}); ok {
 		playListBuffer = playListMap["buffer"].(string)
 	}
 	systemMutex.Unlock()
-
-	if playListBuffer == "" {
-		playListBuffer = Settings.Buffer
-	}
 
 	switch playListBuffer {
 
@@ -1384,14 +1400,8 @@ func getTuner(id, playlistType string) (tuner int) {
 	return
 }
 
-func initBufferVFS(virtual bool) {
-
-	if virtual {
-		bufferVFS = memfs.New()
-	} else {
-		bufferVFS = osfs.New()
-	}
-
+func initBufferVFS() {
+	bufferVFS = memfs.New()
 }
 
 func debugRequest(req *http.Request) {

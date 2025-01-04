@@ -36,7 +36,6 @@ func DoUpdate(fileType, filenameBIN string) (err error) {
 		log.Println("["+strings.ToUpper(fileType)+"]", "New version ("+Updater.Name+"):", Updater.Response.Version)
 
 		// Download new binary
-		log.Println("DEBUG: ", url)
 		resp, err := http.Get(url)
 		if err != nil {
 			return err

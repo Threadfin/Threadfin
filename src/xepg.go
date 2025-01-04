@@ -7,7 +7,6 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"path"
 	"regexp"
@@ -679,17 +678,17 @@ func mapping() (err error) {
 
 				backup_channel1 := strings.Trim(xepgChannel.XBackupChannel1, " ")
 				if m3uChannel.TvgName == backup_channel1 {
-					xepgChannel.BackupChannel1URL = m3uChannel.URL
+					xepgChannel.BackupChannel1 = &BackupStream{PlaylistID: m3uChannel.FileM3UID, URL: m3uChannel.URL}
 				}
 
 				backup_channel2 := strings.Trim(xepgChannel.XBackupChannel2, " ")
 				if m3uChannel.TvgName == backup_channel2 {
-					xepgChannel.BackupChannel2URL = m3uChannel.URL
+					xepgChannel.BackupChannel2 = &BackupStream{PlaylistID: m3uChannel.FileM3UID, URL: m3uChannel.URL}
 				}
 
 				backup_channel3 := strings.Trim(xepgChannel.XBackupChannel3, " ")
 				if m3uChannel.TvgName == backup_channel3 {
-					xepgChannel.BackupChannel3URL = m3uChannel.URL
+					xepgChannel.BackupChannel3 = &BackupStream{PlaylistID: m3uChannel.FileM3UID, URL: m3uChannel.URL}
 				}
 			}
 		}
@@ -918,7 +917,7 @@ func createXMLTVFile() (err error) {
 				}
 			}
 		} else {
-			log.Println("ERROR: ", err)
+			showDebug("XEPG:"+fmt.Sprintf("Error: %s", err), 3)
 		}
 	}
 

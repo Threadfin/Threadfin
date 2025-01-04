@@ -144,6 +144,10 @@ func Stream(w http.ResponseWriter, r *http.Request) {
 	var playListBuffer string
 	systemMutex.Lock()
 	playListInterface := Settings.Files.M3U[streamInfo.PlaylistID]
+	if playListInterface == nil {
+		playListInterface = Settings.Files.HDHR[streamInfo.PlaylistID]
+	}
+
 	if playListMap, ok := playListInterface.(map[string]interface{}); ok {
 		if bufferValue, exists := playListMap["buffer"]; exists && bufferValue != nil {
 			if buffer, ok := bufferValue.(string); ok {
@@ -152,10 +156,6 @@ func Stream(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	systemMutex.Unlock()
-
-	if playListBuffer == "" {
-		playListBuffer = Settings.Buffer
-	}
 
 	switch playListBuffer {
 	case "-":
@@ -182,7 +182,7 @@ func Stream(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		http.Redirect(w, r, streamInfo.URL, 302)
 	default:
-		bufferingStream(streamInfo.PlaylistID, streamInfo.URL, streamInfo.BackupChannel1URL, streamInfo.BackupChannel2URL, streamInfo.BackupChannel3URL, streamInfo.Name, w, r)
+		bufferingStream(streamInfo.PlaylistID, streamInfo.URL, streamInfo.BackupChannel1, streamInfo.BackupChannel2, streamInfo.BackupChannel3, streamInfo.Name, w, r)
 	}
 	return
 }
@@ -441,7 +441,7 @@ func WS(w http.ResponseWriter, r *http.Request) {
 		// Data write commands
 		case "saveSettings":
 			var authenticationUpdate = Settings.AuthenticationWEB
-			var previousStoreBufferInRAM = Settings.StoreBufferInRAM
+			// var previousStoreBufferInRAM = Settings.StoreBufferInRAM
 			response.Settings, err = updateServerSettings(request)
 			if err == nil {
 				response.OpenMenu = strconv.Itoa(indexOfString("settings", System.WEB.Menu))
@@ -450,9 +450,9 @@ func WS(w http.ResponseWriter, r *http.Request) {
 					response.Reload = true
 				}
 
-				if Settings.StoreBufferInRAM != previousStoreBufferInRAM {
-					initBufferVFS(Settings.StoreBufferInRAM)
-				}
+				// if Settings.StoreBufferInRAM != previousStoreBufferInRAM {
+				initBufferVFS()
+				// }
 			}
 
 		case "saveFilesM3U":
