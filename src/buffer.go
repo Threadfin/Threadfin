@@ -275,9 +275,6 @@ func bufferingStream(playlistID string, streamingURL string, backupStream1 *Back
 
 			// Prüfen ob die Playlist noch einen weiteren Stream erlaubt (Tuner)
 			if len(playlist.Streams) >= playlist.Tuner {
-				log.Println("BACKUP STREAM 1: ", backupStream1)
-				log.Println("BACKUP STREAM 2: ", backupStream2)
-				log.Println("BACKUP STREAM 3: ", backupStream3)
 				// If there are backup URLs, use them
 				if backupStream1 != nil {
 					bufferingStream(backupStream1.PlaylistID, backupStream1.URL, nil, backupStream2, backupStream3, channelName, w, r)
@@ -1095,7 +1092,6 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 		}
 
 		err := checkVFSFolder(tmpFolder, bufferVFS)
-		log.Println("ERR: ", err)
 		if err != nil {
 			ShowError(err, 0)
 			killClientConnection(streamID, playlistID, false)
@@ -1118,7 +1114,6 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 
 		f, err := bufferVFS.Create(tmpFile)
 		f.Close()
-		log.Println("ERR: ", err)
 		if err != nil {
 			ShowError(err, 0)
 			killClientConnection(streamID, playlistID, false)
