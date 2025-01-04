@@ -1241,7 +1241,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 
 		f, err = bufferVFS.OpenFile(tmpFile, os.O_APPEND|os.O_WRONLY, 0600)
 		if err != nil {
-			panic(err)
+			// panic(err)
 		}
 		defer f.Close()
 
@@ -1262,7 +1262,11 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 				case <-t:
 					return
 				default:
-					t <- timeout
+					// Check if the channel is closed before sending
+					select {
+					case t <- timeout:
+					default:
+					}
 				}
 
 			}
@@ -1275,7 +1279,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 			case timeout := <-t:
 				if timeout >= 20 && tmpSegment == 1 {
 					cmd.Process.Kill()
-					err = errors.New("Timout")
+					err = errors.New("Timeout")
 					ShowError(err, 4006)
 					killClientConnection(streamID, playlistID, false)
 					addErrorToStream(err)
