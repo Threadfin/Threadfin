@@ -224,6 +224,8 @@ func bufferingStream(playlistID string, streamingURL string, backupStream1 *Back
 
 		// Playlist is already used for streaming
 		// Check if the URL is already streaming from another client.
+		Lock.Lock()         // Add mutex lock
+		defer Lock.Unlock() // Ensure mutex is unlocked
 
 		playlist = p.(Playlist)
 
@@ -1013,7 +1015,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 		var playlist = p.(Playlist)
 		var debug, path, options, bufferType string
 		var tmpSegment = 1
-		var bufferSize = 4 * 1024
+		var bufferSize = Settings.BufferSize * 1024
 		var stream = playlist.Streams[streamID]
 		var buf bytes.Buffer
 		var fileSize = 0
