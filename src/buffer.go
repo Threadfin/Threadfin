@@ -154,7 +154,9 @@ func bufferingStream(playlistID string, streamingURL string, backupStream1 *Back
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 
 	// Check whether the playlist is already in use
+	Lock.Lock()
 	if p, ok := BufferInformation.Load(playlistID); !ok {
+		Lock.Unlock() // Unlock early if not found
 		var playlistType string
 
 		// Playlist wird noch nicht verwendet, Default-Werte für die Playlist erstellen
@@ -218,16 +220,16 @@ func bufferingStream(playlistID string, streamingURL string, backupStream1 *Back
 		playlist.Streams[streamID] = stream
 		playlist.Clients[streamID] = client
 
+		Lock.Lock()
 		BufferInformation.Store(playlistID, playlist)
+		Lock.Unlock()
 
 	} else {
-		Lock.Lock()         // Add mutex lock
-		defer Lock.Unlock() // Ensure mutex is unlocked
+		playlist = p.(Playlist)
+		Lock.Unlock()
 
 		// Playlist is already used for streaming
 		// Check if the URL is already streaming from another client.
-		playlist = p.(Playlist)
-
 		for id := range playlist.Streams {
 
 			stream = playlist.Streams[id]
@@ -245,10 +247,11 @@ func bufferingStream(playlistID string, streamingURL string, backupStream1 *Back
 				newStream = false
 				client.Connection += 1
 
-				//playlist.Streams[streamID] = stream
 				playlist.Clients[streamID] = client
 
+				Lock.Lock()
 				BufferInformation.Store(playlistID, playlist)
+				Lock.Unlock()
 
 				debug = fmt.Sprintf("Restream Status:Playlist: %s - Channel: %s - Connections: %d", playlist.PlaylistName, stream.ChannelName, client.Connection)
 
@@ -324,7 +327,9 @@ func bufferingStream(playlistID string, streamingURL string, backupStream1 *Back
 			playlist.Streams[streamID] = stream
 			playlist.Clients[streamID] = client
 
+			Lock.Lock()
 			BufferInformation.Store(playlistID, playlist)
+			Lock.Unlock()
 
 		}
 
@@ -332,8 +337,6 @@ func bufferingStream(playlistID string, streamingURL string, backupStream1 *Back
 
 	// Check whether the stream is already being played by another client
 	if !playlist.Streams[streamID].Status && newStream {
-		Lock.Lock()         // Add mutex lock
-		defer Lock.Unlock() // Ensure mutex is unlocked
 
 		// New buffer is needed
 		stream = playlist.Streams[streamID]
@@ -346,7 +349,10 @@ func bufferingStream(playlistID string, streamingURL string, backupStream1 *Back
 		stream.BackupChannel3 = backupStream3
 
 		playlist.Streams[streamID] = stream
+
+		Lock.Lock()
 		BufferInformation.Store(playlistID, playlist)
+		Lock.Unlock()
 
 		switch playlist.Buffer {
 
@@ -1010,8 +1016,6 @@ func switchBandwidth(stream *ThisStream) (err error) {
 
 // Buffer mit FFMPEG
 func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNumber int) {
-	Lock.Lock()
-	defer Lock.Unlock()
 
 	if p, ok := BufferInformation.Load(playlistID); ok {
 
