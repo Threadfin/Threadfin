@@ -1,4 +1,3 @@
-
 class MainMenu {
   DocumentID: string = "main-menu"
   HTMLTag: string = "LI"
@@ -2869,3 +2868,21 @@ function showPreview(element: boolean) {
 
   return
 }
+
+document.addEventListener("DOMContentLoaded", function() {
+  var backToTopButton = document.createElement("button");
+  backToTopButton.id = "back-to-top";
+  backToTopButton.innerText = "Back to Top";
+  backToTopButton.onclick = function() {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+  document.body.appendChild(backToTopButton);
+
+  window.addEventListener("scroll", function() {
+    if (window.scrollY > 200) {
+      backToTopButton.style.display = "block";
+    } else {
+      backToTopButton.style.display = "none";
+    }
+  });
+});
