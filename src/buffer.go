@@ -154,7 +154,9 @@ func bufferingStream(playlistID string, streamingURL string, backupStream1 *Back
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 
 	// Check whether the playlist is already in use
+	Lock.Lock()
 	if p, ok := BufferInformation.Load(playlistID); !ok {
+		Lock.Unlock() // Unlock early if not found
 		var playlistType string
 
 		// Playlist wird noch nicht verwendet, Default-Werte für die Playlist erstellen
@@ -218,15 +220,16 @@ func bufferingStream(playlistID string, streamingURL string, backupStream1 *Back
 		playlist.Streams[streamID] = stream
 		playlist.Clients[streamID] = client
 
+		Lock.Lock()
 		BufferInformation.Store(playlistID, playlist)
+		Lock.Unlock()
 
 	} else {
+		playlist = p.(Playlist)
+		Lock.Unlock()
 
 		// Playlist is already used for streaming
 		// Check if the URL is already streaming from another client.
-
-		playlist = p.(Playlist)
-
 		for id := range playlist.Streams {
 
 			stream = playlist.Streams[id]
@@ -244,10 +247,11 @@ func bufferingStream(playlistID string, streamingURL string, backupStream1 *Back
 				newStream = false
 				client.Connection += 1
 
-				//playlist.Streams[streamID] = stream
 				playlist.Clients[streamID] = client
 
+				Lock.Lock()
 				BufferInformation.Store(playlistID, playlist)
+				Lock.Unlock()
 
 				debug = fmt.Sprintf("Restream Status:Playlist: %s - Channel: %s - Connections: %d", playlist.PlaylistName, stream.ChannelName, client.Connection)
 
@@ -323,7 +327,9 @@ func bufferingStream(playlistID string, streamingURL string, backupStream1 *Back
 			playlist.Streams[streamID] = stream
 			playlist.Clients[streamID] = client
 
+			Lock.Lock()
 			BufferInformation.Store(playlistID, playlist)
+			Lock.Unlock()
 
 		}
 
@@ -343,7 +349,10 @@ func bufferingStream(playlistID string, streamingURL string, backupStream1 *Back
 		stream.BackupChannel3 = backupStream3
 
 		playlist.Streams[streamID] = stream
+
+		Lock.Lock()
 		BufferInformation.Store(playlistID, playlist)
+		Lock.Unlock()
 
 		switch playlist.Buffer {
 
@@ -1013,7 +1022,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 		var playlist = p.(Playlist)
 		var debug, path, options, bufferType string
 		var tmpSegment = 1
-		var bufferSize = 4 * 1024
+		var bufferSize = Settings.BufferSize * 1024
 		var stream = playlist.Streams[streamID]
 		var buf bytes.Buffer
 		var fileSize = 0
