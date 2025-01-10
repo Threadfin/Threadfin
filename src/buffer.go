@@ -1,7 +1,7 @@
 package src
 
 /*
-  Tuner-Limit Bild als Video rendern [ffmpeg]
+  Render tuner-limit image as video [ffmpeg]
   -loop 1 -i stream-limit.jpg -c:v libx264 -t 1 -pix_fmt yuv420p -vf scale=1920:1080  stream-limit.ts
 */
 
@@ -159,7 +159,7 @@ func bufferingStream(playlistID string, streamingURL string, backupStream1 *Back
 		Lock.Unlock() // Unlock early if not found
 		var playlistType string
 
-		// Playlist wird noch nicht verwendet, Default-Werte für die Playlist erstellen
+		// Playlist is not yet in use, create default values for the playlist
 		playlist.Folder = System.Folder.Temp + playlistID + string(os.PathSeparator)
 		playlist.PlaylistID = playlistID
 		playlist.Streams = make(map[int]ThisStream)
@@ -205,7 +205,7 @@ func bufferingStream(playlistID string, streamingURL string, backupStream1 *Back
 		playlist.HttpUserOrigin = getProviderParameter(playlist.PlaylistID, playlistType, "http_headers.origin")
 		playlist.HttpUserReferer = getProviderParameter(playlist.PlaylistID, playlistType, "http_headers.referer")
 
-		// Default-Werte für den Stream erstellen
+		// Create default values for the stream
 		streamID = createStreamID(playlist.Streams, getClientIP(r), r.UserAgent())
 
 		client.Connection += 1
@@ -273,10 +273,10 @@ func bufferingStream(playlistID string, streamingURL string, backupStream1 *Back
 
 		}
 
-		// Neuer Stream bei einer bereits aktiven Playlist
+		// New stream for an already active playlist
 		if newStream {
 
-			// Prüfen ob die Playlist noch einen weiteren Stream erlaubt (Tuner)
+			// Check if the playlist allows another stream (Tuner)
 			if len(playlist.Streams) >= playlist.Tuner {
 				// If there are backup URLs, use them
 				if backupStream1 != nil {
@@ -309,8 +309,8 @@ func bufferingStream(playlistID string, streamingURL string, backupStream1 *Back
 				return
 			}
 
-			// Playlist erlaubt einen weiterern Stream (Das Limit des Tuners ist noch nicht erreicht)
-			// Default-Werte für den Stream erstellen
+			// Playlist allows another stream (Tuner limit not yet reached)
+			// Create default values for the stream
 			stream = ThisStream{}
 			client = ThisClient{}
 
@@ -374,7 +374,7 @@ func bufferingStream(playlistID string, streamingURL string, backupStream1 *Back
 
 	w.WriteHeader(200)
 
-	for { // Loop 1: Warten bis das erste Segment durch den Buffer heruntergeladen wurde
+	for { //Loop 1: Wait until the first segment has been downloaded through the buffer
 
 		if p, ok := BufferInformation.Load(playlistID); ok {
 
@@ -404,9 +404,9 @@ func bufferingStream(playlistID string, streamingURL string, backupStream1 *Back
 
 				var oldSegments []string
 
-				for { // Loop 2: Temporäre Datein sind vorhanden, Daten können zum Client gesendet werden
+				for { // Loop 2: Temporary files are present, data can be sent to the client
 
-					// HTTP Clientverbindung überwachen
+					// Monitor HTTP client connection
 
 					ctx := r.Context()
 					if ok {
@@ -536,11 +536,11 @@ func bufferingStream(playlistID string, streamingURL string, backupStream1 *Back
 						time.Sleep(time.Duration(100) * time.Millisecond)
 					}
 
-				} // Ende Loop 2
+				} // End Loop 2
 
 			} else {
 
-				// Stream nicht vorhanden
+				// Stream not found
 				showDebug("Streaming Status:Stream not found. Killing Connection", 3)
 				killClientConnection(streamID, stream.PlaylistID, false)
 				showInfo(fmt.Sprintf("Streaming Status:Playlist: %s - Tuner: %d / %d", playlist.PlaylistName, len(playlist.Streams), playlist.Tuner))
@@ -548,9 +548,9 @@ func bufferingStream(playlistID string, streamingURL string, backupStream1 *Back
 
 			}
 
-		} // Ende BufferInformation
+		} // End BufferInformation
 
-	} // Ende Loop 1
+	} // End Loop 1
 
 }
 
@@ -800,24 +800,24 @@ func parseM3U8(stream *ThisStream) (err error) {
 
 	var parseURL = func(line string, segment *Segment) {
 
-		// Prüfen ob die Adresse eine gültige URL ist (http://... oder /path/to/stream)
+		// Check if the address is a valid URL (http://... or /path/to/stream)
 		_, err := url.ParseRequestURI(line)
 		if err == nil {
 
-			// Prüfen ob die Domain in der Adresse enhalten ist
+			// Check if the domain is included in the address
 			u, _ := url.Parse(line)
 
 			if len(u.Host) == 0 {
-				// Adresse enthällt nicht die Domain, Redirect wird der Adresse hinzugefügt
+				// Address does not contain the domain, redirect is added to the address
 				segment.URL = stream.URLStreamingServer + line
 			} else {
-				// Domain in der Adresse enthalten
+				// Domain included in the address
 				segment.URL = line
 			}
 
 		} else {
 
-			// keine URL, sondern ein Dateipfad (media/file-01.ts)
+			// Not a URL, but a file path (media/file-01.ts)
 			var serverURLPath = strings.Replace(stream.M3U8URL, path.Base(stream.M3U8URL), line, -1)
 			segment.URL = serverURLPath
 
@@ -832,7 +832,7 @@ func parseM3U8(stream *ThisStream) (err error) {
 			stream.DynamicStream = make(map[int]DynamicStream)
 		}
 
-		// Parameter parsen
+		// Parse parameters
 		for i, line := range lines {
 
 			_ = i
@@ -850,7 +850,7 @@ func parseM3U8(stream *ThisStream) (err error) {
 
 				}
 
-				// M3U8 enthällt mehrere Links zu weiteren M3U8 Wiedergabelisten (Bandbreitenoption)
+				// M3U8 contains multiple links to other M3U8 playlists (bandwidth options)
 				if segment.Info && len(line) > 0 && line[0:1] != "#" {
 
 					var dynamicStream DynamicStream
@@ -868,7 +868,7 @@ func parseM3U8(stream *ThisStream) (err error) {
 
 				}
 
-				// Segment mit TS Stream
+				// Segment with TS stream
 				if segment.Duration > 0 && line[0:1] != "#" {
 
 					parseURL(line, &segment)
@@ -912,7 +912,7 @@ func parseM3U8(stream *ThisStream) (err error) {
 				noNewSegment = false
 				stream.LastSequence = segment.Sequence
 
-				// Stream ist vom Typ VOD. Es muss das erste Segment der M3U8 Playlist verwendet werden.
+				// Stream is of type VOD. The first segment of the M3U8 playlist must be used.
 				if strings.ToUpper(segment.PlaylistType) == "VOD" {
 					break
 				}
@@ -1014,7 +1014,7 @@ func switchBandwidth(stream *ThisStream) (err error) {
 	return
 }
 
-// Buffer mit FFMPEG
+// Buffer with FFMPEG
 func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNumber int) {
 
 	if p, ok := BufferInformation.Load(playlistID); ok {
@@ -1130,7 +1130,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 
 		//args = strings.Replace(args, "[USER-AGENT]", Settings.UserAgent, -1)
 
-		// User-Agent setzen
+		// Set User-Agent
 		var args []string
 
 		for i, a := range strings.Split(options, " ") {
@@ -1193,7 +1193,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 		debug = fmt.Sprintf("BUFFER DEBUG: %s:%s %s", bufferType, path, args)
 		showDebug(debug, 1)
 
-		// Byte-Daten vom Prozess
+		// Byte data from the process
 		stdOut, err := cmd.StdoutPipe()
 		if err != nil {
 			ShowError(err, 0)
@@ -1202,7 +1202,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 			return
 		}
 
-		// Log-Daten vom Prozess
+		// Log data from the process
 		logOut, err := cmd.StderrPipe()
 		if err != nil {
 			ShowError(err, 0)
@@ -1220,7 +1220,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 
 		go func() {
 
-			// Log Daten vom Prozess im Dubug Mode 1 anzeigen.
+			// Display log data from the process in debug mode 1.
 			scanner := bufio.NewScanner(logOut)
 			scanner.Split(bufio.ScanLines)
 
