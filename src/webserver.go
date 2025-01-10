@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path"
 	"strconv"
 	"strings"
 
@@ -1182,33 +1183,27 @@ func httpStatusError(w http.ResponseWriter, r *http.Request, httpStatusCode int)
 
 func getContentType(filename string) (contentType string) {
 
-	if strings.HasSuffix(filename, ".html") {
-		contentType = "text/html"
-	} else if strings.HasSuffix(filename, ".css") {
-		contentType = "text/css"
-	} else if strings.HasSuffix(filename, ".js") {
-		contentType = "application/javascript"
-	} else if strings.HasSuffix(filename, ".png") {
-		contentType = "image/png"
-	} else if strings.HasSuffix(filename, ".jpg") {
-		contentType = "image/jpeg"
-	} else if strings.HasSuffix(filename, ".gif") {
-		contentType = "image/gif"
-	} else if strings.HasSuffix(filename, ".svg") {
-		contentType = "image/svg+xml"
-	} else if strings.HasSuffix(filename, ".mp4") {
-		contentType = "video/mp4"
-	} else if strings.HasSuffix(filename, ".webm") {
-		contentType = "video/webm"
-	} else if strings.HasSuffix(filename, ".ogg") {
-		contentType = "video/ogg"
-	} else if strings.HasSuffix(filename, ".mp3") {
-		contentType = "audio/mp3"
-	} else if strings.HasSuffix(filename, ".wav") {
-		contentType = "audio/wav"
-	} else {
-		contentType = "text/plain"
+	mimeTypes := map[string]string{
+		".html": "text/html",
+		".css":  "text/css",
+		".js":   "application/javascript",
+		".png":  "image/png",
+		".jpg":  "image/jpeg",
+		".jpeg": "image/jpeg",
+		".gif":  "image/gif",
+		".svg":  "image/svg+xml",
+		".ico":  "image/x-icon",
+		".mp4":  "video/mp4",
+		".webm": "video/webm",
+		".ogg":  "video/ogg",
+		".mp3":  "audio/mp3",
+		".wav":  "audio/wav",
 	}
 
-	return
+	// Extract the file extension and normalize it to lowercase
+	ext := strings.ToLower(path.Ext(filename))
+	if contentType, exists := mimeTypes[ext]; exists {
+		return contentType
+	}
+	return "text/plain"
 }
