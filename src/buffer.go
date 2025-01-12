@@ -189,7 +189,11 @@ func bufferingStream(playlistID string, streamingURL string, backupStream1 *Back
 			playListInterface = Settings.Files.HDHR[playlistID]
 		}
 		if playListMap, ok := playListInterface.(map[string]interface{}); ok {
-			playListBuffer = playListMap["buffer"].(string)
+			if buffer, ok := playListMap["buffer"].(string); ok {
+				playListBuffer = buffer
+			} else {
+				playListBuffer = "-"
+			}
 		}
 		systemMutex.Unlock()
 
