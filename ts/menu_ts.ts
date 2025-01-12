@@ -444,6 +444,7 @@ class Content {
             cell.imageURL = data[key]["tvg-logo"]
             var td = cell.createCell()
             td.setAttribute('onclick', 'javascript: openPopUp("mapping", this)')
+            td.className = "logo-cell"
             td.id = key
 
             tr.appendChild(td)
@@ -591,6 +592,7 @@ class Content {
             cell.imageURL = data[key]["tvg-logo"]
             var td = cell.createCell()
             td.setAttribute('onclick', 'javascript: openPopUp("mapping", this)')
+            td.className = "logo-cell"
             td.id = key
 
             tr.appendChild(td)
@@ -756,12 +758,17 @@ class Cell {
           break
 
         case "IMG":
-          element = document.createElement(this.childType);
-          element.setAttribute("src", this.imageURL)
+          var imgElement: any
+          imgElement = document.createElement(this.childType);
+          imgElement.setAttribute("src", this.imageURL)
           if (this.imageURL != "") {
-            element.setAttribute("onerror", "javascript: this.onerror=null;this.src=''")
+            imgElement.setAttribute("onerror", "javascript: this.onerror=null;this.src=''")
             //onerror="this.onerror=null;this.src='missing.gif';"
           }
+          element = document.createElement("DIV");
+          element.className = "imgWrap";
+          element.appendChild(imgElement);
+
       }
 
       td.appendChild(element)
@@ -939,7 +946,7 @@ class ShowContent extends Content {
         break;
     }
 
-    // Tabelle erstellen (falls benötigt)
+    // Create table (if needed)
     var tableHeader: string[] = menuItems[this.menuID].tableHeader
     if (tableHeader.length > 0) {
       var wrapper = document.createElement("DIV")
@@ -952,7 +959,7 @@ class ShowContent extends Content {
       var header = this.createTableRow()
       table.appendChild(header)
 
-      // Kopfzeile der Tablle
+      // Table header
       tableHeader.forEach(element => {
         var cell: Cell = new Cell()
         cell.child = true
@@ -2794,7 +2801,7 @@ function donePopupData(dataType: string, idsStr: string) {
     }
 
     console.log(input["tvg-logo"]);
-    (document.getElementById(id).childNodes[2].firstChild as HTMLElement).setAttribute("src", input["tvg-logo"])
+    (document.getElementById(id).childNodes[2].firstChild.firstChild as HTMLElement).setAttribute("src", input["tvg-logo"])
 
 
   });

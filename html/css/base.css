@@ -107,7 +107,7 @@ label {
 li {
   list-style-type: none;
   cursor: pointer;
-  transition: all 0.3;
+  transition: all 0.3s;
 }
 
 li:hover {
