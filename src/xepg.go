@@ -1089,8 +1089,9 @@ func createLiveProgram(xepgChannel XEPGChannelStruct, channelId string) []*Progr
 		timeString = strings.Replace(timeString, " PM", "PM", -1)
 
 		// Use LoadLocation to properly account for DST
+		yearString := fmt.Sprintf("%d", currentTime.Year())
 		nyLocation, _ := time.LoadLocation("America/New_York") // ET location
-		startTimeParsed, err := time.ParseInLocation(layout, fmt.Sprintf("2024.%s", timeString), nyLocation)
+		startTimeParsed, err := time.ParseInLocation(layout, fmt.Sprintf("%s.%s", yearString, timeString), nyLocation)
 		if err != nil {
 			showInfo("TIME PARSE ERROR: " + err.Error())
 		} else {
