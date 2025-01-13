@@ -304,9 +304,44 @@ tbody {
   max-width: 60px;
 }
 
+#content_table .logo-cell .imgWrap,
+#inactive_content_table .logo-cell .imgWrap {
+  width: 60px;
+  height: 50px;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  padding: 0;
+  box-sizing: border-box;
+  vertical-align: middle;
+}
+
+#content_table .logo-cell img,
+#inactive_content_table .logo-cell img {
+  width: 60px;
+  height: auto;
+  transition: all 0.3s ease;
+}
+
+#content_table .logo-cell .imgWrap:hover,
+#inactive_content_table .logo-cell .imgWrap:hover {
+  min-height: 50px;
+  height: auto;
+  overflow: visible;
+}
+
+#content_table .logo-cell .imgWrap:hover img,
+#inactive_content_table .logo-cell .imgWrap:hover img {
+  height: auto;
+  max-height: none;
+  width: 60px;
+}
+
 #content_table tr,
 #inactive_content_table tr {
-  border-left: solid 3px 444;
+  border-left: solid 3px #444;
   border-bottom: solid 1px #333;
   cursor: pointer;
 }
@@ -325,8 +360,8 @@ tbody {
 #content_table input[type=text],
 #inactive_content_table input[type=text] {
   width: 80%;
-  min-width: 35px;
-  max-width: 60px;
+  min-width: 60px;
+  max-width: 75px;
   border: 0px;
   background-color: #333;
   margin-left: 5px;
@@ -763,8 +798,12 @@ Sidebar
   cursor: pointer;
   border-radius: 5px;
   z-index: 1000;
+  border: 1px solid #222;
+  box-shadow: 0 8px 16px 0 rgba(0,0,0,0.2), 0 6px 20px 0 rgba(0,0,0,0.19);
+  transition: all .3s ease;
 }
 
 #back-to-top:hover {
   background-color: #555;
+  box-shadow: 0 8px 16px 0 rgba(0,0,0,0.4), 0 6px 20px 0 rgba(0,0,0,0.39)
 }

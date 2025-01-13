@@ -359,6 +359,7 @@ class Content {
                         cell.imageURL = data[key]["tvg-logo"];
                         var td = cell.createCell();
                         td.setAttribute('onclick', 'javascript: openPopUp("mapping", this)');
+                        td.className = "logo-cell";
                         td.id = key;
                         tr.appendChild(td);
                         // Kanalname
@@ -481,6 +482,7 @@ class Content {
                         cell.imageURL = data[key]["tvg-logo"];
                         var td = cell.createCell();
                         td.setAttribute('onclick', 'javascript: openPopUp("mapping", this)');
+                        td.className = "logo-cell";
                         td.id = key;
                         tr.appendChild(td);
                         // Kanalname
@@ -607,12 +609,16 @@ class Cell {
                     }
                     break;
                 case "IMG":
-                    element = document.createElement(this.childType);
-                    element.setAttribute("src", this.imageURL);
+                    var imgElement;
+                    imgElement = document.createElement(this.childType);
+                    imgElement.setAttribute("src", this.imageURL);
                     if (this.imageURL != "") {
-                        element.setAttribute("onerror", "javascript: this.onerror=null;this.src=''");
+                        imgElement.setAttribute("onerror", "javascript: this.onerror=null;this.src=''");
                         //onerror="this.onerror=null;this.src='missing.gif';"
                     }
+                    element = document.createElement("DIV");
+                    element.className = "imgWrap";
+                    element.appendChild(imgElement);
             }
             td.appendChild(element);
         }
@@ -753,7 +759,7 @@ class ShowContent extends Content {
                 console.log("Show content (menuKey):", menuKey);
                 break;
         }
-        // Tabelle erstellen (falls benötigt)
+        // Create table (if needed)
         var tableHeader = menuItems[this.menuID].tableHeader;
         if (tableHeader.length > 0) {
             var wrapper = document.createElement("DIV");
@@ -763,7 +769,7 @@ class ShowContent extends Content {
             wrapper.appendChild(table);
             var header = this.createTableRow();
             table.appendChild(header);
-            // Kopfzeile der Tablle
+            // Table header
             tableHeader.forEach(element => {
                 var cell = new Cell();
                 cell.child = true;
@@ -2228,7 +2234,7 @@ function donePopupData(dataType, idsStr) {
             document.getElementById(id).className = "activeEPG";
         }
         console.log(input["tvg-logo"]);
-        document.getElementById(id).childNodes[2].firstChild.setAttribute("src", input["tvg-logo"]);
+        document.getElementById(id).childNodes[2].firstChild.firstChild.setAttribute("src", input["tvg-logo"]);
     });
     showElement("popup", false);
     return;
