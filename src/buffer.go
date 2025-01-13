@@ -1389,7 +1389,11 @@ func getTuner(id, playlistType string) (tuner int) {
 		playListInterface = Settings.Files.HDHR[id]
 	}
 	if playListMap, ok := playListInterface.(map[string]interface{}); ok {
-		playListBuffer = playListMap["buffer"].(string)
+		if buffer, ok := playListMap["buffer"].(string); ok {
+			playListBuffer = buffer
+		} else {
+			playListBuffer = "-"
+		}
 	}
 	systemMutex.Unlock()
 

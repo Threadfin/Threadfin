@@ -177,7 +177,7 @@ func buildXEPG(background bool) {
 
 }
 
-// XEPG Daten aktualisieren
+// Update XEPG data
 func updateXEPG(background bool) {
 
 	if System.ScanInProgress == 1 {
