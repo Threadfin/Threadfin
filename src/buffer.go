@@ -455,7 +455,19 @@ func bufferingStream(playlistID string, streamingURL string, backupStream1 *Back
 							killClientConnection(streamID, playlistID, false)
 							return
 						}
-
+						// Check if the last item in tmpFiles hasn't changed in 5 iterations
+						if len(tmpFiles) > 0 {
+							if len(oldSegments) > 0 && oldSegments[len(oldSegments)-1] == tmpFiles[len(tmpFiles)-1] {
+								timeOut++
+								if timeOut > 5 {
+									showInfo("The last buffer segment hasn't changed; Killing Client Connection")
+									killClientConnection(streamID, playlistID, false)
+									return
+								}
+							} else {
+								timeOut = 0
+							}
+						}
 						oldSegments = append(oldSegments, f)
 
 						var fileName = stream.Folder + f
