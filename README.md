@@ -106,7 +106,7 @@ TrueCharts Threadfin Chart Docs page [Threadfin-TrueChartsDocs](https://truechar
 
 OR
 
-ThreadFin chart Cluster helm-release.yaml & namespace.yaml examples - [cluster-yaml-example](https://github.com/itconstruct/test-cluster/tree/main/clusters/main/kubernetes/apps/threadfin/app)
+ThreadFin chart Cluster helm-release.yaml & namespace.yaml examples - [yaml-example](https://github.com/itconstruct/test-cluster/tree/main/clusters/main/kubernetes/apps/threadfin/app)
 
 TrueCharts have created ClusterTool [ClusterTool](https://truecharts.org/clustertool/). ClusteTools is TrueCharts' own easy deployment and maintenance tool for Kubernetes running on TalosOS clusters. Clustertool supports single or multi-node clusters. This is not required if you prefer to manage and setup your own Kubernetes platform with Helm.
 
