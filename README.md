@@ -96,7 +96,7 @@ services:
 
 ---                                                                                             
 
-## Helm Chart on Kubernetes
+## Helm Chart on Kubernetes using TrueCharts
 [Threadfin](https://github.com/truecharts/public/tree/master/charts/stable/threadfin)
 
 TrueCharts Threadfin Chart Docs page [Threadfin-TrueChartsDocs](https://truecharts.org/charts/stable/threadfin/)
