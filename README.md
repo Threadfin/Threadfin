@@ -106,39 +106,7 @@ TrueCharts Threadfin Chart Docs page [ThreadfinChart](https://truecharts.org/cha
 
 OR
 
-helm-release.yaml example
-```
----
-# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
-apiVersion: helm.toolkit.fluxcd.io/v2
-kind: HelmRelease
-metadata:
-  name: threadfin
-  namespace: threadfin
-spec:
-  interval: 15m
-  chart:
-    spec:
-      chart: threadfin
-      version: 0.2.0
-      sourceRef:
-        kind: HelmRepository
-        name: truecharts
-        namespace: flux-system
-  values:
-    service:
-      main:
-        type: LoadBalancer
-        loadBalancerIP: "${THREADFIN_IP}"
-```
-
-namespace.yaml
-```
-apiVersion: v1
-kind: Namespace
-metadata:
-    name: threadfin
-```
+Cluster helm-release.yaml & namespace.yaml examples - [helm-release-example](https://github.com/itconstruct/test-cluster/tree/main/clusters/main/kubernetes/apps/threadfin/app)
 
 TrueCharts have created ClusterTool [ClusterTool](https://truecharts.org/clustertool/). ClusteTools is TrueCharts' own easy deployment and maintenance tool for Kubernetes running on TalosOS clusters. Clustertool supports single or multi-node clusters. This is not required if you prefer to manage and setup your own Kubernetes platform with Helm.
 
