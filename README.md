@@ -97,9 +97,7 @@ services:
 ---                                                                                             
 
 ## Helm Chart on Kubernetes using TrueCharts
-[Threadfin](https://github.com/truecharts/public/tree/master/charts/stable/threadfin)
-
-TrueCharts Threadfin Chart Docs page [Threadfin-TrueChartsDocs](https://truecharts.org/charts/stable/threadfin/)
+[Threadfin](https://truecharts.org/charts/stable/threadfin/)
 
 * Helm-Chart Installation
 ```helm install threadfin oci://tccr.io/truecharts/threadfin```
