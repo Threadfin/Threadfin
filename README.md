@@ -94,6 +94,14 @@ services:
     restart: unless-stopped
 ```
 
+---                                                                                             
+
+## Helm Chart on Kubernetes using TrueCharts
+[Threadfin](https://truecharts.org/charts/stable/threadfin/)
+
+* Helm-Chart Installation
+```helm install threadfin oci://tccr.io/truecharts/threadfin```
+
 ---
 
 ### Threadfin Beta branch
