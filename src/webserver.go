@@ -200,35 +200,10 @@ func Stream(w http.ResponseWriter, r *http.Request) {
 
 			// Add connection tracking
 			Lock.Lock()
-			var playlist Playlist
-			if p, ok := BufferInformation.Load(streamInfo.PlaylistID); ok {
-				playlist = p.(Playlist)
-			} else {
-				playlist = Playlist{
-					PlaylistID: streamInfo.PlaylistID,
-					Streams:    make(map[int]ThisStream),
-					Clients:    make(map[int]ThisClient),
-				}
-			}
-
-			streamID := createStreamID(playlist.Streams, getClientIP(r), r.UserAgent())
-			client := ThisClient{Connection: 1}
-			stream := ThisStream{
-				URL:         streamInfo.URL,
-				ChannelName: streamInfo.Name,
-				Status:      true,
-				MD5:         getMD5(streamInfo.URL),
-			}
-
-			playlist.Streams[streamID] = stream
-			playlist.Clients[streamID] = client
-			BufferInformation.Store(streamInfo.PlaylistID, playlist)
-			Lock.Unlock()
-
-			// Track client connection
 			var clients ClientConnection
 			clients.Connection = 1
-			BufferClients.Store(streamInfo.PlaylistID+stream.MD5, clients)
+			BufferClients.Store(streamInfo.PlaylistID+getMD5(streamInfo.URL), clients)
+			Lock.Unlock()
 
 			proxyURL, err := url.Parse(fmt.Sprintf("http://%s:%s", proxyIP, proxyPort))
 			if err != nil {
@@ -245,14 +220,7 @@ func Stream(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				// Decrease connection count on error
 				Lock.Lock()
-				if p, ok := BufferInformation.Load(streamInfo.PlaylistID); ok {
-					playlist = p.(Playlist)
-					if client, ok := playlist.Clients[streamID]; ok {
-						client.Connection--
-						playlist.Clients[streamID] = client
-					}
-					BufferInformation.Store(streamInfo.PlaylistID, playlist)
-				}
+				BufferClients.Delete(streamInfo.PlaylistID + getMD5(streamInfo.URL))
 				Lock.Unlock()
 				http.Error(w, "Failed to fetch stream", http.StatusInternalServerError)
 				return
@@ -270,14 +238,7 @@ func Stream(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				// Decrease connection count on error
 				Lock.Lock()
-				if p, ok := BufferInformation.Load(streamInfo.PlaylistID); ok {
-					playlist = p.(Playlist)
-					if client, ok := playlist.Clients[streamID]; ok {
-						client.Connection--
-						playlist.Clients[streamID] = client
-					}
-					BufferInformation.Store(streamInfo.PlaylistID, playlist)
-				}
+				BufferClients.Delete(streamInfo.PlaylistID + getMD5(streamInfo.URL))
 				Lock.Unlock()
 				http.Error(w, "Failed to stream response", http.StatusInternalServerError)
 				return
@@ -285,14 +246,7 @@ func Stream(w http.ResponseWriter, r *http.Request) {
 
 			// Decrease connection count when done
 			Lock.Lock()
-			if p, ok := BufferInformation.Load(streamInfo.PlaylistID); ok {
-				playlist = p.(Playlist)
-				if client, ok := playlist.Clients[streamID]; ok {
-					client.Connection--
-					playlist.Clients[streamID] = client
-				}
-				BufferInformation.Store(streamInfo.PlaylistID, playlist)
-			}
+			BufferClients.Delete(streamInfo.PlaylistID + getMD5(streamInfo.URL))
 			Lock.Unlock()
 
 		} else {
