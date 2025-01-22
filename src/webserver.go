@@ -198,13 +198,6 @@ func Stream(w http.ResponseWriter, r *http.Request) {
 		if proxyIP != "" && proxyPort != "" {
 			showInfo("Streaming Info: Streaming through proxy.")
 
-			// Add connection tracking
-			Lock.Lock()
-			var clients ClientConnection
-			clients.Connection = 1
-			BufferClients.Store(streamInfo.PlaylistID+getMD5(streamInfo.URL), clients)
-			Lock.Unlock()
-
 			proxyURL, err := url.Parse(fmt.Sprintf("http://%s:%s", proxyIP, proxyPort))
 			if err != nil {
 				return
@@ -218,10 +211,6 @@ func Stream(w http.ResponseWriter, r *http.Request) {
 
 			resp, err := httpClient.Get(streamInfo.URL)
 			if err != nil {
-				// Decrease connection count on error
-				Lock.Lock()
-				BufferClients.Delete(streamInfo.PlaylistID + getMD5(streamInfo.URL))
-				Lock.Unlock()
 				http.Error(w, "Failed to fetch stream", http.StatusInternalServerError)
 				return
 			}
@@ -236,18 +225,9 @@ func Stream(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(resp.StatusCode)
 			_, err = io.Copy(w, resp.Body)
 			if err != nil {
-				// Decrease connection count on error
-				Lock.Lock()
-				BufferClients.Delete(streamInfo.PlaylistID + getMD5(streamInfo.URL))
-				Lock.Unlock()
 				http.Error(w, "Failed to stream response", http.StatusInternalServerError)
 				return
 			}
-
-			// Decrease connection count when done
-			Lock.Lock()
-			BufferClients.Delete(streamInfo.PlaylistID + getMD5(streamInfo.URL))
-			Lock.Unlock()
 
 		} else {
 			showInfo("Streaming URL:" + streamInfo.URL)
