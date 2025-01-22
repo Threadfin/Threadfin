@@ -160,25 +160,6 @@ func Stream(w http.ResponseWriter, r *http.Request) {
 
 	switch playListBuffer {
 	case "-":
-		showInfo(fmt.Sprintf("Buffer:false [%s]", playListBuffer))
-	case "threadfin":
-		if strings.Index(streamInfo.URL, "rtsp://") != -1 || strings.Index(streamInfo.URL, "rtp://") != -1 {
-			err = errors.New("RTSP and RTP streams are not supported")
-			ShowError(err, 2004)
-			showInfo("Streaming URL:" + streamInfo.URL)
-			http.Redirect(w, r, streamInfo.URL, 302)
-			return
-		}
-		showInfo(fmt.Sprintf("Buffer:true [%s]", playListBuffer))
-	default:
-		showInfo(fmt.Sprintf("Buffer:true [%s]", playListBuffer))
-	}
-
-	showInfo(fmt.Sprintf("Channel Name:%s", streamInfo.Name))
-	showInfo(fmt.Sprintf("Client User-Agent:%s", r.Header.Get("User-Agent")))
-
-	switch playListBuffer {
-	case "-":
 		m3uSettings := Settings.Files.M3U
 		providerSettings, ok := m3uSettings["MJV2V0SW1A9RLMRQZ4U7"].(map[string]interface{})
 		if !ok {
@@ -194,46 +175,33 @@ func Stream(w http.ResponseWriter, r *http.Request) {
 		if !ok {
 			return
 		}
-
+		log.Println("PROXY IP: ", proxyIP)
+		log.Println("PROXY PORT: ", proxyPort)
 		if proxyIP != "" && proxyPort != "" {
 			showInfo("Streaming Info: Streaming through proxy.")
-
-			proxyURL, err := url.Parse(fmt.Sprintf("http://%s:%s", proxyIP, proxyPort))
+			// Parse the original URL to validate it
+			_, err := url.Parse(streamInfo.URL)
 			if err != nil {
 				return
 			}
 
-			httpClient := &http.Client{
-				Transport: &http.Transport{
-					Proxy: http.ProxyURL(proxyURL),
-				},
-			}
+			// Create a new URL that includes the proxy
+			proxyURLStr := fmt.Sprintf("http://%s:%s", proxyIP, proxyPort)
+			showInfo("Proxy URL: " + proxyURLStr)
 
-			resp, err := httpClient.Get(streamInfo.URL)
-			if err != nil {
-				http.Error(w, "Failed to fetch stream", http.StatusInternalServerError)
-				return
-			}
-			defer resp.Body.Close()
+			// Set environment variables for the proxy
+			// Expose the proxy URL to the client via os environment variable
+			os.Setenv("THREADFIN_HTTP_PROXY", proxyURLStr)
 
-			for key, values := range resp.Header {
-				for _, value := range values {
-					w.Header().Add(key, value)
-				}
-			}
-
-			w.WriteHeader(resp.StatusCode)
-			_, err = io.Copy(w, resp.Body)
-			if err != nil {
-				http.Error(w, "Failed to stream response", http.StatusInternalServerError)
-				return
-			}
+			showInfo("Streaming URL:" + streamInfo.URL)
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+			http.Redirect(w, r, streamInfo.URL, 302)
+			showInfo("Streaming Info: URL was passed to the client with proxy environment variables set.")
 
 		} else {
 			showInfo("Streaming URL:" + streamInfo.URL)
 			w.Header().Set("Access-Control-Allow-Origin", "*")
 			http.Redirect(w, r, streamInfo.URL, 302)
-
 			showInfo("Streaming Info:URL was passed to the client.")
 			showInfo("Streaming Info:Threadfin is no longer involved, the client connects directly to the streaming server.")
 		}
