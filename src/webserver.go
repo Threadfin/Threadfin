@@ -160,51 +160,30 @@ func Stream(w http.ResponseWriter, r *http.Request) {
 
 	switch playListBuffer {
 	case "-":
-		m3uSettings := Settings.Files.M3U
-		providerSettings, ok := m3uSettings["MJV2V0SW1A9RLMRQZ4U7"].(map[string]interface{})
-		if !ok {
-			return
-		}
-
-		proxyIP, ok := providerSettings["http_proxy.ip"].(string)
-		if !ok {
-			return
-		}
-
-		proxyPort, ok := providerSettings["http_proxy.port"].(string)
-		if !ok {
-			return
-		}
-		log.Println("PROXY IP: ", proxyIP)
-		log.Println("PROXY PORT: ", proxyPort)
-		if proxyIP != "" && proxyPort != "" {
-			showInfo("Streaming Info: Streaming through proxy.")
-			// Parse the original URL to validate it
-			_, err := url.Parse(streamInfo.URL)
-			if err != nil {
-				return
-			}
-
-			// Create a new URL that includes the proxy
-			proxyURLStr := fmt.Sprintf("http://%s:%s", proxyIP, proxyPort)
-			showInfo("Proxy URL: " + proxyURLStr)
-
-			// Set environment variables for the proxy
-			// Expose the proxy URL to the client via os environment variable
-			os.Setenv("THREADFIN_HTTP_PROXY", proxyURLStr)
-
+		showInfo(fmt.Sprintf("Buffer:false [%s]", playListBuffer))
+	case "threadfin":
+		if strings.Index(streamInfo.URL, "rtsp://") != -1 || strings.Index(streamInfo.URL, "rtp://") != -1 {
+			err = errors.New("RTSP and RTP streams are not supported")
+			ShowError(err, 2004)
 			showInfo("Streaming URL:" + streamInfo.URL)
-			w.Header().Set("Access-Control-Allow-Origin", "*")
 			http.Redirect(w, r, streamInfo.URL, 302)
-			showInfo("Streaming Info: URL was passed to the client with proxy environment variables set.")
-
-		} else {
-			showInfo("Streaming URL:" + streamInfo.URL)
-			w.Header().Set("Access-Control-Allow-Origin", "*")
-			http.Redirect(w, r, streamInfo.URL, 302)
-			showInfo("Streaming Info:URL was passed to the client.")
-			showInfo("Streaming Info:Threadfin is no longer involved, the client connects directly to the streaming server.")
+			return
 		}
+		showInfo(fmt.Sprintf("Buffer:true [%s]", playListBuffer))
+	default:
+		showInfo(fmt.Sprintf("Buffer:true [%s]", playListBuffer))
+	}
+
+	showInfo(fmt.Sprintf("Channel Name:%s", streamInfo.Name))
+	showInfo(fmt.Sprintf("Client User-Agent:%s", r.Header.Get("User-Agent")))
+
+	switch playListBuffer {
+	case "-":
+		showInfo("Streaming URL:" + streamInfo.URL)
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		http.Redirect(w, r, streamInfo.URL, 302)
+		showInfo("Streaming Info:URL was passed to the client.")
+		showInfo("Streaming Info:Threadfin is no longer involved, the client connects directly to the streaming server.")
 	default:
 		bufferingStream(streamInfo.PlaylistID, streamInfo.URL, streamInfo.BackupChannel1, streamInfo.BackupChannel2, streamInfo.BackupChannel3, streamInfo.Name, w, r)
 	}
