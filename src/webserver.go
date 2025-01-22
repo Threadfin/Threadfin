@@ -179,9 +179,130 @@ func Stream(w http.ResponseWriter, r *http.Request) {
 
 	switch playListBuffer {
 	case "-":
-		showInfo("Streaming URL:" + streamInfo.URL)
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		http.Redirect(w, r, streamInfo.URL, 302)
+		m3uSettings := Settings.Files.M3U
+		providerSettings, ok := m3uSettings["MJV2V0SW1A9RLMRQZ4U7"].(map[string]interface{})
+		if !ok {
+			return
+		}
+
+		proxyIP, ok := providerSettings["http_proxy.ip"].(string)
+		if !ok {
+			return
+		}
+
+		proxyPort, ok := providerSettings["http_proxy.port"].(string)
+		if !ok {
+			return
+		}
+
+		if proxyIP != "" && proxyPort != "" {
+			showInfo("Streaming Info: Streaming through proxy.")
+
+			// Add connection tracking
+			Lock.Lock()
+			var playlist Playlist
+			if p, ok := BufferInformation.Load(streamInfo.PlaylistID); ok {
+				playlist = p.(Playlist)
+			} else {
+				playlist = Playlist{
+					PlaylistID: streamInfo.PlaylistID,
+					Streams:    make(map[int]ThisStream),
+					Clients:    make(map[int]ThisClient),
+				}
+			}
+
+			streamID := createStreamID(playlist.Streams, getClientIP(r), r.UserAgent())
+			client := ThisClient{Connection: 1}
+			stream := ThisStream{
+				URL:         streamInfo.URL,
+				ChannelName: streamInfo.Name,
+				Status:      true,
+				MD5:         getMD5(streamInfo.URL),
+			}
+
+			playlist.Streams[streamID] = stream
+			playlist.Clients[streamID] = client
+			BufferInformation.Store(streamInfo.PlaylistID, playlist)
+			Lock.Unlock()
+
+			// Track client connection
+			var clients ClientConnection
+			clients.Connection = 1
+			BufferClients.Store(streamInfo.PlaylistID+stream.MD5, clients)
+
+			proxyURL, err := url.Parse(fmt.Sprintf("http://%s:%s", proxyIP, proxyPort))
+			if err != nil {
+				return
+			}
+
+			httpClient := &http.Client{
+				Transport: &http.Transport{
+					Proxy: http.ProxyURL(proxyURL),
+				},
+			}
+
+			resp, err := httpClient.Get(streamInfo.URL)
+			if err != nil {
+				// Decrease connection count on error
+				Lock.Lock()
+				if p, ok := BufferInformation.Load(streamInfo.PlaylistID); ok {
+					playlist = p.(Playlist)
+					if client, ok := playlist.Clients[streamID]; ok {
+						client.Connection--
+						playlist.Clients[streamID] = client
+					}
+					BufferInformation.Store(streamInfo.PlaylistID, playlist)
+				}
+				Lock.Unlock()
+				http.Error(w, "Failed to fetch stream", http.StatusInternalServerError)
+				return
+			}
+			defer resp.Body.Close()
+
+			for key, values := range resp.Header {
+				for _, value := range values {
+					w.Header().Add(key, value)
+				}
+			}
+
+			w.WriteHeader(resp.StatusCode)
+			_, err = io.Copy(w, resp.Body)
+			if err != nil {
+				// Decrease connection count on error
+				Lock.Lock()
+				if p, ok := BufferInformation.Load(streamInfo.PlaylistID); ok {
+					playlist = p.(Playlist)
+					if client, ok := playlist.Clients[streamID]; ok {
+						client.Connection--
+						playlist.Clients[streamID] = client
+					}
+					BufferInformation.Store(streamInfo.PlaylistID, playlist)
+				}
+				Lock.Unlock()
+				http.Error(w, "Failed to stream response", http.StatusInternalServerError)
+				return
+			}
+
+			// Decrease connection count when done
+			Lock.Lock()
+			if p, ok := BufferInformation.Load(streamInfo.PlaylistID); ok {
+				playlist = p.(Playlist)
+				if client, ok := playlist.Clients[streamID]; ok {
+					client.Connection--
+					playlist.Clients[streamID] = client
+				}
+				BufferInformation.Store(streamInfo.PlaylistID, playlist)
+			}
+			Lock.Unlock()
+
+		} else {
+			showInfo("Streaming URL:" + streamInfo.URL)
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+			http.Redirect(w, r, streamInfo.URL, 302)
+
+			showInfo("Streaming Info:URL was passed to the client.")
+			showInfo("Streaming Info:Threadfin is no longer involved, the client connects directly to the streaming server.")
+		}
 	default:
 		bufferingStream(streamInfo.PlaylistID, streamInfo.URL, streamInfo.BackupChannel1, streamInfo.BackupChannel2, streamInfo.BackupChannel3, streamInfo.Name, w, r)
 	}
