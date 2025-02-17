@@ -142,6 +142,30 @@ func Stream(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	if r.Method == "HEAD" {
+		client := &http.Client{}
+		req, err := http.NewRequest("HEAD", streamInfo.URL, nil)
+		if err != nil {
+			ShowError(err, 1501)
+			httpStatusError(w, r, 405)
+			return
+		}
+		resp, err := client.Do(req)
+		if err != nil {
+			ShowError(err, 1502)
+			httpStatusError(w, r, 405)
+			return
+		}
+		defer resp.Body.Close()
+		// Copy headers from the source HEAD response to the outgoing response
+		for key, values := range resp.Header {
+			for _, value := range values {
+				w.Header().Add(key, value)
+			}
+		}
+		return
+	}
+
 	var playListBuffer string
 	systemMutex.Lock()
 	playListInterface := Settings.Files.M3U[streamInfo.PlaylistID]
@@ -182,6 +206,8 @@ func Stream(w http.ResponseWriter, r *http.Request) {
 		showInfo("Streaming URL:" + streamInfo.URL)
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		http.Redirect(w, r, streamInfo.URL, 302)
+		showInfo("Streaming Info:URL was passed to the client.")
+		showInfo("Streaming Info:Threadfin is no longer involved, the client connects directly to the streaming server.")
 	default:
 		bufferingStream(streamInfo.PlaylistID, streamInfo.URL, streamInfo.BackupChannel1, streamInfo.BackupChannel2, streamInfo.BackupChannel3, streamInfo.Name, w, r)
 	}
@@ -1193,6 +1219,7 @@ func getContentType(filename string) (contentType string) {
 		".gif":  "image/gif",
 		".svg":  "image/svg+xml",
 		".ico":  "image/x-icon",
+		".webp": "image/webp",
 		".mp4":  "video/mp4",
 		".webm": "video/webm",
 		".ogg":  "video/ogg",

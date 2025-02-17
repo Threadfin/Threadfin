@@ -115,9 +115,10 @@ func getProviderData(fileType, fileID string) (err error) {
 			for _, channel := range newM3u {
 				channelMap := channel.(map[string]string)
 
-				extinf := fmt.Sprintf(`#EXTINF:-1 tvg-id="%s" tvg-name="%s" tvg-logo="%s" group-title="%s",%s`,
+				extinf := fmt.Sprintf(`#EXTINF:-1 tvg-id="%s" tvg-name="%s" tvg-chno="%s" tvg-logo="%s" group-title="%s",%s`,
 					channelMap["tvg-id"],
 					channelMap["tvg-name"],
+					channelMap["tvg-chno"],
 					channelMap["tvg-logo"],
 					channelMap["group-title"],
 					channelMap["name"],
