@@ -48,7 +48,7 @@ const Version = "1.2.28"
 const DBVersion = "0.5.0"
 
 // APIVersion : API Version
-const APIVersion = "1.2.28"
+const APIVersion = "1.2.29"
 
 var homeDirectory = fmt.Sprintf("%s%s.%s%s", src.GetUserHomeDirectory(), string(os.PathSeparator), strings.ToLower(Name), string(os.PathSeparator))
 var samplePath = fmt.Sprintf("%spath%sto%sthreadfin%s", string(os.PathSeparator), string(os.PathSeparator), string(os.PathSeparator), string(os.PathSeparator))
@@ -80,9 +80,6 @@ func main() {
 	system.GitHub = GitHub
 	system.Name = Name
 	system.Version = strings.Join(build[0:len(build)-1], ".")
-	if bindIpAddress != nil && len(*bindIpAddress) > 0 {
-		system.IPAddress = *bindIpAddress
-	}
 
 	// Panic !!!
 	defer func() {
@@ -149,6 +146,10 @@ func main() {
 	// Webserver Port
 	if len(*port) > 0 {
 		system.Flag.Port = *port
+	}
+
+	if bindIpAddress != nil && len(*bindIpAddress) > 0 {
+		system.IPAddress = *bindIpAddress
 	}
 
 	// Branch
