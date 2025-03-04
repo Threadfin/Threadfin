@@ -15,22 +15,25 @@ RUN go build threadfin.go
 
 # Second stage. Creating an image
 # -----------------------------------------------------------------------------
+# Declare ARG before FROM
 ARG USE_NVIDIA=0
 FROM ${USE_NVIDIA:+nvidia/cuda:12.5.1-base-ubuntu22.04}${USE_NVIDIA:-ubuntu:22.04}
 
+# Re-declare ARG after FROM for use in the second stage
+ARG USE_NVIDIA
 ARG BUILD_DATE
 ARG VCS_REF
 ARG THREADFIN_PORT=34400
 ARG THREADFIN_VERSION
 
-LABEL org.label-schema.build-date="{$BUILD_DATE}" \
+LABEL org.label-schema.build-date="${BUILD_DATE}" \
       org.label-schema.name="Threadfin" \
       org.label-schema.description="Dockerized Threadfin" \
       org.label-schema.url="https://hub.docker.com/r/fyb3roptik/threadfin/" \
-      org.label-schema.vcs-ref="{$VCS_REF}" \
+      org.label-schema.vcs-ref="${VCS_REF}" \
       org.label-schema.vcs-url="https://github.com/Threadfin/Threadfin" \
       org.label-schema.vendor="Threadfin" \
-      org.label-schema.version="{$THREADFIN_VERSION}" \
+      org.label-schema.version="${THREADFIN_VERSION}" \
       org.label-schema.schema-version="1.0" \
       DISCORD_URL="https://discord.gg/bEPPNP2VG8"
 
@@ -54,10 +57,13 @@ ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$THREADFIN
 # Set working directory
 WORKDIR $THREADFIN_HOME
 
-RUN apt-get update && apt-get upgrade -y
-RUN apt-get install -y ca-certificates curl ffmpeg vlc
-
-RUN DEBIAN_FRONTEND=noninteractive TZ="America/New_York" apt-get -y install tzdata
+# Fix apt-get commands by setting non-interactive and combining commands to reduce layers
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y ca-certificates curl ffmpeg vlc tzdata && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 RUN mkdir -p $THREADFIN_BIN
 
@@ -83,5 +89,5 @@ VOLUME $THREADFIN_TEMP
 
 EXPOSE $THREADFIN_PORT
 
-# Run the Threadfin executable
-ENTRYPOINT ${THREADFIN_BIN}/threadfin -port=${THREADFIN_PORT} -bind=${THREADFIN_BIND_IP_ADDRESS} -config=${THREADFIN_CONF} -debug=${THREADFIN_DEBUG}
+# Run the Threadfin executable using JSON format for ENTRYPOINT
+ENTRYPOINT ["sh", "-c", "${THREADFIN_BIN}/threadfin -port=${THREADFIN_PORT} -bind=${THREADFIN_BIND_IP_ADDRESS} -config=${THREADFIN_CONF} -debug=${THREADFIN_DEBUG}"]
