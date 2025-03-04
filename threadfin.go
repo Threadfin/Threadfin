@@ -80,9 +80,6 @@ func main() {
 	system.GitHub = GitHub
 	system.Name = Name
 	system.Version = strings.Join(build[0:len(build)-1], ".")
-	if bindIpAddress != nil && len(*bindIpAddress) > 0 {
-		system.IPAddress = *bindIpAddress
-	}
 
 	// Panic !!!
 	defer func() {
@@ -149,6 +146,10 @@ func main() {
 	// Webserver Port
 	if len(*port) > 0 {
 		system.Flag.Port = *port
+	}
+
+	if bindIpAddress != nil && len(*bindIpAddress) > 0 {
+		system.IPAddress = *bindIpAddress
 	}
 
 	// Branch
