@@ -1,5 +1,8 @@
 # First stage. Building a binary
 # -----------------------------------------------------------------------------
+# Declare ARG before any FROM statements (global scope)
+ARG USE_NVIDIA=0
+
 FROM golang:1.22 AS builder
 
 # Download the source code
@@ -15,8 +18,6 @@ RUN go build threadfin.go
 
 # Second stage. Creating an image
 # -----------------------------------------------------------------------------
-# Declare ARG before FROM
-ARG USE_NVIDIA=0
 FROM ${USE_NVIDIA:+nvidia/cuda:12.5.1-base-ubuntu22.04}${USE_NVIDIA:-ubuntu:22.04}
 
 # Re-declare ARG after FROM for use in the second stage
