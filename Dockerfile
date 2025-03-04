@@ -1,9 +1,8 @@
 # First stage. Building a binary
 # -----------------------------------------------------------------------------
-# Declare ARG before any FROM statements (global scope)
-ARG USE_NVIDIA=0
+ARG USE_NVIDIA
 
-FROM golang:1.22 AS builder
+FROM golang:1.23 AS builder
 
 # Download the source code
 RUN apt-get update && apt-get install -y git
@@ -18,10 +17,8 @@ RUN go build threadfin.go
 
 # Second stage. Creating an image
 # -----------------------------------------------------------------------------
-FROM ${USE_NVIDIA:+nvidia/cuda:12.5.1-base-ubuntu22.04}${USE_NVIDIA:-ubuntu:22.04}
+FROM ${USE_NVIDIA:+nvidia/cuda:12.8.0-base-ubuntu24.04}${USE_NVIDIA:-ubuntu:24.04}
 
-# Re-declare ARG after FROM for use in the second stage
-ARG USE_NVIDIA
 ARG BUILD_DATE
 ARG VCS_REF
 ARG THREADFIN_PORT=34400
@@ -58,7 +55,6 @@ ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$THREADFIN
 # Set working directory
 WORKDIR $THREADFIN_HOME
 
-# Fix apt-get commands by setting non-interactive and combining commands to reduce layers
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
     apt-get upgrade -y && \
@@ -90,5 +86,4 @@ VOLUME $THREADFIN_TEMP
 
 EXPOSE $THREADFIN_PORT
 
-# Run the Threadfin executable using JSON format for ENTRYPOINT
 ENTRYPOINT ["sh", "-c", "${THREADFIN_BIN}/threadfin -port=${THREADFIN_PORT} -bind=${THREADFIN_BIND_IP_ADDRESS} -config=${THREADFIN_CONF} -debug=${THREADFIN_DEBUG}"]
