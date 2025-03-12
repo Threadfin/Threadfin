@@ -1019,6 +1019,16 @@ func createLiveProgram(xepgChannel XEPGChannelStruct, channelId string) []*Progr
 		name = xepgChannel.TvgName
 	}
 
+	// Apply EnableNonAscii setting to filter out non-ASCII characters if needed
+	if !Settings.EnableNonAscii {
+		name = strings.TrimSpace(strings.Map(func(r rune) rune {
+			if r > unicode.MaxASCII {
+				return -1
+			}
+			return r
+		}, name))
+	}
+
 	// Search for Datetime or Time
 	// Datetime examples: '12/31-11:59 PM', '1.1 6:30 AM', '09/15-10:00PM', '7/4 12:00 PM', '3.21 3:45 AM', '6/30-8:00 AM', '4/15 3AM'
 	// Time examples: '11:59 PM', '6:30 AM', '11:59PM', '1PM'
@@ -1130,14 +1140,21 @@ func createDummyProgram(xepgChannel XEPGChannelStruct) (dummyXMLTV XMLTV) {
 
 	showInfo("Create Dummy Guide:" + "Time offset" + offset + " - " + xepgChannel.XName)
 
-	var dummyLength int
+	var dummyLength int = 30 // Default to 30 minutes if parsing fails
 	var err error
 	var dl = strings.Split(xepgChannel.XMapping, "_")
 	if dl[0] != "" {
-		dummyLength, err = strconv.Atoi(dl[0])
-		if err != nil {
-			ShowError(err, 000)
-			return
+		// Check if the first part is a valid integer
+		if match, _ := regexp.MatchString(`^\d+$`, dl[0]); match {
+			dummyLength, err = strconv.Atoi(dl[0])
+			if err != nil {
+				ShowError(err, 000)
+				// Continue with default value instead of returning
+			}
+		} else {
+			// For non-numeric formats that aren't "PPV" (which is handled above),
+			// use the default value
+			showInfo(fmt.Sprintf("Non-numeric format for XMapping: %s, using default duration of 30 minutes", xepgChannel.XMapping))
 		}
 	}
 
