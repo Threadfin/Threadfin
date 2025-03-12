@@ -512,14 +512,10 @@ func createXEPGDatabase() (err error) {
 					}
 				}
 
-				// Kanallogo aktualisieren. Wird bei vorhandenem Logo in der XMLTV Datei wieder überschrieben
-				if xepgChannel.XUpdateChannelIcon {
-					var imgc = Data.Cache.Images
-					xepgChannel.TvgLogo = imgc.Image.GetURL(m3uChannel.TvgLogo, Settings.HttpThreadfinDomain, Settings.Port, Settings.ForceHttps, Settings.HttpsPort, Settings.HttpsThreadfinDomain)
-				}
-			}
+				Data.XEPG.Channels[currentXEPGID] = xepgChannel
+				break
 
-			Data.XEPG.Channels[currentXEPGID] = xepgChannel
+			}
 
 		case false:
 			// Neuer Kanal
@@ -595,15 +591,12 @@ func createXEPGDatabase() (err error) {
 						newChannel.XActive = true
 
 						// Falls in der XMLTV Datei ein Logo existiert, wird dieses verwendet. Falls nicht, dann das Logo aus der M3U Datei
-						if icon, ok := chmap["icon"].(string); ok {
-							if len(icon) > 0 {
-								newChannel.TvgLogo = icon
-							}
-						}
-
-						break
 
 					}
+
+					Data.XEPG.Channels[xepg] = newChannel
+					xepgChannelsValuesMap[m3uChannelHash] = newChannel
+					break
 
 				}
 
@@ -631,8 +624,6 @@ func createXEPGDatabase() (err error) {
 			newChannel.TvgChno = xChannelID
 			newChannel.XChannelID = xChannelID
 			newChannel.ChannelUniqueID = m3uChannelHash
-			Data.XEPG.Channels[xepg] = newChannel
-			xepgChannelsValuesMap[m3uChannelHash] = newChannel
 
 		}
 	}
@@ -704,68 +695,12 @@ func mapping() (err error) {
 				xepgChannel.XMapping = "-"
 
 				Data.XEPG.Channels[xepg] = xepgChannel
-				for file, xmltvChannels := range Data.XMLTV.Mapping {
+				for _, xmltvChannels := range Data.XMLTV.Mapping {
 					channelsMap, ok := xmltvChannels.(map[string]interface{})
 					if !ok {
 						continue
 					}
-					if channel, ok := channelsMap[tvgID]; ok {
-
-						filters := []FilterStruct{}
-						for _, filter := range Settings.Filter {
-							filter_json, _ := json.Marshal(filter)
-							f := FilterStruct{}
-							json.Unmarshal(filter_json, &f)
-							filters = append(filters, f)
-						}
-						for _, filter := range filters {
-							if xepgChannel.GroupTitle == filter.Filter {
-								category := &Category{}
-								category.Value = filter.Category
-								category.Lang = "en"
-								xepgChannel.XCategory = filter.Category
-							}
-						}
-
-						chmap, okk := channel.(map[string]interface{})
-						if !okk {
-							continue
-						}
-
-						if channelID, ok := chmap["id"].(string); ok {
-							xepgChannel.XmltvFile = file
-							xepgChannel.XMapping = channelID
-							xepgChannel.XActive = true
-
-							// Falls in der XMLTV Datei ein Logo existiert, wird dieses verwendet. Falls nicht, dann das Logo aus der M3U Datei
-							if icon, ok := chmap["icon"].(string); ok {
-								if len(icon) > 0 {
-									xepgChannel.TvgLogo = icon
-								}
-							}
-
-							Data.XEPG.Channels[xepg] = xepgChannel
-							break
-
-						}
-
-					}
-
-				}
-			}
-		}
-
-		// Überprüfen, ob die zugeordneten XMLTV Dateien und Kanäle noch existieren.
-		if xepgChannel.XActive && !xepgChannel.XHideChannel {
-
-			var mapping = xepgChannel.XMapping
-			var file = xepgChannel.XmltvFile
-
-			if file != "Threadfin Dummy" && !xepgChannel.Live {
-
-				if value, ok := Data.XMLTV.Mapping[file].(map[string]interface{}); ok {
-
-					if channel, ok := value[mapping].(map[string]interface{}); ok {
+					if _, ok := channelsMap[tvgID]; ok {
 
 						filters := []FilterStruct{}
 						for _, filter := range Settings.Filter {
@@ -786,14 +721,44 @@ func mapping() (err error) {
 						}
 
 						// Kanallogo aktualisieren
-						if logo, ok := channel["icon"].(string); ok {
 
-							if xepgChannel.XUpdateChannelIcon && len(logo) > 0 {
-								var imgc = Data.Cache.Images
-								xepgChannel.TvgLogo = imgc.Image.GetURL(logo, Settings.HttpThreadfinDomain, Settings.Port, Settings.ForceHttps, Settings.HttpsPort, Settings.HttpsThreadfinDomain)
-							}
+					}
 
+				}
+			}
+		}
+
+		// Überprüfen, ob die zugeordneten XMLTV Dateien und Kanäle noch existieren.
+		if xepgChannel.XActive && !xepgChannel.XHideChannel {
+
+			var mapping = xepgChannel.XMapping
+			var file = xepgChannel.XmltvFile
+
+			if file != "Threadfin Dummy" && !xepgChannel.Live {
+
+				if _, ok := Data.XMLTV.Mapping[file].(map[string]interface{}); ok {
+
+					if _, ok := Data.XMLTV.Mapping[file].(map[string]interface{})[mapping].(map[string]interface{}); ok {
+
+						filters := []FilterStruct{}
+						for _, filter := range Settings.Filter {
+							filter_json, _ := json.Marshal(filter)
+							f := FilterStruct{}
+							json.Unmarshal(filter_json, &f)
+							filters = append(filters, f)
 						}
+						for _, filter := range filters {
+							if xepgChannel.GroupTitle == filter.Filter {
+								category := &Category{}
+								category.Value = filter.Category
+								category.Lang = "en"
+								if xepgChannel.XCategory == "" {
+									xepgChannel.XCategory = filter.Category
+								}
+							}
+						}
+
+						// Kanallogo aktualisieren
 
 					}
 
@@ -1054,6 +1019,16 @@ func createLiveProgram(xepgChannel XEPGChannelStruct, channelId string) []*Progr
 		name = xepgChannel.TvgName
 	}
 
+	// Apply EnableNonAscii setting to filter out non-ASCII characters if needed
+	if !Settings.EnableNonAscii {
+		name = strings.TrimSpace(strings.Map(func(r rune) rune {
+			if r > unicode.MaxASCII {
+				return -1
+			}
+			return r
+		}, name))
+	}
+
 	// Search for Datetime or Time
 	// Datetime examples: '12/31-11:59 PM', '1.1 6:30 AM', '09/15-10:00PM', '7/4 12:00 PM', '3.21 3:45 AM', '6/30-8:00 AM', '4/15 3AM'
 	// Time examples: '11:59 PM', '6:30 AM', '11:59PM', '1PM'
@@ -1165,14 +1140,21 @@ func createDummyProgram(xepgChannel XEPGChannelStruct) (dummyXMLTV XMLTV) {
 
 	showInfo("Create Dummy Guide:" + "Time offset" + offset + " - " + xepgChannel.XName)
 
-	var dummyLength int
+	var dummyLength int = 30 // Default to 30 minutes if parsing fails
 	var err error
 	var dl = strings.Split(xepgChannel.XMapping, "_")
 	if dl[0] != "" {
-		dummyLength, err = strconv.Atoi(dl[0])
-		if err != nil {
-			ShowError(err, 000)
-			return
+		// Check if the first part is a valid integer
+		if match, _ := regexp.MatchString(`^\d+$`, dl[0]); match {
+			dummyLength, err = strconv.Atoi(dl[0])
+			if err != nil {
+				ShowError(err, 000)
+				// Continue with default value instead of returning
+			}
+		} else {
+			// For non-numeric formats that aren't "PPV" (which is handled above),
+			// use the default value
+			showInfo(fmt.Sprintf("Non-numeric format for XMapping: %s, using default duration of 30 minutes", xepgChannel.XMapping))
 		}
 	}
 
