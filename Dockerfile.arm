@@ -9,13 +9,13 @@ WORKDIR /app
 
 # Copy go mod files first for better caching
 COPY go.mod go.sum ./
-RUN go mod tidy && go mod vendor
+RUN go mod download
 
 # Copy the source code
 COPY . .
 
 # Build the application with optimizations
-RUN CGO_ENABLED=0 GOARCH=$TARGETARCH go build -ldflags="-s -w" -trimpath -o threadfin threadfin.go
+RUN CGO_ENABLED=0 GOARCH=$TARGETARCH go build -mod=mod -ldflags="-s -w" -trimpath -o threadfin threadfin.go
 
 # Second stage. Creating a minimal image
 # -----------------------------------------------------------------------------
