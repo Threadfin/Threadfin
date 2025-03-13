@@ -2,22 +2,23 @@
 # -----------------------------------------------------------------------------
 ARG USE_NVIDIA
 
-FROM golang:1.23 AS builder
+FROM golang:1.23-bullseye AS builder
 
-# Download the source code
-RUN apt-get update && apt-get install -y git
-RUN git clone https://github.com/Threadfin/Threadfin.git /src
+WORKDIR /app
 
-WORKDIR /src
+# Copy go mod files first for better caching
+COPY go.mod go.sum ./
+RUN go mod download && go mod verify
 
-RUN git checkout main
-RUN git pull
-RUN go mod tidy && go mod vendor
-RUN go build threadfin.go
+# Copy the source code
+COPY . .
 
-# Second stage. Creating an image
+# Build the application with optimizations
+RUN CGO_ENABLED=0 go build -ldflags="-s -w" -trimpath -o threadfin threadfin.go
+
+# Second stage. Creating a minimal image
 # -----------------------------------------------------------------------------
-FROM ${USE_NVIDIA:+nvidia/cuda:12.8.0-base-ubuntu24.04}${USE_NVIDIA:-ubuntu:24.04}
+FROM ${USE_NVIDIA:+nvidia/cuda:12.8.0-base-ubuntu24.04}${USE_NVIDIA:-ubuntu:24.04} AS final
 
 ARG BUILD_DATE
 ARG VCS_REF
@@ -35,50 +36,42 @@ LABEL org.label-schema.build-date="${BUILD_DATE}" \
       org.label-schema.schema-version="1.0" \
       DISCORD_URL="https://discord.gg/bEPPNP2VG8"
 
-ENV THREADFIN_BIN=/home/threadfin/bin
-ENV THREADFIN_CONF=/home/threadfin/conf
-ENV THREADFIN_HOME=/home/threadfin
-ENV THREADFIN_TEMP=/tmp/threadfin
-ENV THREADFIN_CACHE=/home/threadfin/cache
-ENV THREADFIN_UID=31337
-ENV THREADFIN_GID=31337
-ENV THREADFIN_USER=threadfin
-ENV THREADFIN_BRANCH=main
-ENV THREADFIN_DEBUG=0
-ENV THREADFIN_PORT=34400
-ENV THREADFIN_LOG=/var/log/threadfin.log
-ENV THREADFIN_BIND_IP_ADDRESS=0.0.0.0
-
-# Add binary to PATH
-ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$THREADFIN_BIN
+ENV THREADFIN_BIN=/home/threadfin/bin \
+    THREADFIN_CONF=/home/threadfin/conf \
+    THREADFIN_HOME=/home/threadfin \
+    THREADFIN_TEMP=/tmp/threadfin \
+    THREADFIN_CACHE=/home/threadfin/cache \
+    THREADFIN_UID=31337 \
+    THREADFIN_GID=31337 \
+    THREADFIN_USER=threadfin \
+    THREADFIN_BRANCH=main \
+    THREADFIN_DEBUG=0 \
+    THREADFIN_PORT=34400 \
+    THREADFIN_LOG=/var/log/threadfin.log \
+    THREADFIN_BIND_IP_ADDRESS=0.0.0.0 \
+    PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/threadfin/bin \
+    DEBIAN_FRONTEND=noninteractive
 
 # Set working directory
 WORKDIR $THREADFIN_HOME
 
-ENV DEBIAN_FRONTEND=noninteractive
+# Install dependencies in a single layer
 RUN apt-get update && \
-    apt-get upgrade -y && \
-    apt-get install -y ca-certificates curl ffmpeg vlc tzdata && \
+    apt-get install -y --no-install-recommends \
+    ca-certificates \
+    curl \
+    ffmpeg \
+    vlc \
+    tzdata && \
     apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-
-RUN mkdir -p $THREADFIN_BIN
+    rm -rf /var/lib/apt/lists/* && \
+    mkdir -p $THREADFIN_BIN $THREADFIN_CONF $THREADFIN_TEMP $THREADFIN_HOME/cache && \
+    chmod a+rwX $THREADFIN_CONF $THREADFIN_TEMP && \
+    sed -i 's/geteuid/getppid/' /usr/bin/vlc
 
 # Copy built binary from builder image
-COPY --chown=${THREADFIN_UID} --from=builder [ "/src/threadfin", "${THREADFIN_BIN}/" ]
-
-# Set binary permissions
+COPY --from=builder /app/threadfin $THREADFIN_BIN/
 RUN chmod +rx $THREADFIN_BIN/threadfin
-RUN mkdir $THREADFIN_HOME/cache
-
-# Create working directories for Threadfin
-RUN mkdir $THREADFIN_CONF
-RUN chmod a+rwX $THREADFIN_CONF
-RUN mkdir $THREADFIN_TEMP
-RUN chmod a+rwX $THREADFIN_TEMP
-
-# For VLC
-RUN sed -i 's/geteuid/getppid/' /usr/bin/vlc
 
 # Configure container volume mappings
 VOLUME $THREADFIN_CONF
