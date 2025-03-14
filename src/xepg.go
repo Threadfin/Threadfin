@@ -513,10 +513,10 @@ func createXEPGDatabase() (err error) {
 				}
 
 				// Kanallogo aktualisieren. Wird bei vorhandenem Logo in der XMLTV Datei wieder überschrieben
-				/*if xepgChannel.XUpdateChannelIcon {
+				if xepgChannel.XUpdateChannelIcon {
 					var imgc = Data.Cache.Images
 					xepgChannel.TvgLogo = imgc.Image.GetURL(m3uChannel.TvgLogo, Settings.HttpThreadfinDomain, Settings.Port, Settings.ForceHttps, Settings.HttpsPort, Settings.HttpsThreadfinDomain)
-				}*/
+				}
 			}
 
 			Data.XEPG.Channels[currentXEPGID] = xepgChannel
