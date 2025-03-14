@@ -512,10 +512,14 @@ func createXEPGDatabase() (err error) {
 					}
 				}
 
-				Data.XEPG.Channels[currentXEPGID] = xepgChannel
-				break
-
+				// Kanallogo aktualisieren. Wird bei vorhandenem Logo in der XMLTV Datei wieder überschrieben
+				/*if xepgChannel.XUpdateChannelIcon {
+					var imgc = Data.Cache.Images
+					xepgChannel.TvgLogo = imgc.Image.GetURL(m3uChannel.TvgLogo, Settings.HttpThreadfinDomain, Settings.Port, Settings.ForceHttps, Settings.HttpsPort, Settings.HttpsThreadfinDomain)
+				}*/
 			}
+
+			Data.XEPG.Channels[currentXEPGID] = xepgChannel
 
 		case false:
 			// Neuer Kanal
@@ -591,12 +595,15 @@ func createXEPGDatabase() (err error) {
 						newChannel.XActive = true
 
 						// Falls in der XMLTV Datei ein Logo existiert, wird dieses verwendet. Falls nicht, dann das Logo aus der M3U Datei
+						/*if icon, ok := chmap["icon"].(string); ok {
+							if len(icon) > 0 {
+								newChannel.TvgLogo = icon
+							}
+						}*/
+
+						break
 
 					}
-
-					Data.XEPG.Channels[xepg] = newChannel
-					xepgChannelsValuesMap[m3uChannelHash] = newChannel
-					break
 
 				}
 
@@ -624,6 +631,8 @@ func createXEPGDatabase() (err error) {
 			newChannel.TvgChno = xChannelID
 			newChannel.XChannelID = xChannelID
 			newChannel.ChannelUniqueID = m3uChannelHash
+			Data.XEPG.Channels[xepg] = newChannel
+			xepgChannelsValuesMap[m3uChannelHash] = newChannel
 
 		}
 	}
@@ -695,12 +704,12 @@ func mapping() (err error) {
 				xepgChannel.XMapping = "-"
 
 				Data.XEPG.Channels[xepg] = xepgChannel
-				for _, xmltvChannels := range Data.XMLTV.Mapping {
+				for file, xmltvChannels := range Data.XMLTV.Mapping {
 					channelsMap, ok := xmltvChannels.(map[string]interface{})
 					if !ok {
 						continue
 					}
-					if _, ok := channelsMap[tvgID]; ok {
+					if channel, ok := channelsMap[tvgID]; ok {
 
 						filters := []FilterStruct{}
 						for _, filter := range Settings.Filter {
@@ -714,13 +723,31 @@ func mapping() (err error) {
 								category := &Category{}
 								category.Value = filter.Category
 								category.Lang = "en"
-								if xepgChannel.XCategory == "" {
-									xepgChannel.XCategory = filter.Category
-								}
+								xepgChannel.XCategory = filter.Category
 							}
 						}
 
-						// Kanallogo aktualisieren
+						chmap, okk := channel.(map[string]interface{})
+						if !okk {
+							continue
+						}
+
+						if channelID, ok := chmap["id"].(string); ok {
+							xepgChannel.XmltvFile = file
+							xepgChannel.XMapping = channelID
+							xepgChannel.XActive = true
+
+							// Falls in der XMLTV Datei ein Logo existiert, wird dieses verwendet. Falls nicht, dann das Logo aus der M3U Datei
+							/*if icon, ok := chmap["icon"].(string); ok {
+								if len(icon) > 0 {
+									xepgChannel.TvgLogo = icon
+								}
+							}*/
+
+							Data.XEPG.Channels[xepg] = xepgChannel
+							break
+
+						}
 
 					}
 
@@ -736,9 +763,9 @@ func mapping() (err error) {
 
 			if file != "Threadfin Dummy" && !xepgChannel.Live {
 
-				if _, ok := Data.XMLTV.Mapping[file].(map[string]interface{}); ok {
+				if value, ok := Data.XMLTV.Mapping[file].(map[string]interface{}); ok {
 
-					if _, ok := Data.XMLTV.Mapping[file].(map[string]interface{})[mapping].(map[string]interface{}); ok {
+					if channel, ok := value[mapping].(map[string]interface{}); ok {
 
 						filters := []FilterStruct{}
 						for _, filter := range Settings.Filter {
@@ -759,6 +786,14 @@ func mapping() (err error) {
 						}
 
 						// Kanallogo aktualisieren
+						if logo, ok := channel["icon"].(string); ok {
+
+							if xepgChannel.XUpdateChannelIcon && len(logo) > 0 {
+								/*var imgc = Data.Cache.Images
+								xepgChannel.TvgLogo = imgc.Image.GetURL(logo, Settings.HttpThreadfinDomain, Settings.Port, Settings.ForceHttps, Settings.HttpsPort, Settings.HttpsThreadfinDomain)*/
+							}
+
+						}
 
 					}
 
@@ -784,7 +819,6 @@ func mapping() (err error) {
 					}
 				}
 			}
-
 			if len(xepgChannel.XmltvFile) == 0 {
 				xepgChannel.XmltvFile = "-"
 				xepgChannel.XActive = true
@@ -1019,16 +1053,6 @@ func createLiveProgram(xepgChannel XEPGChannelStruct, channelId string) []*Progr
 		name = xepgChannel.TvgName
 	}
 
-	// Apply EnableNonAscii setting to filter out non-ASCII characters if needed
-	if !Settings.EnableNonAscii {
-		name = strings.TrimSpace(strings.Map(func(r rune) rune {
-			if r > unicode.MaxASCII {
-				return -1
-			}
-			return r
-		}, name))
-	}
-
 	// Search for Datetime or Time
 	// Datetime examples: '12/31-11:59 PM', '1.1 6:30 AM', '09/15-10:00PM', '7/4 12:00 PM', '3.21 3:45 AM', '6/30-8:00 AM', '4/15 3AM'
 	// Time examples: '11:59 PM', '6:30 AM', '11:59PM', '1PM'
@@ -1077,12 +1101,24 @@ func createLiveProgram(xepgChannel XEPGChannelStruct, channelId string) []*Progr
 
 	// Add "CHANNEL OFFLINE" program for the time before the event
 	beginningOfDay := time.Date(startTime.Year(), startTime.Month(), startTime.Day(), 0, 0, 0, 0, localLocation)
+
+	// Handle non-ASCII characters in offline text
+	var offlineText = "CHANNEL OFFLINE"
+	if !Settings.EnableNonAscii {
+		offlineText = strings.TrimSpace(strings.Map(func(r rune) rune {
+			if r > unicode.MaxASCII {
+				return -1
+			}
+			return r
+		}, offlineText))
+	}
+
 	programBefore := &Program{
 		Channel: channelId,
 		Start:   beginningOfDay.Format("20060102150405 -0700"),
 		Stop:    startTime.Format("20060102150405 -0700"),
-		Title:   []*Title{{Lang: "en", Value: "CHANNEL OFFLINE"}},
-		Desc:    []*Desc{{Lang: "en", Value: "CHANNEL OFFLINE"}},
+		Title:   []*Title{{Lang: "en", Value: offlineText}},
+		Desc:    []*Desc{{Lang: "en", Value: offlineText}},
 	}
 	programs = append(programs, programBefore)
 
@@ -1096,6 +1132,17 @@ func createLiveProgram(xepgChannel XEPGChannelStruct, channelId string) []*Progr
 	if Settings.XepgReplaceChannelTitle && xepgChannel.XMapping == "PPV" {
 		title := []*Title{}
 		title_parsed := fmt.Sprintf("%s %s", name, xepgChannel.XPpvExtra)
+
+		// Handle non-ASCII characters in title
+		if !Settings.EnableNonAscii {
+			title_parsed = strings.TrimSpace(strings.Map(func(r rune) rune {
+				if r > unicode.MaxASCII {
+					return -1
+				}
+				return r
+			}, title_parsed))
+		}
+
 		t := &Title{Lang: "en", Value: title_parsed}
 		title = append(title, t)
 		mainProgram.Title = title
@@ -1114,8 +1161,8 @@ func createLiveProgram(xepgChannel XEPGChannelStruct, channelId string) []*Progr
 		Channel: channelId,
 		Start:   midnightNextDayStart.Format("20060102150405 -0700"),
 		Stop:    midnightNextDayStop.Format("20060102150405 -0700"),
-		Title:   []*Title{{Lang: "en", Value: "CHANNEL OFFLINE"}},
-		Desc:    []*Desc{{Lang: "en", Value: "CHANNEL OFFLINE"}},
+		Title:   []*Title{{Lang: "en", Value: offlineText}},
+		Desc:    []*Desc{{Lang: "en", Value: offlineText}},
 	}
 	programs = append(programs, programAfter)
 
@@ -1172,12 +1219,41 @@ func createDummyProgram(xepgChannel XEPGChannelStruct) (dummyXMLTV XMLTV) {
 			epg.Channel = xepgChannel.XMapping
 			epg.Start = epgStartTime.Format("20060102150405") + offset
 			epg.Stop = epgStopTime.Format("20060102150405") + offset
-			epg.Title = append(epg.Title, &Title{Value: xepgChannel.XName + " (" + epgStartTime.Weekday().String()[0:2] + ". " + epgStartTime.Format("15:04") + " - " + epgStopTime.Format("15:04") + ")", Lang: "en"})
+
+			// Create title with proper handling of non-ASCII characters
+			var titleValue = xepgChannel.XName + " (" + epgStartTime.Weekday().String()[0:2] + ". " + epgStartTime.Format("15:04") + " - " + epgStopTime.Format("15:04") + ")"
+			if !Settings.EnableNonAscii {
+				titleValue = strings.TrimSpace(strings.Map(func(r rune) rune {
+					if r > unicode.MaxASCII {
+						return -1
+					}
+					return r
+				}, titleValue))
+			}
+			epg.Title = append(epg.Title, &Title{Value: titleValue, Lang: "en"})
 
 			if len(xepgChannel.XDescription) == 0 {
-				epg.Desc = append(epg.Desc, &Desc{Value: "Threadfin: (" + strconv.Itoa(dummyLength) + " Minutes) " + epgStartTime.Weekday().String() + " " + epgStartTime.Format("15:04") + " - " + epgStopTime.Format("15:04"), Lang: "en"})
+				var descValue = "Threadfin: (" + strconv.Itoa(dummyLength) + " Minutes) " + epgStartTime.Weekday().String() + " " + epgStartTime.Format("15:04") + " - " + epgStopTime.Format("15:04")
+				if !Settings.EnableNonAscii {
+					descValue = strings.TrimSpace(strings.Map(func(r rune) rune {
+						if r > unicode.MaxASCII {
+							return -1
+						}
+						return r
+					}, descValue))
+				}
+				epg.Desc = append(epg.Desc, &Desc{Value: descValue, Lang: "en"})
 			} else {
-				epg.Desc = append(epg.Desc, &Desc{Value: xepgChannel.XDescription, Lang: "en"})
+				var descValue = xepgChannel.XDescription
+				if !Settings.EnableNonAscii {
+					descValue = strings.TrimSpace(strings.Map(func(r rune) rune {
+						if r > unicode.MaxASCII {
+							return -1
+						}
+						return r
+					}, descValue))
+				}
+				epg.Desc = append(epg.Desc, &Desc{Value: descValue, Lang: "en"})
 			}
 
 			if Settings.XepgReplaceMissingImages {
