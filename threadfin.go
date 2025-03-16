@@ -29,7 +29,7 @@ type GitHubStruct struct {
 
 // GitHub : GitHub Account
 // If you want to fork this project, enter your Github account here. This prevents a newer version of Threadfin from updating your version.
-var GitHub = GitHubStruct{Branch: "Main", User: "Threadfin", Repo: "Threadfin", Update: true}
+var GitHub = GitHubStruct{Branch: "Debian-11-compatibility", User: "edwinludik", Repo: "Threadfin", Update: true}
 
 /*
 	Branch: GitHub Branch
