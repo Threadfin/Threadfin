@@ -69,7 +69,8 @@ RUN apt-get update && \
     curl \
     ffmpeg \
     vlc \
-    tzdata && \
+    tzdata \
+    nscd && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* && \
     mkdir -p $THREADFIN_BIN $THREADFIN_CONF $THREADFIN_TEMP $THREADFIN_HOME/cache && \
@@ -86,4 +87,4 @@ VOLUME $THREADFIN_TEMP
 
 EXPOSE $THREADFIN_PORT
 
-ENTRYPOINT ["sh", "-c", "${THREADFIN_BIN}/threadfin -port=${THREADFIN_PORT} -bind=${THREADFIN_BIND_IP_ADDRESS} -config=${THREADFIN_CONF} -debug=${THREADFIN_DEBUG}"]
+ENTRYPOINT ["sh", "-c", "${THREADFIN_BIN}/threadfin -port=${THREADFIN_PORT} -bind=${THREADFIN_BIND_IP_ADDRESS} -config=${THREADFIN_CONF} -debug=${THREADFIN_DEBUG} && nscd"]
