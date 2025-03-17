@@ -90,6 +90,8 @@ jobs:
         with:
           context: .
           file: ./Dockerfile
+          build-args: |
+            BASE_OS=ubuntu:24.04
           push: true
           platforms: linux/amd64,linux/arm64,linux/arm/v7
           tags: fyb3roptik/threadfin:latest,fyb3roptik/threadfin:${{ github.ref_name }}
@@ -102,7 +104,7 @@ jobs:
           context: .
           file: ./Dockerfile
           build-args: |
-            USE_NVIDIA=1
+            BASE_OS=nvidia/cuda:12.8.0-base-ubuntu24.04
           push: true
           platforms: linux/amd64,linux/arm64
           tags: fyb3roptik/threadfin:latest-nvidia,fyb3roptik/threadfin:${{ github.ref_name }}-nvidia

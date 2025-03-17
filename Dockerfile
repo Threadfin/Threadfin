@@ -1,7 +1,8 @@
+# Build ARG for final image base
+ARG BASE_OS=ubuntu:24.04
+
 # First stage. Building a binary
 # -----------------------------------------------------------------------------
-ARG USE_NVIDIA
-
 FROM golang:1.23-bullseye AS builder
 
 WORKDIR /app
@@ -18,14 +19,8 @@ RUN CGO_ENABLED=0 go build -mod=mod -ldflags="-s -w" -trimpath -o threadfin thre
 
 # Second stage. Creating a minimal image
 # -----------------------------------------------------------------------------
-ARG USE_NVIDIA
-FROM ubuntu:24.04 AS standard
-FROM nvidia/cuda:12.8.0-base-ubuntu24.04 AS nvidia
-FROM standard AS final
-FROM nvidia AS final-nvidia
-
-ARG USE_NVIDIA
-FROM final${USE_NVIDIA:+-nvidia}
+ARG BASE_OS
+FROM ${BASE_OS}
 
 ARG BUILD_DATE
 ARG VCS_REF
