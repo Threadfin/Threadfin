@@ -1068,6 +1068,13 @@ func createLiveProgram(xepgChannel XEPGChannelStruct, channelId string) []*Progr
 		timeString := strings.TrimSpace(timePart)
 		timeString = strings.ReplaceAll(timeString, "  ", " ")
 
+		hourRe := regexp.MustCompile(`(\d{1,2})`)
+		hourMatches := hourRe.FindStringSubmatch(timeString)
+		if len(hourMatches) > 0 {
+			hour := hourMatches[1]
+			timeString = strings.Replace(timeString, hour, hour, 1)
+		}
+
 		if strings.Contains(timeString, ":") {
 			layout = "2006.1.2 3:04PM"
 		} else {
@@ -1078,7 +1085,6 @@ func createLiveProgram(xepgChannel XEPGChannelStruct, channelId string) []*Progr
 		nyLocation, _ := time.LoadLocation("America/New_York")
 
 		fullTimeString := fmt.Sprintf("%s.%d.%d %s", yearString, currentTime.Month(), currentTime.Day(), timeString)
-		showInfo("CHANNEL: " + name)
 		showInfo("Attempting to parse time string: " + fullTimeString)
 
 		startTimeParsed, err := time.ParseInLocation(layout, fullTimeString, nyLocation)
