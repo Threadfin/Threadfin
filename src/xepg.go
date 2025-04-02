@@ -1085,6 +1085,7 @@ func createLiveProgram(xepgChannel XEPGChannelStruct, channelId string) []*Progr
 		nyLocation, _ := time.LoadLocation("America/New_York")
 
 		fullTimeString := fmt.Sprintf("%s.%d.%d %s", yearString, currentTime.Month(), currentTime.Day(), timeString)
+		showInfo("CHANNEL: " + name)
 		showInfo("Attempting to parse time string: " + fullTimeString)
 
 		startTimeParsed, err := time.ParseInLocation(layout, fullTimeString, nyLocation)
