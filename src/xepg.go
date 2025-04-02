@@ -1056,7 +1056,7 @@ func createLiveProgram(xepgChannel XEPGChannelStruct, channelId string) []*Progr
 	// Search for Datetime or Time
 	// Datetime examples: '12/31-11:59 PM', '1.1 6:30 AM', '09/15-10:00PM', '7/4 12:00 PM', '3.21 3:45 AM', '6/30-8:00 AM', '4/15 3AM'
 	// Time examples: '11:59 PM', '6:30 AM', '11:59PM', '1PM'
-	re := regexp.MustCompile(`((\d{1,2}[./]\d{1,2})[-\s])*(\d{1,2}(:\d{2})*\s*(AM|PM))`)
+	re := regexp.MustCompile(`((\d{1,2}[./]\d{1,2})[-\s])*(\d{1,2}(:\d{2})*\s*(AM|PM)?(?:\s*(ET|CT|MT|PT|EST|CST|MST|PST))?)`)
 	matches := re.FindStringSubmatch(name)
 	layout := "2006.1.2 3:04 PM"
 	if len(matches) > 0 {
@@ -1068,30 +1068,76 @@ func createLiveProgram(xepgChannel XEPGChannelStruct, channelId string) []*Progr
 		timeString := strings.TrimSpace(timePart)
 		timeString = strings.ReplaceAll(timeString, "  ", " ")
 
-		hourRe := regexp.MustCompile(`(\d{1,2})`)
-		hourMatches := hourRe.FindStringSubmatch(timeString)
-		if len(hourMatches) > 0 {
-			hour := hourMatches[1]
-			timeString = strings.Replace(timeString, hour, hour, 1)
-		}
-
-		if strings.Contains(timeString, ":") {
-			layout = "2006.1.2 3:04PM"
+		// Handle timezone if present
+		var location *time.Location
+		if strings.Contains(timeString, "ET") || strings.Contains(timeString, "EST") {
+			location, _ = time.LoadLocation("America/New_York")
+		} else if strings.Contains(timeString, "CT") || strings.Contains(timeString, "CST") {
+			location, _ = time.LoadLocation("America/Chicago")
+		} else if strings.Contains(timeString, "MT") || strings.Contains(timeString, "MST") {
+			location, _ = time.LoadLocation("America/Denver")
+		} else if strings.Contains(timeString, "PT") || strings.Contains(timeString, "PST") {
+			location, _ = time.LoadLocation("America/Los_Angeles")
 		} else {
-			layout = "2006.1.2 3PM"
+			location = currentTime.Location()
 		}
 
-		yearString := fmt.Sprintf("%d", currentTime.Year())
-		nyLocation, _ := time.LoadLocation("America/New_York")
+		// Remove timezone from timeString
+		timeString = strings.ReplaceAll(timeString, "ET", "")
+		timeString = strings.ReplaceAll(timeString, "CT", "")
+		timeString = strings.ReplaceAll(timeString, "MT", "")
+		timeString = strings.ReplaceAll(timeString, "PT", "")
+		timeString = strings.ReplaceAll(timeString, "EST", "")
+		timeString = strings.ReplaceAll(timeString, "CST", "")
+		timeString = strings.ReplaceAll(timeString, "MST", "")
+		timeString = strings.ReplaceAll(timeString, "PST", "")
+		timeString = strings.TrimSpace(timeString)
 
-		fullTimeString := fmt.Sprintf("%s.%d.%d %s", yearString, currentTime.Month(), currentTime.Day(), timeString)
+		// Handle different date formats
+		var datePart string
+		if len(matches) > 3 && matches[2] != "" {
+			datePart = matches[2]
+			// Convert slashes to dots for consistency
+			datePart = strings.ReplaceAll(datePart, "/", ".")
+		}
+
+		// Build the full time string
+		var fullTimeString string
+		if datePart != "" {
+			// If we have a date part, use it
+			parts := strings.Split(datePart, ".")
+			if len(parts) == 2 {
+				month := parts[0]
+				day := parts[1]
+				fullTimeString = fmt.Sprintf("%d.%s.%s %s", currentTime.Year(), month, day, timeString)
+			}
+		} else {
+			// If no date part, use current date
+			fullTimeString = fmt.Sprintf("%d.%d.%d %s", currentTime.Year(), currentTime.Month(), currentTime.Day(), timeString)
+		}
+
+		// Determine layout based on time format
+		if strings.Contains(timeString, ":") {
+			if strings.Contains(timeString, "AM") || strings.Contains(timeString, "PM") {
+				layout = "2006.1.2 3:04 PM"
+			} else {
+				layout = "2006.1.2 15:04"
+			}
+		} else {
+			if strings.Contains(timeString, "AM") || strings.Contains(timeString, "PM") {
+				layout = "2006.1.2 3PM"
+			} else {
+				layout = "2006.1.2 15"
+			}
+		}
+
 		showInfo("CHANNEL: " + name)
 		showInfo("Attempting to parse time string: " + fullTimeString)
 
-		startTimeParsed, err := time.ParseInLocation(layout, fullTimeString, nyLocation)
+		startTimeParsed, err := time.ParseInLocation(layout, fullTimeString, location)
 		if err != nil {
 			showInfo("TIME PARSE ERROR: " + err.Error() + " - Defaulting to 6am local time")
-			startTime = time.Date(currentTime.Year(), currentTime.Month(), currentTime.Day(), 6, 0, 0, 0, localLocation)
+			startTime = time.Date(currentTime.Year(), currentTime.Month(), currentTime.Day(), 6, 0, 0, 0, location)
 		} else {
 			localTime := startTimeParsed.In(localLocation)
 			startTime = localTime
