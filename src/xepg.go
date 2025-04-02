@@ -1087,10 +1087,20 @@ func createLiveProgram(xepgChannel XEPGChannelStruct, channelId string) []*Progr
 		timeString = strings.Replace(timeString, " AM", "AM", -1)
 		timeString = strings.Replace(timeString, " PM", "PM", -1)
 
+		// Clean up the time string to ensure valid format
+		timeString = strings.TrimSpace(timeString)
+		// Remove any double spaces
+		timeString = strings.ReplaceAll(timeString, "  ", " ")
+
 		// Use LoadLocation to properly account for DST
 		yearString := fmt.Sprintf("%d", currentTime.Year())
 		nyLocation, _ := time.LoadLocation("America/New_York") // ET location
-		startTimeParsed, err := time.ParseInLocation(layout, fmt.Sprintf("%s.%s", yearString, timeString), nyLocation)
+
+		// Build the full time string with proper formatting
+		fullTimeString := fmt.Sprintf("%s.%d.%d %s", yearString, currentTime.Month(), currentTime.Day(), timeString)
+		showInfo("Attempting to parse time string: " + fullTimeString)
+
+		startTimeParsed, err := time.ParseInLocation(layout, fullTimeString, nyLocation)
 		if err != nil {
 			showInfo("TIME PARSE ERROR: " + err.Error() + " - Defaulting to 6am local time")
 			// Default to 6am local time
