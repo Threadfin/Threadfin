@@ -1131,12 +1131,8 @@ func createLiveProgram(xepgChannel XEPGChannelStruct, channelId string) []*Progr
 			}
 		}
 
-		showInfo("CHANNEL: " + name)
-		showInfo("Attempting to parse time string: " + fullTimeString)
-
 		startTimeParsed, err := time.ParseInLocation(layout, fullTimeString, location)
 		if err != nil {
-			showInfo("TIME PARSE ERROR: " + err.Error() + " - Defaulting to 6am local time")
 			startTime = time.Date(currentTime.Year(), currentTime.Month(), currentTime.Day(), 6, 0, 0, 0, location)
 		} else {
 			localTime := startTimeParsed.In(localLocation)
