@@ -1092,7 +1092,9 @@ func createLiveProgram(xepgChannel XEPGChannelStruct, channelId string) []*Progr
 		nyLocation, _ := time.LoadLocation("America/New_York") // ET location
 		startTimeParsed, err := time.ParseInLocation(layout, fmt.Sprintf("%s.%s", yearString, timeString), nyLocation)
 		if err != nil {
-			showInfo("TIME PARSE ERROR: " + err.Error())
+			showInfo("TIME PARSE ERROR: " + err.Error() + " - Defaulting to 6am local time")
+			// Default to 6am local time
+			startTime = time.Date(currentTime.Year(), currentTime.Month(), currentTime.Day(), 6, 0, 0, 0, localLocation)
 		} else {
 			localTime := startTimeParsed.In(localLocation) // Convert to CT
 			startTime = localTime
