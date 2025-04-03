@@ -1,3 +1,9 @@
+# Build ARG for final image base
+ARG BASE_OS=ubuntu:24.04
+ARG OS_VERSION=ubuntu
+ARG OS_CODENAME=noble
+ARG FFMPEG_PACKAGE=jellyfin-ffmpeg7
+
 # First stage. Building a binary
 # -----------------------------------------------------------------------------
 ARG USE_NVIDIA
@@ -75,6 +81,32 @@ RUN apt-get update && \
     mkdir -p $THREADFIN_BIN $THREADFIN_CONF $THREADFIN_TEMP $THREADFIN_HOME/cache && \
     chmod a+rwX $THREADFIN_CONF $THREADFIN_TEMP && \
     sed -i 's/geteuid/getppid/' /usr/bin/vlc
+
+    ARG BUILDARCH
+    ARG OS_VERSION
+    ARG OS_CODENAME
+    ARG FFMPEG_PACKAGE
+    
+    # Install jellyfin-ffmpeg7
+    RUN apt-get update && \
+        apt-get install --no-install-recommends --no-install-suggests --yes \
+            gnupg \
+            apt-transport-https && \
+        curl -fsSL https://repo.jellyfin.org/jellyfin_team.gpg.key \
+            | gpg --dearmor -o /etc/apt/trusted.gpg.d/debian-jellyfin.gpg && \
+        echo "deb [arch=${BUILDARCH}] https://repo.jellyfin.org/master/${OS_VERSION} ${OS_CODENAME} main" > /etc/apt/sources.list.d/jellyfin.list  && \
+        apt-get update && \
+        apt-get install --no-install-recommends --no-install-suggests --yes \
+            ${FFMPEG_PACKAGE} \
+            openssl \
+            locales \
+            libfontconfig1 \
+            libfreetype6 && \
+        sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && locale-gen && \
+        apt-get remove gnupg apt-transport-https --yes  && \
+        apt-get clean autoclean --yes && \
+        apt-get autoremove --yes && \
+        rm -rf /var/cache/apt/archives* /var/lib/apt/lists/*
 
 # Copy built binary from builder image
 COPY --from=builder /app/threadfin $THREADFIN_BIN/
