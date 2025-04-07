@@ -55,6 +55,10 @@ func buildXEPG(background bool) {
 
 	System.ScanInProgress = 1
 
+	// Clear streaming URL cache
+	Data.Cache.StreamingURLS = make(map[string]StreamInfo)
+	saveMapToJSONFile(System.File.URLS, Data.Cache.StreamingURLS)
+
 	var err error
 
 	Data.Cache.Images, err = imgcache.New(System.Folder.ImagesCache, fmt.Sprintf("%s://%s/images/", System.ServerProtocol.WEB, System.Domain), Settings.CacheImages)
@@ -333,6 +337,10 @@ func createXEPGDatabase() (err error) {
 	Data.Cache.Streams.Active = make([]string, 0, System.UnfilteredChannelLimit)
 	Data.XEPG.Channels = make(map[string]interface{}, System.UnfilteredChannelLimit)
 
+	// Clear streaming URL cache
+	Data.Cache.StreamingURLS = make(map[string]StreamInfo)
+	saveMapToJSONFile(System.File.URLS, Data.Cache.StreamingURLS)
+
 	Data.Cache.Streams.Active = make([]string, 0, System.UnfilteredChannelLimit)
 	Settings = SettingsStruct{}
 	Data.XEPG.Channels, err = loadJSONFileToMap(System.File.XEPG)
@@ -347,6 +355,38 @@ func createXEPGDatabase() (err error) {
 	}
 	settings_json, _ := json.Marshal(settings)
 	json.Unmarshal(settings_json, &Settings)
+
+	// Get current M3U channels
+	m3uChannels := make(map[string]M3UChannelStructXEPG)
+	for _, dsa := range Data.Streams.Active {
+		var m3uChannel M3UChannelStructXEPG
+		err = json.Unmarshal([]byte(mapToJSON(dsa)), &m3uChannel)
+		if err == nil {
+			m3uChannels[m3uChannel.TvgName+m3uChannel.FileM3UID] = m3uChannel
+		}
+	}
+
+	// Update URLs in XEPG database
+	for id, dxc := range Data.XEPG.Channels {
+		var xepgChannel XEPGChannelStruct
+		err = json.Unmarshal([]byte(mapToJSON(dxc)), &xepgChannel)
+		if err == nil {
+			// Find matching M3U channel
+			if m3uChannel, ok := m3uChannels[xepgChannel.TvgName+xepgChannel.FileM3UID]; ok {
+				// Update URL
+				xepgChannel.URL = m3uChannel.URL
+				Data.XEPG.Channels[id] = xepgChannel
+			}
+		}
+	}
+
+	// Save updated XEPG database
+	err = saveMapToJSONFile(System.File.XEPG, Data.XEPG.Channels)
+	if err != nil {
+		ShowError(err, 000)
+		return err
+	}
+
 	var createNewID = func() (xepg string) {
 
 		var firstID = 0 //len(Data.XEPG.Channels)
