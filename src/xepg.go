@@ -55,6 +55,10 @@ func buildXEPG(background bool) {
 
 	System.ScanInProgress = 1
 
+	// Clear streaming URL cache
+	Data.Cache.StreamingURLS = make(map[string]StreamInfo)
+	saveMapToJSONFile(System.File.URLS, Data.Cache.StreamingURLS)
+
 	var err error
 
 	Data.Cache.Images, err = imgcache.New(System.Folder.ImagesCache, fmt.Sprintf("%s://%s/images/", System.ServerProtocol.WEB, System.Domain), Settings.CacheImages)
@@ -333,6 +337,10 @@ func createXEPGDatabase() (err error) {
 	Data.Cache.Streams.Active = make([]string, 0, System.UnfilteredChannelLimit)
 	Data.XEPG.Channels = make(map[string]interface{}, System.UnfilteredChannelLimit)
 
+	// Clear streaming URL cache
+	Data.Cache.StreamingURLS = make(map[string]StreamInfo)
+	saveMapToJSONFile(System.File.URLS, Data.Cache.StreamingURLS)
+
 	Data.Cache.Streams.Active = make([]string, 0, System.UnfilteredChannelLimit)
 	Settings = SettingsStruct{}
 	Data.XEPG.Channels, err = loadJSONFileToMap(System.File.XEPG)
@@ -347,6 +355,49 @@ func createXEPGDatabase() (err error) {
 	}
 	settings_json, _ := json.Marshal(settings)
 	json.Unmarshal(settings_json, &Settings)
+
+	// Get current M3U channels
+	m3uChannels := make(map[string]M3UChannelStructXEPG)
+	for _, dsa := range Data.Streams.Active {
+		var m3uChannel M3UChannelStructXEPG
+		err = json.Unmarshal([]byte(mapToJSON(dsa)), &m3uChannel)
+		if err == nil {
+			// Use tvg-id as the key for matching channels
+			key := m3uChannel.TvgID
+			if key == "" {
+				key = m3uChannel.TvgName
+			}
+			m3uChannels[key] = m3uChannel
+		}
+	}
+
+	// Update URLs in XEPG database
+	for id, dxc := range Data.XEPG.Channels {
+		var xepgChannel XEPGChannelStruct
+		err = json.Unmarshal([]byte(mapToJSON(dxc)), &xepgChannel)
+		if err == nil {
+			// Find matching M3U channel using tvg-id or tvg-name
+			key := xepgChannel.TvgID
+			if key == "" {
+				key = xepgChannel.TvgName
+			}
+			if m3uChannel, ok := m3uChannels[key]; ok {
+				// Always update URL if it's different
+				if xepgChannel.URL != m3uChannel.URL {
+					xepgChannel.URL = m3uChannel.URL
+					Data.XEPG.Channels[id] = xepgChannel
+				}
+			}
+		}
+	}
+
+	// Save updated XEPG database
+	err = saveMapToJSONFile(System.File.XEPG, Data.XEPG.Channels)
+	if err != nil {
+		ShowError(err, 000)
+		return err
+	}
+
 	var createNewID = func() (xepg string) {
 
 		var firstID = 0 //len(Data.XEPG.Channels)
@@ -1056,45 +1107,86 @@ func createLiveProgram(xepgChannel XEPGChannelStruct, channelId string) []*Progr
 	// Search for Datetime or Time
 	// Datetime examples: '12/31-11:59 PM', '1.1 6:30 AM', '09/15-10:00PM', '7/4 12:00 PM', '3.21 3:45 AM', '6/30-8:00 AM', '4/15 3AM'
 	// Time examples: '11:59 PM', '6:30 AM', '11:59PM', '1PM'
-	re := regexp.MustCompile(`((\d{1,2}[./]\d{1,2})[-\s])*(\d{1,2}(:\d{2})*\s*(AM|PM))`)
+	re := regexp.MustCompile(`((\d{1,2}[./]\d{1,2})[-\s])*(\d{1,2}(:\d{2})*\s*(AM|PM)?(?:\s*(ET|CT|MT|PT|EST|CST|MST|PST))?)`)
 	matches := re.FindStringSubmatch(name)
 	layout := "2006.1.2 3:04 PM"
 	if len(matches) > 0 {
-
-		// The string contains a date, so normalize it
-		if strings.Contains(matches[0], "/") {
-			matches[0] = strings.Replace(matches[0], "/", ".", 1)
-			matches[0] = strings.Replace(matches[0], "-", " ", 1)
-			layout = "2006.1.2 3:04PM"
-		} else if !strings.Contains(matches[0], ".") && !strings.Contains(matches[0], "/") {
-			// If the string doesn't contain a date, assume that the time applies to today
-			matches[0] = fmt.Sprintf("%d.%d %s", currentTime.Month(), currentTime.Day(), matches[0])
+		timePart := matches[len(matches)-2]
+		if timePart == "" {
+			timePart = matches[len(matches)-1]
 		}
 
-		// Format the expected layout based on if the time is '2:00PM' or '2PM'
-		if strings.Contains(matches[0], ":") {
-			layout = "2006.1.2 3:04PM"
+		timeString := strings.TrimSpace(timePart)
+		timeString = strings.ReplaceAll(timeString, "  ", " ")
+
+		// Handle timezone if present
+		var location *time.Location
+		if strings.Contains(timeString, "ET") || strings.Contains(timeString, "EST") {
+			location, _ = time.LoadLocation("America/New_York")
+		} else if strings.Contains(timeString, "CT") || strings.Contains(timeString, "CST") {
+			location, _ = time.LoadLocation("America/Chicago")
+		} else if strings.Contains(timeString, "MT") || strings.Contains(timeString, "MST") {
+			location, _ = time.LoadLocation("America/Denver")
+		} else if strings.Contains(timeString, "PT") || strings.Contains(timeString, "PST") {
+			location, _ = time.LoadLocation("America/Los_Angeles")
 		} else {
-			layout = "2006.1.2 3PM"
+			location = currentTime.Location()
 		}
 
-		timeString := matches[0]
-		if !regexp.MustCompile(`ET$`).MatchString(timeString) {
-			timeString += " ET"
+		// Remove timezone from timeString
+		timeString = strings.ReplaceAll(timeString, "ET", "")
+		timeString = strings.ReplaceAll(timeString, "CT", "")
+		timeString = strings.ReplaceAll(timeString, "MT", "")
+		timeString = strings.ReplaceAll(timeString, "PT", "")
+		timeString = strings.ReplaceAll(timeString, "EST", "")
+		timeString = strings.ReplaceAll(timeString, "CST", "")
+		timeString = strings.ReplaceAll(timeString, "MST", "")
+		timeString = strings.ReplaceAll(timeString, "PST", "")
+		timeString = strings.TrimSpace(timeString)
+
+		// Handle different date formats
+		var datePart string
+		if len(matches) > 3 && matches[2] != "" {
+			datePart = matches[2]
+			// Convert slashes to dots for consistency
+			datePart = strings.ReplaceAll(datePart, "/", ".")
 		}
-		timeString = strings.Replace(timeString, " ET", "", 1) // Remove "ET" from the time string
 
-		timeString = strings.Replace(timeString, " AM", "AM", -1)
-		timeString = strings.Replace(timeString, " PM", "PM", -1)
+		// Build the full time string
+		var fullTimeString string
+		if datePart != "" {
+			// If we have a date part, use it
+			parts := strings.Split(datePart, ".")
+			if len(parts) == 2 {
+				month := parts[0]
+				day := parts[1]
+				fullTimeString = fmt.Sprintf("%d.%s.%s %s", currentTime.Year(), month, day, timeString)
+			}
+		} else {
+			// If no date part, use current date
+			fullTimeString = fmt.Sprintf("%d.%d.%d %s", currentTime.Year(), currentTime.Month(), currentTime.Day(), timeString)
+		}
 
-		// Use LoadLocation to properly account for DST
-		yearString := fmt.Sprintf("%d", currentTime.Year())
-		nyLocation, _ := time.LoadLocation("America/New_York") // ET location
-		startTimeParsed, err := time.ParseInLocation(layout, fmt.Sprintf("%s.%s", yearString, timeString), nyLocation)
+		// Determine layout based on time format
+		if strings.Contains(timeString, ":") {
+			if strings.Contains(timeString, "AM") || strings.Contains(timeString, "PM") {
+				layout = "2006.1.2 3:04 PM"
+			} else {
+				layout = "2006.1.2 15:04"
+			}
+		} else {
+			if strings.Contains(timeString, "AM") || strings.Contains(timeString, "PM") {
+				layout = "2006.1.2 3PM"
+			} else {
+				layout = "2006.1.2 15"
+			}
+		}
+
+		startTimeParsed, err := time.ParseInLocation(layout, fullTimeString, location)
 		if err != nil {
-			showInfo("TIME PARSE ERROR: " + err.Error())
+			startTime = time.Date(currentTime.Year(), currentTime.Month(), currentTime.Day(), 6, 0, 0, 0, location)
 		} else {
-			localTime := startTimeParsed.In(localLocation) // Convert to CT
+			localTime := startTimeParsed.In(localLocation)
 			startTime = localTime
 		}
 	}
