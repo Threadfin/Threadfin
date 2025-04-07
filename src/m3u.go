@@ -121,19 +121,23 @@ func filterThisStream(s interface{}) (status bool, liveEvent bool) {
 			}
 		}
 
-		if match == true {
+		if match {
 
 			if len(exclude) > 0 {
 				var status = checkConditions(search, exclude, "exclude")
-				if status == false {
+				if !status {
 					return false, liveEvent
 				}
 			}
 
 			if len(include) > 0 {
 				var status = checkConditions(search, include, "include")
-				if status == false {
-					return false, liveEvent
+
+				// If include filter is set and it fails the check, we skip this filter,
+				// but move on to the next filter in the list (don't return). This allows for multiple
+				// filters to be applied using OR logic, rather than AND logic.
+				if !status {
+					continue
 				}
 			}
 
