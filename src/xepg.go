@@ -362,7 +362,12 @@ func createXEPGDatabase() (err error) {
 		var m3uChannel M3UChannelStructXEPG
 		err = json.Unmarshal([]byte(mapToJSON(dsa)), &m3uChannel)
 		if err == nil {
-			m3uChannels[m3uChannel.TvgName+m3uChannel.FileM3UID] = m3uChannel
+			// Use tvg-id as the key for matching channels
+			key := m3uChannel.TvgID
+			if key == "" {
+				key = m3uChannel.TvgName
+			}
+			m3uChannels[key] = m3uChannel
 		}
 	}
 
@@ -371,11 +376,17 @@ func createXEPGDatabase() (err error) {
 		var xepgChannel XEPGChannelStruct
 		err = json.Unmarshal([]byte(mapToJSON(dxc)), &xepgChannel)
 		if err == nil {
-			// Find matching M3U channel
-			if m3uChannel, ok := m3uChannels[xepgChannel.TvgName+xepgChannel.FileM3UID]; ok {
-				// Update URL
-				xepgChannel.URL = m3uChannel.URL
-				Data.XEPG.Channels[id] = xepgChannel
+			// Find matching M3U channel using tvg-id or tvg-name
+			key := xepgChannel.TvgID
+			if key == "" {
+				key = xepgChannel.TvgName
+			}
+			if m3uChannel, ok := m3uChannels[key]; ok {
+				// Always update URL if it's different
+				if xepgChannel.URL != m3uChannel.URL {
+					xepgChannel.URL = m3uChannel.URL
+					Data.XEPG.Channels[id] = xepgChannel
+				}
 			}
 		}
 	}
