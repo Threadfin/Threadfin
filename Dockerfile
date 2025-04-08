@@ -91,27 +91,6 @@ RUN apt-get update && \
     apt-get autoremove --yes && \
     rm -rf /var/cache/apt/archives* /var/lib/apt/lists/*
 
-# Install jellyfin-ffmpeg7
-#RUN apt-get update && \
-#    apt-get install --no-install-recommends --no-install-suggests --yes \
-#        gnupg \
-#        apt-transport-https && \
-#    curl -fsSL https://repo.jellyfin.org/jellyfin_team.gpg.key \
-#        | gpg --dearmor -o /etc/apt/trusted.gpg.d/debian-jellyfin.gpg && \
-#    echo "deb [arch=${TARGETARCH}] https://repo.jellyfin.org/master/${OS_VERSION} ${OS_CODENAME} main" > /etc/apt/sources.list.d/jellyfin.list  && \
-#    apt-get update && \
-#    apt-get install --no-install-recommends --no-install-suggests --yes \
-#        ${FFMPEG_PACKAGE} \
-#        openssl \
-#        locales \
-#        libfontconfig1 \
-#        libfreetype6 && \
-#    sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && locale-gen && \
-#    apt-get remove gnupg apt-transport-https --yes  && \
-#    apt-get clean autoclean --yes && \
-#    apt-get autoremove --yes && \
-#    rm -rf /var/cache/apt/archives* /var/lib/apt/lists/*
-
 # Copy built binary from builder image
 COPY --from=builder /app/threadfin $THREADFIN_BIN/
 RUN chmod +rx $THREADFIN_BIN/threadfin
