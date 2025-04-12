@@ -646,11 +646,11 @@ func createXEPGDatabase() (err error) {
 						newChannel.XActive = true
 
 						// Falls in der XMLTV Datei ein Logo existiert, wird dieses verwendet. Falls nicht, dann das Logo aus der M3U Datei
-						/*if icon, ok := chmap["icon"].(string); ok {
+						if icon, ok := chmap["icon"].(string); ok {
 							if len(icon) > 0 {
 								newChannel.TvgLogo = icon
 							}
-						}*/
+						}
 
 						break
 
@@ -789,11 +789,11 @@ func mapping() (err error) {
 							xepgChannel.XActive = true
 
 							// Falls in der XMLTV Datei ein Logo existiert, wird dieses verwendet. Falls nicht, dann das Logo aus der M3U Datei
-							/*if icon, ok := chmap["icon"].(string); ok {
+							if icon, ok := chmap["icon"].(string); ok {
 								if len(icon) > 0 {
 									xepgChannel.TvgLogo = icon
 								}
-							}*/
+							}
 
 							Data.XEPG.Channels[xepg] = xepgChannel
 							break
@@ -840,8 +840,8 @@ func mapping() (err error) {
 						if logo, ok := channel["icon"].(string); ok {
 
 							if xepgChannel.XUpdateChannelIcon && len(logo) > 0 {
-								/*var imgc = Data.Cache.Images
-								xepgChannel.TvgLogo = imgc.Image.GetURL(logo, Settings.HttpThreadfinDomain, Settings.Port, Settings.ForceHttps, Settings.HttpsPort, Settings.HttpsThreadfinDomain)*/
+								var imgc = Data.Cache.Images
+								xepgChannel.TvgLogo = imgc.Image.GetURL(logo, Settings.HttpThreadfinDomain, Settings.Port, Settings.ForceHttps, Settings.HttpsPort, Settings.HttpsThreadfinDomain)
 							}
 
 						}
