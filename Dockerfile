@@ -27,6 +27,9 @@
     # Add support for custom THREADFIN_HOME path
     ARG THREADFIN_HOME=/home/threadfin
     
+    # Set working directory
+    WORKDIR ${THREADFIN_HOME}
+    
     ARG USE_NVIDIA
     FROM final${USE_NVIDIA:+-nvidia}
     
@@ -63,9 +66,7 @@
         THREADFIN_BIND_IP_ADDRESS=0.0.0.0 \
         PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:${THREADFIN_HOME}/bin \
         DEBIAN_FRONTEND=noninteractive
-    
-    # Set working directory
-    WORKDIR ${THREADFIN_HOME}
+
     
     # Install dependencies in a single layer
     RUN apt-get update && \
