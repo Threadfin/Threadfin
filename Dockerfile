@@ -29,6 +29,11 @@
     
     # Set working directory
     WORKDIR ${THREADFIN_HOME}
+
+    # Arguments to add the jellyfin repository
+    ARG TARGETARCH=amd64
+    ARG OS_VERSION=ubuntu
+    ARG OS_CODENAME=noble
     
     ARG USE_NVIDIA
     FROM final${USE_NVIDIA:+-nvidia}
@@ -67,7 +72,6 @@
         PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:${THREADFIN_HOME}/bin \
         DEBIAN_FRONTEND=noninteractive
 
-    
     # Install dependencies in a single layer
     RUN apt-get update && \
         apt-get install -y --no-install-recommends \
@@ -75,12 +79,22 @@
         curl \
         ffmpeg \
         vlc \
-        tzdata && \
-        apt-get clean && \
-        rm -rf /var/lib/apt/lists/* && \
-        mkdir -p ${THREADFIN_BIN} ${THREADFIN_CONF} ${THREADFIN_TEMP} ${THREADFIN_CACHE} && \
-        chmod a+rwX ${THREADFIN_CONF} ${THREADFIN_TEMP} && \
-        sed -i 's/geteuid/getppid/' /usr/bin/vlc
+        tzdata \
+        gnupg \
+        apt-transport-https && \
+        mkdir -p $THREADFIN_BIN $THREADFIN_CONF $THREADFIN_TEMP $THREADFIN_HOME/cache && \
+        chmod a+rwX $THREADFIN_CONF $THREADFIN_TEMP && \
+        sed -i 's/geteuid/getppid/' /usr/bin/vlc && \
+        curl -fsSL https://repo.jellyfin.org/jellyfin_team.gpg.key \
+            | gpg --dearmor -o /etc/apt/trusted.gpg.d/debian-jellyfin.gpg && \
+        echo "deb [arch=${TARGETARCH}] https://repo.jellyfin.org/master/${OS_VERSION} ${OS_CODENAME} main" > /etc/apt/sources.list.d/jellyfin.list && \
+        apt-get update && \
+        apt-get install --no-install-recommends --no-install-suggests --yes \
+            jellyfin-ffmpeg7 && \
+        apt-get remove gnupg apt-transport-https --yes  && \
+        apt-get clean autoclean --yes && \
+        apt-get autoremove --yes && \
+        rm -rf /var/cache/apt/archives* /var/lib/apt/lists/*
     
     # Copy built binary from builder image
     COPY --from=builder /app/threadfin ${THREADFIN_BIN}/
