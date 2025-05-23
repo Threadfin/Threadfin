@@ -73,9 +73,8 @@ func MakeInterfaceFromM3U(byteStream []byte) (allChannels []interface{}, err err
 				}
 			}
 
-			// Only generate a new tvg-id if it's missing or blank
-			if stream["tvg-id"] == "" {
-				// Use MD5 hash of the URL as the tvg-id
+			// Only generate a new tvg-id if it's missing, blank, or (no tvg-id)
+			if stream["tvg-id"] == "" || stream["tvg-id"] == "(no tvg-id)" {
 				hash := md5.Sum([]byte(stream["url"]))
 				stream["tvg-id"] = fmt.Sprintf("threadfin-%x", hash)
 			}
