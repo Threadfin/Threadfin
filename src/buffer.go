@@ -1038,17 +1038,23 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 			if backupNumber >= 1 && backupNumber <= 3 {
 				switch backupNumber {
 				case 1:
-					url = stream.BackupChannel1.URL
-					showHighlight("START OF BACKUP 1 STREAM")
-					showInfo("Backup Channel 1 URL: " + url)
+					if stream.BackupChannel1 != nil {
+						url = stream.BackupChannel1.URL
+						showHighlight("START OF BACKUP 1 STREAM")
+						showInfo("Backup Channel 1 URL: " + url)
+					}
 				case 2:
-					url = stream.BackupChannel2.URL
-					showHighlight("START OF BACKUP 2 STREAM")
-					showInfo("Backup Channel 2 URL: " + url)
+					if stream.BackupChannel2 != nil {
+						url = stream.BackupChannel2.URL
+						showHighlight("START OF BACKUP 2 STREAM")
+						showInfo("Backup Channel 2 URL: " + url)
+					}
 				case 3:
-					url = stream.BackupChannel3.URL
-					showHighlight("START OF BACKUP 3 STREAM")
-					showInfo("Backup Channel 3 URL: " + url)
+					if stream.BackupChannel3 != nil {
+						url = stream.BackupChannel3.URL
+						showHighlight("START OF BACKUP 3 STREAM")
+						showInfo("Backup Channel 3 URL: " + url)
+					}
 				}
 			}
 		}
