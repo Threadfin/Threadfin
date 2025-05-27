@@ -121,8 +121,7 @@ jobs:
           path: dist
 
       - name: Release
-        uses: "ModeSevenIndustrialSolutions/action-automatic-releases@latest"
+        uses: softprops/action-gh-release@v1
         with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          prerelease: false
           files: dist/*
+          generate_release_notes: true
