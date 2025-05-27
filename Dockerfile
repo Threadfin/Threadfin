@@ -82,7 +82,11 @@ RUN apt-get update && \
     sed -i 's/geteuid/getppid/' /usr/bin/vlc && \
     curl -fsSL https://repo.jellyfin.org/master/ubuntu/jellyfin_team.gpg.key \
         | gpg --dearmor -o /etc/apt/trusted.gpg.d/ubuntu-jellyfin.gpg && \
-    echo "deb [arch=${TARGETARCH}] https://repo.jellyfin.org/master/${OS_VERSION} ${OS_CODENAME} main" > /etc/apt/sources.list.d/jellyfin.list && \
+    (if [ "${TARGETARCH}" = "arm" ]; then \
+        echo "deb [arch=armhf] https://repo.jellyfin.org/master/${OS_VERSION} ${OS_CODENAME} main" > /etc/apt/sources.list.d/jellyfin.list; \
+    else \
+        echo "deb [arch=${TARGETARCH}] https://repo.jellyfin.org/master/${OS_VERSION} ${OS_CODENAME} main" > /etc/apt/sources.list.d/jellyfin.list; \
+    fi) && \
     apt-get update && \
     apt-get install --no-install-recommends --no-install-suggests --yes \
         jellyfin-ffmpeg7 && \
