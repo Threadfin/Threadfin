@@ -23,7 +23,14 @@ func uploadLogo(input, filename string) (logoURL string, err error) {
     return
   }
 
+  // Respect Force HTTPS setting when generating logo URL
+  if Settings.ForceHttps && Settings.HttpsThreadfinDomain != "" {
+    logoURL = fmt.Sprintf("https://%s:%d/data_images/%s", Settings.HttpsThreadfinDomain, Settings.HttpsPort, filename)
+  } else if Settings.HttpThreadfinDomain != "" {
+    logoURL = fmt.Sprintf("http://%s:%s/data_images/%s", Settings.HttpThreadfinDomain, Settings.Port, filename)
+  } else {
   logoURL = fmt.Sprintf("%s://%s/data_images/%s", System.ServerProtocol.XML, System.Domain, filename)
+  }
 
   return
 
