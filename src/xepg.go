@@ -432,6 +432,26 @@ func createXEPGDatabase() (err error) {
 
 	showInfo("XEPG:" + "Update database")
 
+	// Initialize filter numbering map to track next available channel number for each filter group
+	var filterNumbering = make(map[string]float64)
+
+	// Get filters and initialize starting numbers for group-title filters
+	filters := []FilterStruct{}
+	for _, filter := range Settings.Filter {
+		filter_json, _ := json.Marshal(filter)
+		f := FilterStruct{}
+		json.Unmarshal(filter_json, &f)
+		filters = append(filters, f)
+
+		// Only track group-title filters with starting numbers
+		if f.Type == "group-title" && f.StartingNumber != "" {
+			start_num, err := strconv.ParseFloat(f.StartingNumber, 64)
+			if err == nil {
+				filterNumbering[f.Filter] = start_num
+			}
+		}
+	}
+
 	// Kanal mit fehlenden Kanalnummern löschen.  Delete channel with missing channel numbers
 	for id, dxc := range Data.XEPG.Channels {
 
@@ -540,6 +560,13 @@ func createXEPGDatabase() (err error) {
 				return
 			}
 
+			// Apply filter starting numbers to existing channels using sequential counter
+			if _, hasFilter := filterNumbering[m3uChannel.GroupTitle]; hasFilter {
+				// Use sequential numbering from filter counter
+				currentChannelNumber = getFreeChannelNumber(filterNumbering[m3uChannel.GroupTitle])
+				filterNumbering[m3uChannel.GroupTitle]++
+			}
+
 			if xepgChannel.Live && xepgChannel.ChannelUniqueID == m3uChannelHash {
 				if xepgChannel.TvgName == "" {
 					xepgChannel.TvgName = xepgChannel.Name
@@ -568,6 +595,10 @@ func createXEPGDatabase() (err error) {
 					var imgc = Data.Cache.Images
 					xepgChannel.TvgLogo = imgc.Image.GetURL(m3uChannel.TvgLogo, Settings.HttpThreadfinDomain, Settings.Port, Settings.ForceHttps, Settings.HttpsPort, Settings.HttpsThreadfinDomain)
 				}
+			} else {
+				// For non-live channels, always update the channel number
+				xepgChannel.XChannelID = currentChannelNumber
+				xepgChannel.TvgChno = currentChannelNumber
 			}
 
 			Data.XEPG.Channels[currentXEPGID] = xepgChannel
@@ -575,20 +606,10 @@ func createXEPGDatabase() (err error) {
 		case false:
 			// Neuer Kanal
 			var firstFreeNumber float64 = Settings.MappingFirstChannel
-			// Check channel start number from Group Filter
-			filters := []FilterStruct{}
-			for _, filter := range Settings.Filter {
-				filter_json, _ := json.Marshal(filter)
-				f := FilterStruct{}
-				json.Unmarshal(filter_json, &f)
-				filters = append(filters, f)
-			}
 
-			for _, filter := range filters {
-				if m3uChannel.GroupTitle == filter.Filter {
-					start_num, _ := strconv.ParseFloat(filter.StartingNumber, 64)
-					firstFreeNumber = start_num
-				}
+			// Check if this new channel belongs to a filter group
+			if _, hasFilter := filterNumbering[m3uChannel.GroupTitle]; hasFilter {
+				firstFreeNumber = filterNumbering[m3uChannel.GroupTitle]
 			}
 
 			var xepg = createNewID()
@@ -596,6 +617,10 @@ func createXEPGDatabase() (err error) {
 
 			if m3uChannel.TvgChno == "" {
 				xChannelID = getFreeChannelNumber(firstFreeNumber)
+				// Update filter numbering counter if this channel belongs to a filter
+				if _, hasFilter := filterNumbering[m3uChannel.GroupTitle]; hasFilter {
+					filterNumbering[m3uChannel.GroupTitle]++
+				}
 			} else {
 				xChannelID = m3uChannel.TvgChno
 			}
