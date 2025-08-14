@@ -1005,6 +1005,8 @@ func API(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 
+		buildXEPG(false)
+
 	case "update.hdhr":
 
 		err = getProviderData("hdhr", "")
@@ -1017,11 +1019,15 @@ func API(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 
+		buildXEPG(false)
+
 	case "update.xmltv":
 		err = getProviderData("xmltv", "")
 		if err != nil {
 			break
 		}
+
+		buildXEPG(false)
 
 	case "update.xepg":
 		buildXEPG(false)

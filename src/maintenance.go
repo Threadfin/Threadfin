@@ -62,10 +62,6 @@ func maintenance() {
 					}
 
 					// XEPG Dateien erstellen
-					systemMutex.Lock()
-					Data.Cache.XMLTV = make(map[string]XMLTV)
-					systemMutex.Unlock()
-
 					buildXEPG(false)
 
 				}
