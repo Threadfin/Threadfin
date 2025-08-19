@@ -11,7 +11,6 @@ import (
 	"path"
 	"regexp"
 	"runtime"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -41,19 +40,41 @@ func checkXMLCompatibility(id string, body []byte) (err error) {
 }
 
 var buildXEPGCount int
+var xepgProcessingInProgress bool
+var webserverXEPGInProgress bool
+var globalXEPGProgress int // Track overall progress across multiple XEPG runs
 
 // XEPG Daten erstellen
-func buildXEPG(background bool) {
+func buildXEPG() chan bool {
+	// Completely disable background XEPG when webserver.go is handling it
+	if webserverXEPGInProgress {
+		showInfo("XEPG: BACKGROUND XEPG DISABLED - webserver.go is handling XEPG processing")
+		completionChan := make(chan bool, 1)
+		completionChan <- true
+		return completionChan
+	}
+
+	// Prevent duplicate XEPG processing when webserver.go is handling it
+	if xepgProcessingInProgress {
+		showInfo("XEPG: Skipping background processing - already in progress via webserver.go")
+		completionChan := make(chan bool, 1)
+		completionChan <- true
+		return completionChan
+	}
+
+	// Set flag to indicate background XEPG is running
+	xepgProcessingInProgress = true
+	defer func() {
+		xepgProcessingInProgress = false
+		showInfo("XEPG: Background processing flag cleared")
+	}()
+
+	completionChan := make(chan bool, 1)
+
 	xepgMutex.Lock()
 	defer func() {
 		xepgMutex.Unlock()
 	}()
-
-	if System.ScanInProgress == 1 {
-		return
-	}
-
-	System.ScanInProgress = 1
 
 	// Clear streaming URL cache
 	Data.Cache.StreamingURLS = make(map[string]StreamInfo)
@@ -68,164 +89,136 @@ func buildXEPG(background bool) {
 
 	if Settings.EpgSource == "XEPG" {
 
-		switch background {
+		// Always use background processing for better user experience
+		// This prevents the interface from being locked during heavy operations
+		go func() {
 
-		case true:
-
-			go func() {
-
-				createXEPGMapping()
-				createXEPGDatabase()
-				mapping()
-				cleanupXEPG()
-				createXMLTVFile()
-				createM3UFile()
-
-				showInfo("XEPG:" + fmt.Sprintf("Ready to use"))
-
-				if Settings.CacheImages && System.ImageCachingInProgress == 0 {
-
-					go func() {
-
-						systemMutex.Lock()
-						System.ImageCachingInProgress = 1
-						systemMutex.Unlock()
-
-						showInfo(fmt.Sprintf("Image Caching:Images are cached (%d)", len(Data.Cache.Images.Queue)))
-
-						Data.Cache.Images.Image.Caching()
-						Data.Cache.Images.Image.Remove()
-						showInfo("Image Caching:Done")
-
-						createXMLTVFile()
-						createM3UFile()
-
-						systemMutex.Lock()
-						System.ImageCachingInProgress = 0
-						systemMutex.Unlock()
-
-					}()
-
-				}
-
-				systemMutex.Lock()
-				System.ScanInProgress = 0
-				systemMutex.Unlock()
-
-				// Cache löschen
-				/*
-					Data.Cache.XMLTV = make(map[string]XMLTV)
-					Data.Cache.XMLTV = nil
-				*/
-				runtime.GC()
-
-			}()
-
-		case false:
+			showDebug("XEPG: Starting background processing...", 1)
 
 			createXEPGMapping()
-			createXEPGDatabase()
+
+			// Send progress update for mapping - continue from previous progress
+			globalXEPGProgress = 40
+			broadcastProgressUpdate(ProcessingProgress{
+				Percentage:   globalXEPGProgress,
+				Current:      0,
+				Total:        1,
+				Operation:    "Creating XEPG Mapping",
+				IsProcessing: true,
+			})
+
+			// Create a completion channel for this call
+			innerCompletionChan := make(chan bool, 1)
+			createXEPGDatabase(innerCompletionChan)
+			// Wait for completion signal
+			<-innerCompletionChan
+
+			// Don't send conflicting progress updates here - they're handled by the calling function
+			// This prevents conflicts with the main progress tracking
+
 			mapping()
 			cleanupXEPG()
 			createXMLTVFile()
 			createM3UFile()
 
-			go func() {
+			// Don't send conflicting progress updates here - they're handled by the calling function
+			// This prevents conflicts with the main progress tracking
 
-				if Settings.CacheImages && System.ImageCachingInProgress == 0 {
+			if Settings.CacheImages && System.ImageCachingInProgress == 0 {
 
-					go func() {
+				go func() {
 
-						systemMutex.Lock()
-						System.ImageCachingInProgress = 1
-						systemMutex.Unlock()
+					systemMutex.Lock()
+					System.ImageCachingInProgress = 1
+					systemMutex.Unlock()
 
-						showInfo(fmt.Sprintf("Image Caching:Images are cached (%d)", len(Data.Cache.Images.Queue)))
+					showDebug(fmt.Sprintf("Image Caching:Images are cached (%d)", len(Data.Cache.Images.Queue)), 1)
 
-						Data.Cache.Images.Image.Caching()
-						Data.Cache.Images.Image.Remove()
-						showInfo("Image Caching:Done")
+					Data.Cache.Images.Image.Caching()
+					Data.Cache.Images.Image.Remove()
+					showDebug("Image Caching:Done", 1)
 
-						createXMLTVFile()
-						createM3UFile()
+					createXMLTVFile()
+					createM3UFile()
 
-						systemMutex.Lock()
-						System.ImageCachingInProgress = 0
-						systemMutex.Unlock()
+					systemMutex.Lock()
+					System.ImageCachingInProgress = 0
+					systemMutex.Unlock()
 
-					}()
+				}()
 
-				}
+			}
 
-				showInfo("XEPG:" + fmt.Sprintf("Ready to use"))
+			// Cache löschen
+			/*
+				Data.Cache.XMLTV = make(map[string]XMLTV)
+				Data.Cache.XMLTV = nil
+			*/
+			runtime.GC()
 
-				systemMutex.Lock()
-				System.ScanInProgress = 0
-				systemMutex.Unlock()
+			showInfo("XEPG: Ready to use")
 
-				// Cache löschen
-				//Data.Cache.XMLTV = make(map[string]XMLTV)
-				//Data.Cache.XMLTV = nil
-				runtime.GC()
+			completionChan <- true
+		}()
 
-			}()
-
-		}
+		return completionChan
 
 	} else {
 
 		getLineup()
-		System.ScanInProgress = 0
+		completionChan := make(chan bool, 1)
+		completionChan <- true
+		return completionChan
 
 	}
 
 }
 
 // Update XEPG data
-func updateXEPG(background bool) {
-
-	if System.ScanInProgress == 1 {
-		return
-	}
-
-	System.ScanInProgress = 1
+func updateXEPG() {
 
 	if Settings.EpgSource == "XEPG" {
 
-		switch background {
+		// Always use background processing for updates
+		go func() {
 
-		case false:
+			// Don't send conflicting progress updates here - they're handled by the calling function
+			// This prevents conflicts with the main progress tracking
 
-			createXEPGDatabase()
+			// Create a completion channel for this call
+			innerCompletionChan := make(chan bool, 1)
+			createXEPGDatabase(innerCompletionChan)
+			// Wait for completion signal
+			<-innerCompletionChan
+
+			// Send progress update for database update
+			broadcastProgressUpdate(ProcessingProgress{
+				Percentage:   40,
+				Current:      0,
+				Total:        1,
+				Operation:    "Updating XEPG Database",
+				IsProcessing: true,
+			})
+
 			mapping()
 			cleanupXEPG()
+			createXMLTVFile()
+			createM3UFile()
+			showDebug("XEPG:"+fmt.Sprintf("Ready to use"), 1)
 
-			go func() {
+			// Send progress update for XEPG update completion
+			broadcastProgressUpdate(ProcessingProgress{
+				Percentage:   100,
+				Current:      1,
+				Total:        1,
+				Operation:    "XEPG Update Complete",
+				IsProcessing: false,
+			})
 
-				createXMLTVFile()
-				createM3UFile()
-				showInfo("XEPG:" + fmt.Sprintf("Ready to use"))
-
-				System.ScanInProgress = 0
-
-			}()
-
-		case true:
-			System.ScanInProgress = 0
-
-		}
-
-	} else {
-
-		System.ScanInProgress = 0
+		}()
 
 	}
 
-	// Cache löschen
-	//Data.Cache.XMLTV = nil //make(map[string]XMLTV)
-	//Data.Cache.XMLTV = make(map[string]XMLTV)
-
-	return
 }
 
 // Mapping Menü für die XMLTV Dateien erstellen
@@ -259,6 +252,15 @@ func createXEPGMapping() {
 			var fileID = strings.TrimSuffix(getFilenameFromPath(file), path.Ext(getFilenameFromPath(file)))
 			showInfo("XEPG:" + "Parse XMLTV file: " + getProviderParameter(fileID, "xmltv", "name"))
 
+			// Check file size for progress reporting
+			fileInfo, err := os.Stat(file)
+			if err == nil {
+				fileSizeMB := float64(fileInfo.Size()) / (1024 * 1024)
+				if fileSizeMB > 50 {
+					showInfo(fmt.Sprintf("XEPG: Large XML file detected (%.1f MB), this may take a while...", fileSizeMB))
+				}
+			}
+
 			//xmltv, err = getLocalXMLTV(file)
 			var xmltv XMLTV
 			err = getLocalXMLTV(file, &xmltv)
@@ -275,7 +277,17 @@ func createXEPGMapping() {
 				// Daten aus der XML Datei in eine temporäre Map schreiben
 				var xmltvMap = make(map[string]interface{})
 
-				for _, c := range xmltv.Channel {
+				totalChannels := len(xmltv.Channel)
+				if totalChannels > 1000 {
+					showInfo(fmt.Sprintf("XEPG: Processing %d channels from %s", totalChannels, getProviderParameter(fileID, "xmltv", "name")))
+				}
+
+				for j, c := range xmltv.Channel {
+					// Progress reporting for large files
+					if totalChannels > 1000 && j%1000 == 0 {
+						showDebug(fmt.Sprintf("XEPG: Processed %d/%d channels from %s", j, totalChannels, getProviderParameter(fileID, "xmltv", "name")), 1)
+					}
+
 					var channel = make(map[string]interface{})
 
 					channel["id"] = c.ID
@@ -284,7 +296,10 @@ func createXEPGMapping() {
 					channel["active"] = c.Active
 
 					xmltvMap[c.ID] = channel
+				}
 
+				if totalChannels > 1000 {
+					showInfo(fmt.Sprintf("XEPG: Completed processing %d channels from %s", totalChannels, getProviderParameter(fileID, "xmltv", "name")))
 				}
 
 				tmpMap[getFilenameFromPath(file)] = xmltvMap
@@ -331,7 +346,24 @@ func createXEPGMapping() {
 }
 
 // XEPG Datenbank erstellen / aktualisieren
-func createXEPGDatabase() (err error) {
+func createXEPGDatabase(completionChan chan<- bool) (err error) {
+
+	// Protect against concurrent access to XEPG data structures
+	xepgMutex.Lock()
+	defer xepgMutex.Unlock()
+
+	// Send initial progress update - continue from previous progress
+	if globalXEPGProgress > 0 {
+		showInfo(fmt.Sprintf("XEPG: Continuing from previous progress (%d%%)", globalXEPGProgress))
+	}
+	globalXEPGProgress = 40
+	broadcastProgressUpdate(ProcessingProgress{
+		Percentage:   globalXEPGProgress,
+		Current:      0,
+		Total:        len(Data.Streams.Active),
+		Operation:    "Rebuilding XEPG Database - Starting",
+		IsProcessing: true,
+	})
 
 	var allChannelNumbers = make([]float64, 0, System.UnfilteredChannelLimit)
 	Data.Cache.Streams.Active = make([]string, 0, System.UnfilteredChannelLimit)
@@ -413,40 +445,33 @@ func createXEPGDatabase() (err error) {
 		return
 	}
 
-	var getFreeChannelNumber = func(startingNumber float64) (xChannelID string) {
-
-		sort.Float64s(allChannelNumbers)
-
-		for {
-
-			if indexOfFloat64(startingNumber, allChannelNumbers) == -1 {
-				xChannelID = fmt.Sprintf("%g", startingNumber)
-				allChannelNumbers = append(allChannelNumbers, startingNumber)
-				return
-			}
-
-			startingNumber++
-
-		}
-	}
-
 	showInfo("XEPG:" + "Update database")
 
 	// Kanal mit fehlenden Kanalnummern löschen.  Delete channel with missing channel numbers
 	for id, dxc := range Data.XEPG.Channels {
 
-		var xepgChannel XEPGChannelStruct
-		err = json.Unmarshal([]byte(mapToJSON(dxc)), &xepgChannel)
-		if err != nil {
-			return
+		// Try direct map access first for better performance
+		var xChannelID string
+		if channelMap, ok := dxc.(map[string]interface{}); ok {
+			if chID, ok := channelMap["x-channel-id"].(string); ok {
+				xChannelID = chID
+			}
+		} else {
+			// Fallback to JSON if direct access fails
+			var xepgChannel XEPGChannelStruct
+			err = json.Unmarshal([]byte(mapToJSON(dxc)), &xepgChannel)
+			if err != nil {
+				return
+			}
+			xChannelID = xepgChannel.XChannelID
 		}
 
-		if len(xepgChannel.XChannelID) == 0 {
+		if len(xChannelID) == 0 {
 			delete(Data.XEPG.Channels, id)
 		}
 
-		if xChannelID, err := strconv.ParseFloat(xepgChannel.XChannelID, 64); err == nil {
-			allChannelNumbers = append(allChannelNumbers, xChannelID)
+		if xChannelIDFloat, err := strconv.ParseFloat(xChannelID, 64); err == nil {
+			allChannelNumbers = append(allChannelNumbers, xChannelIDFloat)
 		}
 
 	}
@@ -455,9 +480,37 @@ func createXEPGDatabase() (err error) {
 	var xepgChannelsValuesMap = make(map[string]XEPGChannelStruct, System.UnfilteredChannelLimit)
 	for _, v := range Data.XEPG.Channels {
 		var channel XEPGChannelStruct
-		err = json.Unmarshal([]byte(mapToJSON(v)), &channel)
-		if err != nil {
-			return
+
+		// Try direct map access first for better performance
+		if channelMap, ok := v.(map[string]interface{}); ok {
+			// Direct field assignment to avoid expensive JSON operations
+			if name, ok := channelMap["name"].(string); ok {
+				channel.Name = name
+			}
+			if tvgName, ok := channelMap["tvg-name"].(string); ok {
+				channel.TvgName = tvgName
+			}
+			if fileM3UID, ok := channelMap["file-m3u-id"].(string); ok {
+				channel.FileM3UID = fileM3UID
+			}
+			if url, ok := channelMap["url"].(string); ok {
+				channel.URL = url
+			}
+			if live, ok := channelMap["live"].(string); ok {
+				channel.Live, _ = strconv.ParseBool(live)
+			}
+			if tvgChno, ok := channelMap["tvg-chno"].(string); ok {
+				channel.TvgChno = tvgChno
+			}
+			if uuidValue, ok := channelMap["uuid-value"].(string); ok {
+				channel.UUIDValue = uuidValue
+			}
+		} else {
+			// Fallback to JSON if direct access fails
+			err = json.Unmarshal([]byte(mapToJSON(v)), &channel)
+			if err != nil {
+				return
+			}
 		}
 
 		if channel.TvgName == "" {
@@ -472,17 +525,177 @@ func createXEPGDatabase() (err error) {
 		xepgChannelsValuesMap[channelHash] = channel
 	}
 
+	// Create efficient lookup maps to eliminate O(n²) linear searches
+	fileM3UIDMap := make(map[string]XEPGChannelStruct)
+	uuidMap := make(map[string]XEPGChannelStruct)
+
+	// Pre-populate lookup maps for O(1) access
+	for _, channel := range xepgChannelsValuesMap {
+		// Map by FileM3UID for quick lookup
+		if channel.FileM3UID != "" {
+			fileM3UIDMap[channel.FileM3UID] = channel
+		}
+		// Map by UUID for quick lookup
+		if channel.UUIDValue != "" {
+			uuidMap[channel.UUIDValue] = channel
+		}
+	}
+
+	// Pre-process filters once to avoid repeated processing
+	filterMap := make(map[string]FilterStruct)
+	for _, filter := range Settings.Filter {
+		filter_json, _ := json.Marshal(filter)
+		f := FilterStruct{}
+		json.Unmarshal(filter_json, &f)
+		filterMap[f.Filter] = f
+	}
+
+	// Pre-allocate channel numbers to avoid repeated searches
+	usedChannelNumbers := make(map[string]bool)
+
+	existingChannelNumbers := make(map[string]string)
+
+	for _, channel := range xepgChannelsValuesMap {
+		if channel.TvgChno != "" {
+			usedChannelNumbers[channel.TvgChno] = true
+			channelKey := channel.Name + "|" + channel.GroupTitle
+			existingChannelNumbers[channelKey] = channel.TvgChno
+		}
+	}
+
+	// Optimized channel number allocation function
+	getFreeChannelNumberOptimized := func(startNumber float64, usedNumbers map[string]bool) string {
+		// Try the start number first
+		startStr := strconv.FormatFloat(startNumber, 'f', 0, 64)
+		if !usedNumbers[startStr] {
+			usedNumbers[startStr] = true
+			return startStr
+		}
+
+		// Find next available number
+		for i := 1; i < 10000; i++ { // Reasonable limit
+			nextNum := startNumber + float64(i)
+			nextStr := strconv.FormatFloat(nextNum, 'f', 0, 64)
+			if !usedNumbers[nextStr] {
+				usedNumbers[nextStr] = true
+				return nextStr
+			}
+		}
+		// Fallback to a random number if all are taken
+		return strconv.FormatFloat(startNumber+float64(time.Now().UnixNano()%1000), 'f', 0, 64)
+	}
+
+	// Count only non-VOD streams for accurate progress tracking
+	nonVodStreams := 0
 	for _, dsa := range Data.Streams.Active {
+		if s, ok := dsa.(map[string]string); ok {
+			if isVOD, exists := s["_is_vod"]; exists && isVOD == "true" {
+				continue // Skip VOD streams
+			}
+			nonVodStreams++
+		}
+	}
+
+	// Re-enabled progress tracking for XEPG processing
+	totalStreams := nonVodStreams
+
+	// Calculate milestone points for better progress feedback
+	milestone25 := totalStreams / 4
+	milestone50 := totalStreams / 2
+	milestone75 := (totalStreams * 3) / 4
+
+	// Reset counter for actual processing
+	nonVodStreams = 0
+
+	// Process active streams with progress tracking
+	processedStreams := 0
+
+	for _, dsa := range Data.Streams.Active {
+		// Skip VOD channels - they don't need EPG processing
+		if s, ok := dsa.(map[string]string); ok {
+			if isVOD, exists := s["_is_vod"]; exists && isVOD == "true" {
+				// Skip this VOD stream, don't count it in progress
+				continue
+			}
+		}
+
+		// Count non-VOD streams for progress
+		nonVodStreams++
+
+		// Increment processed streams counter for progress tracking
+		processedStreams++
+
+		// Send progress update more frequently for better user experience
+		// For large datasets, update every 1000 streams instead of 5000
+		updateInterval := 1000
+		if totalStreams > 20000 {
+			updateInterval = 1000 // More frequent updates for very large datasets
+		} else if totalStreams > 10000 {
+			updateInterval = 2000 // Medium frequency for large datasets
+		}
+
+		if processedStreams%updateInterval == 0 && processedStreams > 0 && totalStreams > 0 {
+			// Calculate actual percentage for logging
+			actualPercent := float64(processedStreams) / float64(totalStreams) * 100
+
+			// Allow progress to go from current global progress to 100% as XEPG completes
+			progressPercent := globalXEPGProgress + int(float64(processedStreams)/float64(totalStreams)*float64(100-globalXEPGProgress))
+			showDebug(fmt.Sprintf("XEPG: Progress update - %d/%d streams (%.1f%%)", processedStreams, totalStreams, actualPercent), 1)
+			broadcastProgressUpdate(ProcessingProgress{
+				Percentage:   progressPercent,
+				Current:      processedStreams,
+				Total:        totalStreams,
+				Operation:    fmt.Sprintf("Rebuilding XEPG Database - Processing streams (%d/%d)", processedStreams, totalStreams),
+				IsProcessing: true,
+			})
+		}
+
+		// Send milestone progress updates
+		if processedStreams == milestone25 || processedStreams == milestone50 || processedStreams == milestone75 {
+			// Calculate actual percentage for logging
+			actualPercent := float64(processedStreams) / float64(totalStreams) * 100
+
+			// Allow progress to go from current global progress to 100% as XEPG completes
+			progressPercent := globalXEPGProgress + int(float64(processedStreams)/float64(totalStreams)*float64(100-globalXEPGProgress))
+			showDebug(fmt.Sprintf("XEPG: Milestone reached - %d/%d streams (%.1f%%)", processedStreams, totalStreams, actualPercent), 1)
+			broadcastProgressUpdate(ProcessingProgress{
+				Percentage:   progressPercent,
+				Current:      processedStreams,
+				Total:        totalStreams,
+				Operation:    fmt.Sprintf("Rebuilding XEPG Database - Milestone reached (%d/%d)", processedStreams, totalStreams),
+				IsProcessing: true,
+			})
+		}
+
 		var channelExists = false  // Entscheidet ob ein Kanal neu zu Datenbank hinzugefügt werden soll.  Decides whether a channel should be added to the database
 		var channelHasUUID = false // Überprüft, ob der Kanal (Stream) eindeutige ID's besitzt.  Checks whether the channel (stream) has unique IDs
 		var currentXEPGID string   // Aktuelle Datenbank ID (XEPG). Wird verwendet, um den Kanal in der Datenbank mit dem Stream der M3u zu aktualisieren. Current database ID (XEPG) Used to update the channel in the database with the stream of the M3u
 		var currentChannelNumber string
 
+		// Direct map access instead of expensive JSON marshaling/unmarshaling
 		var m3uChannel M3UChannelStructXEPG
-
-		err = json.Unmarshal([]byte(mapToJSON(dsa)), &m3uChannel)
-		if err != nil {
-			return
+		if streamMap, ok := dsa.(map[string]string); ok {
+			// Direct field assignment for better performance
+			m3uChannel.Name = streamMap["name"]
+			m3uChannel.TvgName = streamMap["tvg-name"]
+			m3uChannel.TvgID = streamMap["tvg-id"]
+			m3uChannel.TvgLogo = streamMap["tvg-logo"]
+			m3uChannel.TvgChno = streamMap["tvg-chno"]
+			m3uChannel.GroupTitle = streamMap["group-title"]
+			m3uChannel.URL = streamMap["url"]
+			m3uChannel.LiveEvent = streamMap["liveEvent"]
+			m3uChannel.FileM3UID = streamMap["_file.m3u.id"]
+			m3uChannel.FileM3UName = streamMap["_file.m3u.name"]
+			m3uChannel.FileM3UPath = streamMap["_file.m3u.path"]
+			m3uChannel.Values = streamMap["_values"]
+			m3uChannel.UUIDKey = streamMap["_uuid.key"]
+			m3uChannel.UUIDValue = streamMap["_uuid.value"]
+		} else {
+			// Fallback to JSON if direct access fails
+			err = json.Unmarshal([]byte(mapToJSON(dsa)), &m3uChannel)
+			if err != nil {
+				return
+			}
 		}
 
 		if m3uChannel.TvgName == "" {
@@ -506,27 +719,38 @@ func createXEPGDatabase() (err error) {
 				channelHasUUID = true
 			}
 		} else {
-			// XEPG Datenbank durchlaufen um nach dem Kanal zu suchen.  Run through the XEPG database to search for the channel (full scan)
-			for _, dxc := range xepgChannelsValuesMap {
-				if m3uChannel.FileM3UID == dxc.FileM3UID && !isInInactiveList(dxc.URL) {
+			var foundChannel XEPGChannelStruct
+			var found bool
 
-					dxc.FileM3UID = m3uChannel.FileM3UID
-					dxc.FileM3UName = m3uChannel.FileM3UName
+			if foundChannel, found = fileM3UIDMap[m3uChannel.FileM3UID]; found && !isInInactiveList(foundChannel.URL) {
+				channelExists = true
+				currentXEPGID = foundChannel.XEPG
+				currentChannelNumber = foundChannel.TvgChno
 
-					// Vergleichen des Streams anhand einer UUID in der M3U mit dem Kanal in der Databank.  Compare the stream using a UUID in the M3U with the channel in the database
-					if len(dxc.UUIDValue) > 0 && len(m3uChannel.UUIDValue) > 0 {
-						if dxc.UUIDValue == m3uChannel.UUIDValue {
-
-							channelExists = true
-							channelHasUUID = true
-							currentXEPGID = dxc.XEPG
-							currentChannelNumber = dxc.TvgChno
-							break
-
-						}
+				if len(foundChannel.UUIDValue) > 0 && len(m3uChannel.UUIDValue) > 0 {
+					if foundChannel.UUIDValue == m3uChannel.UUIDValue {
+						channelHasUUID = true
 					}
 				}
-
+			} else if len(m3uChannel.UUIDValue) > 0 {
+				if foundChannel, found = uuidMap[m3uChannel.UUIDValue]; found && !isInInactiveList(foundChannel.URL) {
+					channelExists = true
+					currentXEPGID = foundChannel.XEPG
+					currentChannelNumber = foundChannel.TvgChno
+					channelHasUUID = true
+				}
+			} else if m3uChannel.LiveEvent == "true" {
+				for _, existingChannel := range xepgChannelsValuesMap {
+					if existingChannel.Name == m3uChannel.Name &&
+						existingChannel.GroupTitle == m3uChannel.GroupTitle &&
+						existingChannel.Live &&
+						!isInInactiveList(existingChannel.URL) {
+						channelExists = true
+						currentXEPGID = existingChannel.XEPG
+						currentChannelNumber = existingChannel.TvgChno
+						break
+					}
+				}
 			}
 		}
 
@@ -575,29 +799,37 @@ func createXEPGDatabase() (err error) {
 		case false:
 			// Neuer Kanal
 			var firstFreeNumber float64 = Settings.MappingFirstChannel
-			// Check channel start number from Group Filter
-			filters := []FilterStruct{}
-			for _, filter := range Settings.Filter {
-				filter_json, _ := json.Marshal(filter)
-				f := FilterStruct{}
-				json.Unmarshal(filter_json, &f)
-				filters = append(filters, f)
-			}
-
-			for _, filter := range filters {
-				if m3uChannel.GroupTitle == filter.Filter {
-					start_num, _ := strconv.ParseFloat(filter.StartingNumber, 64)
-					firstFreeNumber = start_num
-				}
+			// Use pre-processed filter map for better performance
+			if filter, exists := filterMap[m3uChannel.GroupTitle]; exists {
+				start_num, _ := strconv.ParseFloat(filter.StartingNumber, 64)
+				firstFreeNumber = start_num
 			}
 
 			var xepg = createNewID()
 			var xChannelID string
 
-			if m3uChannel.TvgChno == "" {
-				xChannelID = getFreeChannelNumber(firstFreeNumber)
-			} else {
+			if m3uChannel.TvgChno != "" {
 				xChannelID = m3uChannel.TvgChno
+				usedChannelNumbers[xChannelID] = true
+			} else {
+				channelKey := m3uChannel.Name + "|" + m3uChannel.GroupTitle
+				if existingNumber, exists := existingChannelNumbers[channelKey]; exists && !usedChannelNumbers[existingNumber] {
+					xChannelID = existingNumber
+					usedChannelNumbers[existingNumber] = true
+				} else {
+					if filter, exists := filterMap[m3uChannel.GroupTitle]; exists {
+						start_num, _ := strconv.ParseFloat(filter.StartingNumber, 64)
+						startStr := strconv.FormatFloat(start_num, 'f', 0, 64)
+						if !usedChannelNumbers[startStr] {
+							xChannelID = startStr
+							usedChannelNumbers[startStr] = true
+						} else {
+							xChannelID = getFreeChannelNumberOptimized(start_num, usedChannelNumbers)
+						}
+					} else {
+						xChannelID = getFreeChannelNumberOptimized(firstFreeNumber, usedChannelNumbers)
+					}
+				}
 			}
 
 			var newChannel XEPGChannelStruct
@@ -619,20 +851,9 @@ func createXEPGDatabase() (err error) {
 					continue
 				}
 				if channel, ok := channelsMap[m3uChannel.TvgID]; ok {
-					filters := []FilterStruct{}
-					for _, filter := range Settings.Filter {
-						filter_json, _ := json.Marshal(filter)
-						f := FilterStruct{}
-						json.Unmarshal(filter_json, &f)
-						filters = append(filters, f)
-					}
-					for _, filter := range filters {
-						if newChannel.GroupTitle == filter.Filter {
-							category := &Category{}
-							category.Value = filter.Category
-							category.Lang = "en"
-							newChannel.XCategory = filter.Category
-						}
+					// Use pre-processed filter map for better performance
+					if filter, exists := filterMap[newChannel.GroupTitle]; exists {
+						newChannel.XCategory = filter.Category
 					}
 
 					chmap, okk := channel.(map[string]interface{})
@@ -688,6 +909,12 @@ func createXEPGDatabase() (err error) {
 		}
 	}
 
+	// Increment processed streams counter
+	processedStreams++
+
+	// Don't send conflicting progress updates here - they're handled by the calling function
+	// This prevents conflicts with the main progress tracking
+
 	showInfo("XEPG:" + "Save DB file")
 
 	err = saveMapToJSONFile(System.File.XEPG, Data.XEPG.Channels)
@@ -695,11 +922,30 @@ func createXEPGDatabase() (err error) {
 		return
 	}
 
+	// Force completion signal to ensure webserver.go continues
+	showDebug("XEPG: FORCING COMPLETION SIGNAL - Database processing complete", 1)
+	showDebug("XEPG: About to send completion signal via channel", 1)
+	broadcastProgressUpdate(ProcessingProgress{
+		Percentage:   100,
+		Current:      processedStreams,
+		Total:        processedStreams,
+		Operation:    "XEPG Database Processing Complete - Ready for .strm generation",
+		IsProcessing: false,
+	})
+
+	showDebug("XEPG: Sending completion signal to channel", 1)
+	completionChan <- true
+	showDebug("XEPG: Completion signal sent to channel successfully", 1)
+
 	return
 }
 
 // Kanäle automatisch zuordnen und das Mapping überprüfen
 func mapping() (err error) {
+	// Protect against concurrent access to XEPG data structures
+	xepgMutex.Lock()
+	defer xepgMutex.Unlock()
+
 	showInfo("XEPG:" + "Map channels")
 
 	for xepg, dxc := range Data.XEPG.Channels {
@@ -1293,7 +1539,7 @@ func createDummyProgram(xepgChannel XEPGChannelStruct) (dummyXMLTV XMLTV) {
 		} else {
 			// For non-numeric formats that aren't "PPV" (which is handled above),
 			// use the default value
-			showInfo(fmt.Sprintf("Non-numeric format for XMapping: %s, using default duration of 30 minutes", xepgChannel.XMapping))
+			showDebug(fmt.Sprintf("Non-numeric format for XMapping: %s, using default duration of 30 minutes", xepgChannel.XMapping), 1)
 		}
 	}
 
@@ -1539,6 +1785,9 @@ func createM3UFile() {
 
 // XEPG Datenbank bereinigen
 func cleanupXEPG() {
+	// Protect against concurrent access to XEPG data structures
+	xepgMutex.Lock()
+	defer xepgMutex.Unlock()
 
 	var sourceIDs []string
 
@@ -1550,7 +1799,7 @@ func cleanupXEPG() {
 		sourceIDs = append(sourceIDs, source)
 	}
 
-	showInfo("XEPG:" + fmt.Sprintf("Cleanup database"))
+	showInfo("XEPG:" + "Cleanup database")
 	Data.XEPG.XEPGCount = 0
 
 	for id, dxc := range Data.XEPG.Channels {

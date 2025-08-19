@@ -1087,8 +1087,6 @@ class ShowContent extends Content {
         sortTable(0)
         break;
     }
-
-    showElement("loading", false)
   }
 
 }
@@ -1097,6 +1095,14 @@ function PageReady() {
 
   var server: Server = new Server("getServerConfig")
   server.request(new Object())
+
+  // Render the menu immediately so UI is usable even before data arrives
+  try { createLayout() } catch (e) { console.log("early createLayout error", e) }
+
+  // Call updateLog immediately to get initial data and create menu
+  setTimeout(() => {
+    updateLog()
+  }, 500); // Small delay to ensure WebSocket is ready
 
   setInterval(function () {
     updateLog()
@@ -1107,30 +1113,50 @@ function PageReady() {
 }
 
 function createLayout() {
-
-  // Client Info
-  var obj = SERVER["clientInfo"]
-  var keys = getObjKeys(obj);
-  console.log("KEYS: ", keys)
-  for (var i = 0; i < keys.length; i++) {
-
-    if (document.getElementById(keys[i])) {
-      (<HTMLInputElement>document.getElementById(keys[i])).value = obj[keys[i]];
-    }
-
+  console.log("createLayout: Function called");
+  console.log("createLayout: SERVER object:", SERVER);
+  
+  // Check if SERVER object has required data
+  if (!SERVER || !SERVER["clientInfo"]) {
+    console.log("createLayout: Proceeding without clientInfo; rendering menu skeleton");
   }
 
-  if (document.getElementById("playlist-connection-information")) {
+  console.log("createLayout: Proceeding with menu creation");
+  console.log("createLayout: clientInfo keys:", getObjKeys(SERVER["clientInfo"]));
+
+  // Client Info (only if available)
+  if (SERVER && SERVER["clientInfo"]) {
+    var obj = SERVER["clientInfo"]
+    var keys = getObjKeys(obj);
+    console.log("createLayout: clientInfo keys:", keys);
+    console.log("createLayout: clientInfo values:", obj);
+    
+    for (var i = 0; i < keys.length; i++) {
+      var elementId = keys[i];
+      var element = document.getElementById(elementId);
+      if (element) {
+        console.log("createLayout: Setting element", elementId, "to value:", obj[elementId]);
+        (<HTMLInputElement>element).value = obj[elementId];
+      } else {
+        console.log("createLayout: Element not found for ID:", elementId);
+      }
+    }
+  } else {
+    console.log("createLayout: No clientInfo available in SERVER object");
+    console.log("createLayout: SERVER object:", SERVER);
+  }
+
+  if (SERVER && SERVER["clientInfo"] && document.getElementById("playlist-connection-information")) {
     let activeClass = "text-primary"
     if (SERVER["clientInfo"]["activePlaylist"] / SERVER["clientInfo"]["totalPlaylist"] >= 0.6 && SERVER["clientInfo"]["activePlaylist"] / SERVER["clientInfo"]["totalPlaylist"] < 0.8) {
       activeClass = "text-warning"
-    } else if (SERVER["clientInfo"]["activePlaylist"] / SERVER["clientInfo"]["totalPlaylist"] >= 0.8) {
+    } else if (SERVER["clientInfo"]["activePlaylist"] / SERVER["clientInfo"]["activePlaylist"] >= 0.8) {
       activeClass = "text-danger"
     }
     document.getElementById("playlist-connection-information").innerHTML = "Playlist Connections: <span class='" + activeClass + "'>" + SERVER["clientInfo"]["activePlaylist"] + " / " + SERVER["clientInfo"]["totalPlaylist"] + "</span>"
   }
 
-  if (document.getElementById("client-connection-information")) {
+  if (SERVER && SERVER["clientInfo"] && document.getElementById("client-connection-information")) {
     let activeClass = "text-primary"
     if (SERVER["clientInfo"]["activeClients"] / SERVER["clientInfo"]["totalClients"] >= 0.6 && SERVER["clientInfo"]["activeClients"] / SERVER["clientInfo"]["totalClients"] < 0.8) {
       activeClass = "text-warning"
@@ -1141,10 +1167,11 @@ function createLayout() {
   }
 
   if (!document.getElementById("main-menu")) {
+    console.log("createLayout: main-menu element not found, returning");
     return
   }
 
-
+  console.log("createLayout: Creating menu with", menuItems.length, "items");
 
   // Create menu
   document.getElementById("main-menu").innerHTML = ""
@@ -1156,14 +1183,14 @@ function createLayout() {
 
       case "users":
       case "logout":
-        if (SERVER["settings"]["authentication.web"] == true) {
+        if (SERVER["settings"] && SERVER["settings"]["authentication.web"] === true) {
           menuItems[i].createItem()
         }
         break
 
       case "mapping":
       case "xmltv":
-          menuItems[i].createItem()
+        menuItems[i].createItem()
         break
 
       default:
@@ -1173,6 +1200,7 @@ function createLayout() {
 
   }
 
+  console.log("createLayout: Menu creation completed");
   return
 }
 
@@ -2471,8 +2499,6 @@ function changeChannelLogo(epgMapId: string) {
 
 function savePopupData(dataType: string, id: string, remove: Boolean, option: number) {
 
-  showElement("loading", true)
-
   if (dataType == "mapping") {
 
 
@@ -2488,8 +2514,6 @@ function savePopupData(dataType: string, id: string, remove: Boolean, option: nu
     server.request(data)
 
     delete UNDO["epgMapping"]
-
-    showElement("loading", false)
 
     return
 
@@ -2671,10 +2695,24 @@ function savePopupData(dataType: string, id: string, remove: Boolean, option: nu
 
   console.log(data);
 
+  // Close modal immediately and show toast for save and update operations
+  if (cmd === "saveFilesM3U" || cmd === "saveFilesXMLTV" || cmd === "updateFileM3U" || cmd === "updateFileXMLTV") {
+    showElement("popup", false);
+    
+    // Show appropriate toast message
+    if (cmd === "saveFilesM3U") {
+      showToast("", "Playlist saved", "warning");
+    } else if (cmd === "saveFilesXMLTV") {
+      showToast("", "XMLTV saved", "warning");
+    } else if (cmd === "updateFileM3U") {
+      showToast("", "Playlist updated", "warning");
+    } else if (cmd === "updateFileXMLTV") {
+      showToast("", "XMLTV updated", "warning");
+    }
+  }
+
   var server: Server = new Server(cmd)
   server.request(data)
-
-  showElement("loading", false)
 
 }
 
@@ -2893,3 +2931,86 @@ document.addEventListener("DOMContentLoaded", function() {
     }
   });
 });
+
+// Show progress indicator in menu header
+function showMenuProgress(message: string, progress: number = 0): void {
+    let menuProgress = document.getElementById("menu-progress");
+    if (!menuProgress) {
+        // Create Bootstrap progress indicator in menu header
+        menuProgress = document.createElement("div");
+        menuProgress.id = "menu-progress";
+        menuProgress.className = "alert alert-warning alert-dismissible fade show";
+        menuProgress.style.cssText = "margin: 10px; border-radius: 8px;";
+        
+        menuProgress.innerHTML = `
+            <div class="d-flex align-items-center">
+                <div class="spinner-border spinner-border-sm me-2" role="status">
+                    <span class="visually-hidden">Processing...</span>
+                </div>
+                <div class="flex-grow-1">
+                    <strong>Processing:</strong> ${message}
+                    <div class="progress mt-2" style="height: 6px;">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                             role="progressbar" 
+                             style="width: ${progress}%" 
+                             aria-valuenow="${progress}" 
+                             aria-valuemin="0" 
+                             aria-valuemax="100">
+                        </div>
+                    </div>
+                </div>
+                <button type="button" class="btn-close ms-2" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        `;
+        
+        // Insert at the top of the menu content
+        const menuContent = document.querySelector('.container-fluid, .container, main, .content') || document.body;
+        if (menuContent.firstChild) {
+            menuContent.insertBefore(menuProgress, menuContent.firstChild);
+        } else {
+            menuContent.appendChild(menuProgress);
+        }
+    } else {
+        // Update existing progress
+        const progressBar = menuProgress.querySelector('.progress-bar') as HTMLElement;
+        const messageDiv = menuProgress.querySelector('.flex-grow-1 strong');
+        if (progressBar) {
+            progressBar.style.width = `${progress}%`;
+            progressBar.setAttribute('aria-valuenow', progress.toString());
+        }
+        if (messageDiv && messageDiv.nextSibling) {
+            messageDiv.nextSibling.textContent = ` ${message}`;
+        }
+    }
+}
+
+// Update menu progress
+function updateMenuProgress(progress: number): void {
+    const menuProgress = document.getElementById("menu-progress");
+    if (menuProgress) {
+        const progressBar = menuProgress.querySelector('.progress-bar') as HTMLElement;
+        if (progressBar) {
+            progressBar.style.width = `${progress}%`;
+            progressBar.setAttribute('aria-valuenow', progress.toString());
+        }
+    }
+}
+
+// Hide menu progress
+function hideMenuProgress(): void {
+    const menuProgress = document.getElementById("menu-progress");
+    if (menuProgress) {
+        // Use Bootstrap's fade out animation
+        menuProgress.classList.remove('show');
+        menuProgress.classList.add('fade');
+        setTimeout(() => {
+            if (menuProgress.parentNode) {
+                menuProgress.parentNode.removeChild(menuProgress);
+            }
+        }, 150);
+    }
+}
+
+
+
+

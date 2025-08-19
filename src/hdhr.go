@@ -92,7 +92,7 @@ func getLineupStatus() (jsonContent []byte, err error) {
 
 	var lineupStatus LineupStatus
 
-	lineupStatus.ScanInProgress = System.ScanInProgress
+	lineupStatus.ScanInProgress = 0
 	lineupStatus.ScanPossible = 0
 	lineupStatus.Source = "Cable"
 	lineupStatus.SourceList = []string{"Cable"}

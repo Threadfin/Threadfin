@@ -6,8 +6,12 @@ var SEARCH_MAPPING = new Object();
 var UNDO = new Object();
 var SERVER_CONNECTION = false;
 var WS_AVAILABLE = false;
+// Initialize tooltips
 const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
+const tooltipList = [];
+for (let i = 0; i < tooltipTriggerList.length; i++) {
+    tooltipList.push(new bootstrap.Tooltip(tooltipTriggerList[i]));
+}
 // new ClipboardJS('.copy-btn');
 var clipboard = new ClipboardJS('.copy-btn');
 clipboard.on('success', function (e) {
@@ -38,7 +42,7 @@ menuItems.push(new MainMenuItem("logout", "{{.mainMenu.item.logout}}", "logout.p
 // Kategorien für die Einstellungen
 var settingsCategory = new Array();
 settingsCategory.push(new SettingsCategoryItem("{{.settings.category.general}}", "ThreadfinAutoUpdate,ssdp,tuner,epgSource,epgCategories,epgCategoriesColors,dummy,dummyChannel,ignoreFilters,api"));
-settingsCategory.push(new SettingsCategoryItem("{{.settings.category.files}}", "update,files.update,temp.path,cache.images,bindIpAddress,httpThreadfinDomain,forceHttps,httpsPort,httpsThreadfinDomain,xepg.replace.missing.images,xepg.replace.channel.title,enableNonAscii"));
+settingsCategory.push(new SettingsCategoryItem("{{.settings.category.files}}", "update,files.update,temp.path,strm.directory,cache.images,bindIpAddress,httpThreadfinDomain,forceHttps,httpsPort,httpsThreadfinDomain,xepg.replace.missing.images,xepg.replace.channel.title,enableNonAscii"));
 settingsCategory.push(new SettingsCategoryItem("{{.settings.category.streaming}}", "udpxy,buffer.size.kb,buffer.timeout,user.agent,ffmpeg.path,ffmpeg.options,ffmpeg.forceHttp,vlc.path,vlc.options"));
 settingsCategory.push(new SettingsCategoryItem("{{.settings.category.backup}}", "backup.path,backup.keep"));
 settingsCategory.push(new SettingsCategoryItem("{{.settings.category.authentication}}", "authentication.web,authentication.pms,authentication.m3u,authentication.xml,authentication.api"));
@@ -69,6 +73,32 @@ function showElement(elmID, type) {
                 loadingModal.hide();
                 break;
         }
+    }
+}
+function showToast(title, message, type = 'info') {
+    const toast = document.getElementById('toast');
+    const toastBody = document.getElementById('toast-body');
+    if (toastBody && toast) {
+        toastBody.textContent = message;
+        // Remove existing classes and add new type class
+        toast.className = 'toast';
+        if (type === 'success') {
+            toast.classList.add('text-bg-success');
+        }
+        else if (type === 'error') {
+            toast.classList.add('text-bg-danger');
+        }
+        else if (type === 'warning') {
+            toast.classList.add('text-bg-orange');
+        }
+        else {
+            toast.classList.add('text-bg-info');
+        }
+        const bsToast = new bootstrap.Toast(toast, {
+            autohide: true,
+            delay: 3000
+        });
+        bsToast.show();
     }
 }
 function changeButtonAction(element, buttonID, attribute) {
@@ -276,6 +306,11 @@ function sortTable(column, table_name = "content_table") {
 }
 function createSearchObj() {
     SEARCH_MAPPING = new Object();
+    // Safety check: ensure SERVER.xepg and epgMapping exist
+    if (!SERVER || !SERVER["xepg"] || !SERVER["xepg"]["epgMapping"]) {
+        console.log("createSearchObj: XEPG data not yet available, skipping search object creation");
+        return;
+    }
     var data = SERVER["xepg"]["epgMapping"];
     var channels = getObjKeys(data);
     var channelKeys = ["x-active", "x-channelID", "x-name", "_file.m3u.name", "x-group-title", "x-xmltv-file"];
@@ -570,8 +605,129 @@ function sortSelect(elem) {
     elem.selectedIndex = newSelectedIndex; // Set new selected index after sorting
     return;
 }
-function updateLog() {
-    console.log("TOKEN");
-    var server = new Server("updateLog");
-    server.request(new Object());
+// Update the progress bar in the header with real-time data
+let progressHideTimeout = null; // Global timeout reference
+function updateHeaderProgress(progress) {
+    const progressNav = document.getElementById("processing-status-nav");
+    if (!progressNav)
+        return;
+    // Only hide progress bar if we explicitly get a progress update with 0 percentage
+    // and isProcessing is false, or if no progress data is provided
+    if (progress && progress.percentage === 0 && !progress.isProcessing) {
+        // This is an explicit "clear progress" signal
+        console.log("Progress: Clearing progress bar");
+        progressNav.style.display = "none";
+        // Reset progress bar classes for next use
+        const progressBar = progressNav.querySelector('.progress-bar');
+        if (progressBar) {
+            progressBar.classList.remove('bg-success');
+            progressBar.classList.add('progress-bar-striped', 'progress-bar-animated');
+        }
+        // Clear any existing timeout
+        if (progressHideTimeout) {
+            clearTimeout(progressHideTimeout);
+            progressHideTimeout = null;
+        }
+        return;
+    }
+    if (progress && progress.percentage > 0) {
+        console.log("Progress: Showing progress bar with percentage:", progress.percentage);
+        // Show processing status for any percentage > 0
+        progressNav.style.display = "block";
+        // Update progress bar
+        const progressBar = progressNav.querySelector('.progress-bar');
+        if (progressBar) {
+            progressBar.style.width = `${progress.percentage}%`;
+            progressBar.setAttribute('aria-valuenow', progress.percentage.toString());
+            // Change to green when reaching 100%
+            if (progress.percentage >= 100) {
+                progressBar.classList.remove('progress-bar-striped', 'progress-bar-animated');
+                progressBar.classList.add('bg-success');
+            }
+            else {
+                progressBar.classList.add('progress-bar-striped', 'progress-bar-animated');
+                progressBar.classList.remove('bg-success');
+            }
+        }
+        // Update percentage text
+        const percentageText = progressNav.querySelector('.text-light');
+        if (percentageText) {
+            percentageText.textContent = `${progress.percentage}%`;
+        }
+        // Update operation text
+        const operationText = progressNav.querySelector('span');
+        if (operationText && progress.operation) {
+            operationText.textContent = progress.operation;
+        }
+        // Show spinner for progress < 100%
+        const spinner = progressNav.querySelector('.spinner-border');
+        if (spinner) {
+            if (progress.percentage < 100) {
+                spinner.style.display = "inline-block";
+            }
+            else {
+                spinner.style.display = "none";
+            }
+        }
+        // Hide progress bar after delay when reaching 100%
+        if (progress.percentage >= 100) {
+            console.log("Progress: Setting timeout to hide at 100%");
+            // Clear any existing timeout to prevent race conditions
+            if (progressHideTimeout) {
+                clearTimeout(progressHideTimeout);
+                progressHideTimeout = null;
+            }
+            // Set new timeout to hide progress bar
+            progressHideTimeout = setTimeout(() => {
+                console.log("Progress: Hiding progress bar after timeout");
+                progressNav.style.display = "none";
+                // Reset progress bar classes for next use
+                if (progressBar) {
+                    progressBar.classList.remove('bg-success');
+                    progressBar.classList.add('progress-bar-striped', 'progress-bar-animated');
+                }
+                progressHideTimeout = null;
+            }, 5000); // Hide after 5 seconds
+        }
+    }
+    // If progress is undefined/null or has 0 percentage but isProcessing is true, do nothing
+    // This prevents the progress bar from disappearing unexpectedly
 }
+// Check processing status for large files via WebSocket
+function checkProcessingStatus() {
+    // This function is now handled by WebSocket messages
+    // Progress updates are sent automatically from the backend
+    console.log("Progress monitoring active via WebSocket");
+}
+// Check if we're stuck on maintenance screen and offer reset option
+function checkForStuckMaintenance() {
+    // Check if we're on a maintenance page
+    const maintenanceText = document.body.textContent;
+    if (maintenanceText && maintenanceText.indexOf("Threadfin is updating the database") !== -1) {
+        // Create a reset button
+        const resetButton = document.createElement("button");
+        resetButton.className = "btn btn-warning";
+        resetButton.style.cssText = "position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10000; padding: 15px 30px; font-size: 16px;";
+        resetButton.innerHTML = "Reset Stuck Processing";
+        resetButton.onclick = function () {
+            if (confirm("Are you sure you want to reset the stuck processing? This will allow you to access the interface again.")) {
+                // Since we removed the API, just refresh the page
+                window.location.reload();
+            }
+        };
+        document.body.appendChild(resetButton);
+        // Also show a message
+        const message = document.createElement("div");
+        message.style.cssText = "position: fixed; top: 40%; left: 50%; transform: translate(-50%, -50%); z-index: 10000; background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px; text-align: center; max-width: 400px;";
+        message.innerHTML = "<strong>Processing appears to be stuck</strong><br>Click the button below to reset and access the interface.";
+        document.body.appendChild(message);
+    }
+}
+// Start checking processing status when page loads
+document.addEventListener('DOMContentLoaded', function () {
+    console.log("DOM loaded, starting WebSocket progress monitoring...");
+    // Check for stuck maintenance screen immediately
+    checkForStuckMaintenance();
+    // Progress monitoring is now handled automatically via WebSocket messages
+    console.log("WebSocket progress monitoring active");
+});

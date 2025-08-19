@@ -24,9 +24,6 @@ func maintenance() {
 		var t = time.Now()
 
 		// Aktualisierung der Playlist und XMLTV Dateien
-		systemMutex.Lock()
-		if System.ScanInProgress == 0 {
-			systemMutex.Unlock()
 			for _, schedule := range Settings.Update {
 
 				if schedule == t.Format("1504") {
@@ -62,11 +59,7 @@ func maintenance() {
 					}
 
 					// XEPG Dateien erstellen
-					systemMutex.Lock()
-					Data.Cache.XMLTV = make(map[string]XMLTV)
-					systemMutex.Unlock()
-
-					buildXEPG(false)
+					buildXEPG()
 
 				}
 
@@ -81,9 +74,7 @@ func maintenance() {
 				systemMutex.Unlock()
 			}
 
-		} else {
-			systemMutex.Unlock()
-		}
+
 
 		time.Sleep(60 * time.Second)
 

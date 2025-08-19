@@ -50,6 +50,17 @@ class SettingsCategory {
                 setting.appendChild(tdLeft);
                 setting.appendChild(tdRight);
                 break;
+            case "strm.directory":
+                var tdLeft = document.createElement("TD");
+                tdLeft.innerHTML = "STRM Directory" + ":";
+                var tdRight = document.createElement("TD");
+                var input = content.createInput("text", "strm.directory", data);
+                input.setAttribute("placeholder", "/path/to/strm/files");
+                input.setAttribute("onchange", "javascript: this.className = 'changed'");
+                tdRight.appendChild(input);
+                setting.appendChild(tdLeft);
+                setting.appendChild(tdRight);
+                break;
             case "user.agent":
                 var tdLeft = document.createElement("TD");
                 tdLeft.innerHTML = "{{.settings.userAgent.title}}" + ":";
