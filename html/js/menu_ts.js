@@ -2172,8 +2172,8 @@ function savePopupData(dataType, id, remove, option) {
     }
     console.log("SEND TO SERVER");
     console.log(data);
-    // Close modal immediately and show toast for save operations
-    if (cmd === "saveFilesM3U" || cmd === "saveFilesXMLTV") {
+    // Close modal immediately and show toast for save and update operations
+    if (cmd === "saveFilesM3U" || cmd === "saveFilesXMLTV" || cmd === "updateFileM3U" || cmd === "updateFileXMLTV") {
         showElement("popup", false);
         // Show appropriate toast message
         if (cmd === "saveFilesM3U") {
@@ -2181,6 +2181,12 @@ function savePopupData(dataType, id, remove, option) {
         }
         else if (cmd === "saveFilesXMLTV") {
             showToast("", "XMLTV saved", "warning");
+        }
+        else if (cmd === "updateFileM3U") {
+            showToast("", "Playlist updated", "warning");
+        }
+        else if (cmd === "updateFileXMLTV") {
+            showToast("", "XMLTV updated", "warning");
         }
     }
     var server = new Server(cmd);

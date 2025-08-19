@@ -2695,8 +2695,8 @@ function savePopupData(dataType: string, id: string, remove: Boolean, option: nu
 
   console.log(data);
 
-  // Close modal immediately and show toast for save operations
-  if (cmd === "saveFilesM3U" || cmd === "saveFilesXMLTV") {
+  // Close modal immediately and show toast for save and update operations
+  if (cmd === "saveFilesM3U" || cmd === "saveFilesXMLTV" || cmd === "updateFileM3U" || cmd === "updateFileXMLTV") {
     showElement("popup", false);
     
     // Show appropriate toast message
@@ -2704,6 +2704,10 @@ function savePopupData(dataType: string, id: string, remove: Boolean, option: nu
       showToast("", "Playlist saved", "warning");
     } else if (cmd === "saveFilesXMLTV") {
       showToast("", "XMLTV saved", "warning");
+    } else if (cmd === "updateFileM3U") {
+      showToast("", "Playlist updated", "warning");
+    } else if (cmd === "updateFileXMLTV") {
+      showToast("", "XMLTV updated", "warning");
     }
   }
 

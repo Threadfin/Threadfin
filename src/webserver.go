@@ -699,11 +699,18 @@ func WS(w http.ResponseWriter, r *http.Request) {
 			continue
 
 		case "updateFileM3U":
-			err = processStartupWorkflow("update", "m3u")
-			if err != nil {
-				ShowError(err, 0)
+			// Send immediate response to close modal
+			if err = conn.WriteJSON(response); err != nil {
+				ShowError(err, 1022)
 				return
 			}
+
+			// Run processing in background
+			go func() {
+				if processErr := processStartupWorkflow("update", "m3u"); processErr != nil {
+					ShowError(processErr, 0)
+				}
+			}()
 
 			continue
 
@@ -749,11 +756,18 @@ func WS(w http.ResponseWriter, r *http.Request) {
 			continue
 
 		case "updateFileXMLTV":
-			err = processStartupWorkflow("update", "xmltv")
-			if err != nil {
-				ShowError(err, 0)
+			// Send immediate response to close modal
+			if err = conn.WriteJSON(response); err != nil {
+				ShowError(err, 1022)
 				return
 			}
+
+			// Run processing in background
+			go func() {
+				if processErr := processStartupWorkflow("update", "xmltv"); processErr != nil {
+					ShowError(processErr, 0)
+				}
+			}()
 
 			continue
 
