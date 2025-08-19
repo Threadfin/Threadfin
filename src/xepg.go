@@ -837,6 +837,7 @@ func createXEPGDatabase(completionChan chan<- bool) (err error) {
 			newChannel.FileM3UName = m3uChannel.FileM3UName
 			newChannel.FileM3UPath = m3uChannel.FileM3UPath
 			newChannel.Values = m3uChannel.Values
+			newChannel.CustomTags = m3uChannel.CustomTags
 			newChannel.GroupTitle = m3uChannel.GroupTitle
 			newChannel.Name = m3uChannel.Name
 			newChannel.TvgID = m3uChannel.TvgID

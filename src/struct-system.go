@@ -196,6 +196,7 @@ type XEPGChannelStruct struct {
 	UUIDKey            string        `json:"_uuid.key"`
 	UUIDValue          string        `json:"_uuid.value,omitempty"`
 	Values             string        `json:"_values"`
+	CustomTags         string        `json:"_custom_tags"`
 	XActive            bool          `json:"x-active"`
 	XCategory          string        `json:"x-category"`
 	XChannelID         string        `json:"x-channelID"`
@@ -235,6 +236,7 @@ type M3UChannelStructXEPG struct {
 	UUIDKey         string `json:"_uuid.key,required"`
 	UUIDValue       string `json:"_uuid.value,required"`
 	Values          string `json:"_values,required"`
+	CustomTags      string `json:"_custom_tags"`
 	LiveEvent       string `json:"liveEvent,required"`
 	ChannelUniqueID string `json:"channelUniqueID"`
 }
@@ -321,7 +323,7 @@ type SettingsStruct struct {
 	Port                      string                `json:"port"`
 	SSDP                      bool                  `json:"ssdp"`
 	TempPath                  string                `json:"temp.path"`
-	StrmDirectory            string                `json:"strm.directory"`
+	StrmDirectory             string                `json:"strm.directory"`
 	Tuner                     int                   `json:"tuner"`
 	Update                    []string              `json:"update"`
 	UpdateURL                 string                `json:"update.url,omitempty"`
