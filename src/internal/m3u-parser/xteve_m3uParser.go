@@ -22,6 +22,8 @@ func MakeInterfaceFromM3U(byteStream []byte) (allChannels []interface{}, err err
 		var exceptForChannelName = `,([^\n]*|,[^\r]*)`
 		var lines = strings.Split(strings.Replace(channel, "\r\n", "\n", -1), "\n")
 
+		var customTags []string
+
 		// Remove lines starting with # and empty lines
 		for i := len(lines) - 1; i >= 0; i-- {
 			if len(lines[i]) == 0 || lines[i][0:1] == "#" {
@@ -47,6 +49,12 @@ func MakeInterfaceFromM3U(byteStream []byte) (allChannels []interface{}, err err
 						stream[strings.ToLower(parameter[0])] = parameter[1]
 					} else {
 						stream[parameter[0]] = parameter[1]
+					}
+
+					if !strings.Contains(parameter[0], "tvg") &&
+						parameter[0] != "group-title" &&
+						parameter[0] != "channelID" {
+						customTags = append(customTags, fmt.Sprintf(`%s="%s"`, parameter[0], parameter[1]))
 					}
 
 					// Do not pass URLs to the filter function
@@ -89,6 +97,10 @@ func MakeInterfaceFromM3U(byteStream []byte) (allChannels []interface{}, err err
 			stream["name"] = channelName
 			value = value + channelName
 			stream["_values"] = value
+
+			if len(customTags) > 0 {
+				stream["_custom_tags"] = strings.Join(customTags, " ")
+			}
 		}
 
 		// Assign a unique ID to the stream

@@ -39,7 +39,6 @@ func parsePlaylist(filename, fileType string) (channels []interface{}, err error
 // Streams filtern
 func filterThisStream(s interface{}) (status bool, liveEvent bool) {
 
-	status = false
 	var stream = s.(map[string]string)
 	var regexpYES = `[{]+[^.]+[}]`
 	var regexpNO = `!+[{]+[^.]+[}]`
@@ -126,14 +125,14 @@ func filterThisStream(s interface{}) (status bool, liveEvent bool) {
 			if len(exclude) > 0 {
 				var status = checkConditions(search, exclude, "exclude")
 				if status == false {
-					return false, liveEvent
+					continue
 				}
 			}
 
 			if len(include) > 0 {
 				var status = checkConditions(search, include, "include")
 				if status == false {
-					return false, liveEvent
+					continue
 				}
 			}
 
@@ -259,7 +258,11 @@ func buildM3U(groups []string) (m3u string, err error) {
 		if channel.TvgLogo != "" {
 			logo = imgc.Image.GetURL(channel.TvgLogo, Settings.HttpThreadfinDomain, Settings.Port, Settings.ForceHttps, Settings.HttpsPort, Settings.HttpsThreadfinDomain)
 		}
-		var parameter = fmt.Sprintf(`#EXTINF:0 channelID="%s" tvg-chno="%s" tvg-name="%s" tvg-id="%s" tvg-logo="%s" group-title="%s",%s`+"\n", channel.XEPG, channel.XChannelID, channel.XName, channel.XChannelID, logo, group, channel.XName)
+		var customTagsStr = ""
+		if channel.CustomTags != "" {
+			customTagsStr = " " + channel.CustomTags
+		}
+		var parameter = fmt.Sprintf(`#EXTINF:0 channelID="%s" tvg-chno="%s" tvg-name="%s" tvg-id="%s" tvg-logo="%s" group-title="%s"%s,%s`+"\n", channel.XEPG, channel.XChannelID, channel.XName, channel.XChannelID, logo, group, customTagsStr, channel.XName)
 		var stream, err = createStreamingURL("M3U", channel.FileM3UID, channel.XChannelID, channel.XName, channel.URL, channel.BackupChannel1, channel.BackupChannel2, channel.BackupChannel3)
 		if err == nil {
 			// Check for exact duplicate of the entire channel entry
