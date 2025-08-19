@@ -321,6 +321,7 @@ type SettingsStruct struct {
 	Port                      string                `json:"port"`
 	SSDP                      bool                  `json:"ssdp"`
 	TempPath                  string                `json:"temp.path"`
+	StrmDirectory            string                `json:"strm.directory"`
 	Tuner                     int                   `json:"tuner"`
 	Update                    []string              `json:"update"`
 	UpdateURL                 string                `json:"update.url,omitempty"`

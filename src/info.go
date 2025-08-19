@@ -15,7 +15,7 @@ func ShowSystemInfo() {
 		return
 	}
 
-	buildXEPG(false)
+	buildXEPG()
 
 	fmt.Println("OK")
 	println()

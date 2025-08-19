@@ -74,7 +74,6 @@ class WizardItem extends WizardCategory {
 function readyForConfiguration(wizard) {
     var server = new Server("getServerConfig");
     server.request(new Object());
-    showElement("loading", false);
     configurationWizard[wizard].createWizard();
 }
 function saveWizard() {
@@ -128,3 +127,79 @@ configurationWizard.push(new WizardItem("tuner", "{{.wizard.tuner.title}}"));
 configurationWizard.push(new WizardItem("epgSource", "{{.wizard.epgSource.title}}"));
 configurationWizard.push(new WizardItem("m3u", "{{.wizard.m3u.title}}"));
 configurationWizard.push(new WizardItem("xmltv", "{{.wizard.xmltv.title}}"));
+// Show configuration progress indicator
+function showConfigProgress(message, progress = 0) {
+    let configProgress = document.getElementById("config-progress");
+    if (!configProgress) {
+        // Create Bootstrap progress indicator in configuration header
+        configProgress = document.createElement("div");
+        configProgress.id = "config-progress";
+        configProgress.className = "alert alert-primary alert-dismissible fade show";
+        configProgress.style.cssText = "margin: 15px; border-radius: 8px; border-left: 4px solid #0d6efd;";
+        configProgress.innerHTML = `
+            <div class="d-flex align-items-center">
+                <div class="spinner-border spinner-border-sm me-2" role="status">
+                    <span class="visually-hidden">Processing...</span>
+                </div>
+                <div class="flex-grow-1">
+                    <strong>Configuration Processing:</strong> ${message}
+                    <div class="progress mt-2" style="height: 8px;">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                             role="progressbar" 
+                             style="width: ${progress}%" 
+                             aria-valuenow="${progress}" 
+                             aria-valuemin="0" 
+                             aria-valuemax="100">
+                        </div>
+                    </div>
+                </div>
+                <button type="button" class="btn-close ms-2" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        `;
+        // Insert at the top of the configuration content
+        const configContent = document.querySelector('.container-fluid, .container, main, .content, .row') || document.body;
+        if (configContent.firstChild) {
+            configContent.insertBefore(configProgress, configContent.firstChild);
+        }
+        else {
+            configContent.appendChild(configProgress);
+        }
+    }
+    else {
+        // Update existing progress
+        const progressBar = configProgress.querySelector('.progress-bar');
+        const messageDiv = configProgress.querySelector('.flex-grow-1 strong');
+        if (progressBar) {
+            progressBar.style.width = `${progress}%`;
+            progressBar.setAttribute('aria-valuenow', progress.toString());
+        }
+        if (messageDiv && messageDiv.nextSibling) {
+            messageDiv.nextSibling.textContent = ` ${message}`;
+        }
+    }
+}
+// Update configuration progress
+function updateConfigProgress(progress) {
+    const configProgress = document.getElementById("config-progress");
+    if (configProgress) {
+        const progressBar = configProgress.querySelector('.progress-bar');
+        if (progressBar) {
+            progressBar.style.width = `${progress}%`;
+            progressBar.setAttribute('aria-valuenow', progress.toString());
+        }
+    }
+}
+// Hide configuration progress
+function hideConfigProgress() {
+    const configProgress = document.getElementById("config-progress");
+    if (configProgress) {
+        // Use Bootstrap's fade out animation
+        configProgress.classList.remove('show');
+        configProgress.classList.add('fade');
+        setTimeout(() => {
+            if (configProgress.parentNode) {
+                configProgress.parentNode.removeChild(configProgress);
+            }
+        }, 150);
+    }
+}

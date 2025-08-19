@@ -12,11 +12,186 @@ import (
 	"path"
 	"strconv"
 	"strings"
+	"sync"
+	"time"
 
 	"threadfin/src/internal/authentication"
 
 	"github.com/gorilla/websocket"
 )
+
+var (
+	wsConnections             = make(map[*websocket.Conn]bool)
+	wsMutex                   sync.RWMutex
+	wsWriteMutex              sync.Mutex
+	broadcastMutex            sync.Mutex
+	connWriteMutexes          = make(map[*websocket.Conn]*sync.Mutex)
+	startupWorkflowInProgress bool
+	startupWorkflowCompleted  bool
+)
+
+func addWSConnection(conn *websocket.Conn) {
+	wsMutex.Lock()
+	wsConnections[conn] = true
+	connWriteMutexes[conn] = &sync.Mutex{}
+	wsMutex.Unlock()
+}
+
+func removeWSConnection(conn *websocket.Conn) {
+	wsMutex.Lock()
+	delete(wsConnections, conn)
+	delete(connWriteMutexes, conn)
+	wsMutex.Unlock()
+}
+
+func processStartupWorkflow(operationType string, fileType string) error {
+	if startupWorkflowInProgress {
+		showInfo("SYSTEM: Startup workflow already in progress, skipping")
+		return nil
+	}
+
+	if startupWorkflowCompleted {
+		showInfo("SYSTEM: Startup workflow already completed, running minimal processing")
+
+		err := buildDatabaseDVR()
+		if err != nil {
+			ShowError(err, 0)
+			return err
+		}
+
+		updateUrlsJson()
+		createM3UFile()
+
+		showInfo("SYSTEM: Minimal processing completed")
+		return nil
+	}
+
+	startupWorkflowInProgress = true
+	defer func() {
+		startupWorkflowInProgress = false
+		startupWorkflowCompleted = true
+	}()
+
+	showInfo(fmt.Sprintf("SYSTEM: Starting centralized workflow for operation: %s", operationType))
+
+	switch operationType {
+	case "startup":
+		showInfo("SYSTEM: Running full startup workflow")
+
+		err := buildDatabaseDVR()
+		if err != nil {
+			ShowError(err, 0)
+			return err
+		}
+
+		vodStreamCount := 0
+		for _, stream := range Data.Streams.Active {
+			if s, ok := stream.(map[string]string); ok {
+				if isVOD, exists := s["_is_vod"]; exists && isVOD == "true" {
+					vodStreamCount++
+				}
+			}
+		}
+
+		if vodStreamCount > 0 {
+			showInfo(fmt.Sprintf("SYSTEM: Generating .strm files for %d VOD streams during startup", vodStreamCount))
+			err = generateStrmFiles()
+			if err != nil {
+				ShowError(err, 0)
+			} else {
+				showInfo("SYSTEM: .strm file generation completed successfully")
+			}
+		} else {
+			showDebug("SYSTEM: No VOD streams found, skipping .strm file generation", 1)
+		}
+
+		completionChan := buildXEPG()
+		<-completionChan
+
+		updateUrlsJson()
+		createM3UFile()
+
+		showInfo("SYSTEM: Full startup workflow completed")
+
+	case "save", "update":
+		showInfo(fmt.Sprintf("SYSTEM: Running %s workflow for %s", operationType, fileType))
+
+		err := buildDatabaseDVR()
+		if err != nil {
+			ShowError(err, 0)
+			return err
+		}
+
+		if fileType == "m3u" {
+			updateUrlsJson()
+			createM3UFile()
+		}
+
+		if fileType == "xmltv" {
+			buildXEPG()
+		}
+
+		showInfo(fmt.Sprintf("SYSTEM: %s workflow for %s completed", operationType, fileType))
+
+	default:
+		return fmt.Errorf("unknown operation type: %s", operationType)
+	}
+
+	return nil
+}
+
+// Broadcast progress update to all connected WebSocket clients
+func broadcastProgressUpdate(progress ProcessingProgress) {
+	broadcastMutex.Lock()
+	defer broadcastMutex.Unlock()
+
+	connections := make([]*websocket.Conn, 0, len(wsConnections))
+	wsMutex.RLock()
+	for conn := range wsConnections {
+		connections = append(connections, conn)
+	}
+	wsMutex.RUnlock()
+
+	var deadConnections []*websocket.Conn
+
+	for _, conn := range connections {
+		progressMessage := map[string]interface{}{
+			"cmd":      "progress",
+			"progress": progress,
+		}
+
+		wsWriteMutex.Lock()
+		if conn == nil {
+			deadConnections = append(deadConnections, conn)
+		} else {
+			wsMutex.RLock()
+			_, exists := wsConnections[conn]
+			connMutex, mutexExists := connWriteMutexes[conn]
+			wsMutex.RUnlock()
+
+			if !exists || !mutexExists {
+				continue
+			}
+
+			connMutex.Lock()
+			conn.SetWriteDeadline(time.Now().Add(5 * time.Second))
+
+			if err := conn.WriteJSON(progressMessage); err != nil {
+				deadConnections = append(deadConnections, conn)
+			}
+
+			conn.SetWriteDeadline(time.Time{})
+			connMutex.Unlock()
+		}
+		wsWriteMutex.Unlock()
+	}
+
+	for _, deadConn := range deadConnections {
+		if deadConn != nil {
+			removeWSConnection(deadConn)
+		}
+	}
+}
 
 // StartWebserver : Startet den Webserver
 func StartWebserver() (err error) {
@@ -54,15 +229,17 @@ func StartWebserver() (err error) {
 	}
 	systemMutex.Unlock()
 
-	if err = http.ListenAndServe(ipAddress+":"+port, nil); err != nil {
-		ShowError(err, 1001)
-		return
-	}
+	go func() {
+		if err = http.ListenAndServe(ipAddress+":"+port, nil); err != nil {
+			ShowError(err, 1001)
+		}
+	}()
+
+	time.Sleep(100 * time.Millisecond)
 
 	return
 }
 
-// Index : Web Server /
 func Index(w http.ResponseWriter, r *http.Request) {
 	var err error
 	var response []byte
@@ -116,7 +293,6 @@ func Index(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-// Stream : Web Server /stream/
 func Stream(w http.ResponseWriter, r *http.Request) {
 	var path = strings.Replace(r.RequestURI, "/stream/", "", 1)
 	streamInfo, err := getStreamInfo(path)
@@ -126,8 +302,6 @@ func Stream(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// If an UDPxy host is set, and the stream URL is multicast (i.e. starts with 'udp://@'),
-	// then streamInfo.URL needs to be rewritten to point to UDPxy.
 	if Settings.UDPxy != "" && strings.HasPrefix(streamInfo.URL, "udp://@") {
 		streamInfo.URL = fmt.Sprintf("http://%s/udp/%s/", Settings.UDPxy, strings.TrimPrefix(streamInfo.URL, "udp://@"))
 	}
@@ -163,7 +337,7 @@ func Stream(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		defer resp.Body.Close()
-		// Copy headers from the source HEAD response to the outgoing response
+
 		for key, values := range resp.Header {
 			for _, value := range values {
 				w.Header().Add(key, value)
@@ -220,14 +394,12 @@ func Stream(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-// Auto : HDHR routing (wird derzeit nicht benutzt)
 func Auto(w http.ResponseWriter, r *http.Request) {
 	var channelID = strings.Replace(r.RequestURI, "/auto/v", "", 1)
 	fmt.Println(channelID)
 	return
 }
 
-// Threadfin : Web Server /xmltv/ und /m3u/
 func Threadfin(w http.ResponseWriter, r *http.Request) {
 
 	var requestType, groupTitle, file, content, contentType string
@@ -243,7 +415,6 @@ func Threadfin(w http.ResponseWriter, r *http.Request) {
 	}
 	systemMutex.Unlock()
 
-	// XMLTV Datei
 	if strings.Contains(path, "xmltv/") {
 
 		requestType = "xml"
@@ -267,7 +438,6 @@ func Threadfin(w http.ResponseWriter, r *http.Request) {
 
 	}
 
-	// M3U Datei
 	if strings.Contains(path, "m3u/") {
 
 		requestType = "m3u"
@@ -286,7 +456,7 @@ func Threadfin(w http.ResponseWriter, r *http.Request) {
 		systemMutex.Unlock()
 
 		queries := r.URL.Query()
-		// Check if the m3u file exists
+
 		if len(queries) == 0 {
 			if _, err := os.Stat(m3uFilePath); err == nil {
 				log.Println("Serving existing m3u file")
@@ -299,8 +469,7 @@ func Threadfin(w http.ResponseWriter, r *http.Request) {
 
 		systemMutex.Lock()
 		if !System.Dev {
-			// false: Dateiname wird im Header gesetzt
-			// true: M3U wird direkt im Browser angezeigt
+
 			w.Header().Set("Content-Disposition", "attachment; filename="+getFilenameFromPath(path))
 		}
 		systemMutex.Unlock()
@@ -328,7 +497,6 @@ func Threadfin(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// Images : Image Cache /images/
 func Images(w http.ResponseWriter, r *http.Request) {
 
 	var path = strings.TrimPrefix(r.URL.Path, "/")
@@ -350,7 +518,6 @@ func Images(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-// DataImages : Image Pfad für Logos / Bilder die hochgeladen wurden /data_images/
 func DataImages(w http.ResponseWriter, r *http.Request) {
 
 	var path = strings.TrimPrefix(r.URL.Path, "/")
@@ -372,7 +539,6 @@ func DataImages(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-// WS : Web Sockets /ws/
 func WS(w http.ResponseWriter, r *http.Request) {
 
 	var request RequestStruct
@@ -385,7 +551,7 @@ func WS(w http.ResponseWriter, r *http.Request) {
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
 		CheckOrigin: func(r *http.Request) bool {
-			// Implement any custom origin validation logic here, if needed.
+
 			return true
 		},
 	}
@@ -396,6 +562,16 @@ func WS(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Could not open websocket connection", http.StatusBadRequest)
 		return
 	}
+
+	addWSConnection(conn)
+	defer removeWSConnection(conn)
+
+	conn.SetPongHandler(func(string) error {
+		conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+		return nil
+	})
+
+	conn.SetReadDeadline(time.Now().Add(60 * time.Second))
 
 	systemMutex.Lock()
 	if Settings.HttpThreadfinDomain != "" {
@@ -413,12 +589,13 @@ func WS(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+
 		systemMutex.Lock()
 		if System.ConfigurationWizard == false {
 
 			switch Settings.AuthenticationWEB {
 
-			// Token Authentication
 			case true:
 
 				var token string
@@ -454,19 +631,33 @@ func WS(w http.ResponseWriter, r *http.Request) {
 		systemMutex.Unlock()
 
 		switch request.Cmd {
-		// Data read commands
-		case "getServerConfig":
-			// response.Config = Settings
 
-		case "updateLog":
-			response = setDefaultResponseData(response, false)
+		case "getServerConfig":
+			response.Settings = Settings
+			response.Cmd = "getServerConfig"
+
 			if err = conn.WriteJSON(response); err != nil {
 				ShowError(err, 1022)
-			} else {
 				return
-				break
 			}
-			return
+
+			continue
+
+		case "updateLog":
+			response = setDefaultResponseData(response, true)
+			response.Cmd = "updateLog"
+
+			// Progress updates come ONLY through broadcastProgressUpdate calls
+			// updateLog responses should NEVER include progress data
+			// This ensures progress is PUSH-ONLY from the backend
+
+			// Send response and continue listening
+			if err = conn.WriteJSON(response); err != nil {
+				ShowError(err, 1022)
+				return
+			}
+
+			continue
 
 		case "loadFiles":
 			// response.Response = Settings.Files
@@ -474,64 +665,71 @@ func WS(w http.ResponseWriter, r *http.Request) {
 		// Data write commands
 		case "saveSettings":
 			var authenticationUpdate = Settings.AuthenticationWEB
-			// var previousStoreBufferInRAM = Settings.StoreBufferInRAM
 			response.Settings, err = updateServerSettings(request)
 			if err == nil {
 				response.OpenMenu = strconv.Itoa(indexOfString("settings", System.WEB.Menu))
-
+				response.Alert = "Settings saved"
 				if Settings.AuthenticationWEB == true && authenticationUpdate == false {
 					response.Reload = true
 				}
-
-				// if Settings.StoreBufferInRAM != previousStoreBufferInRAM {
 				initBufferVFS()
-				// }
 			}
 
 		case "saveFilesM3U":
-			// Reset cache for urls.json
-			var filename = getPlatformFile(System.Folder.Config + "urls.json")
-			saveMapToJSONFile(filename, make(map[string]StreamInfo))
-			Data.Cache.StreamingURLS = make(map[string]StreamInfo)
-
 			err = saveFiles(request, "m3u")
 			if err == nil {
-				response.OpenMenu = strconv.Itoa(indexOfString("playlist", System.WEB.Menu))
+				response.OpenMenu = strconv.Itoa(indexOfString("m3u", System.WEB.Menu))
 			}
-			updateUrlsJson()
+
+			// Send immediate response to close modal
+			if err = conn.WriteJSON(response); err != nil {
+				ShowError(err, 1022)
+				return
+			}
+
+			// Run processing in background if save was successful
+			if err == nil {
+				go func() {
+					if processErr := processStartupWorkflow("save", "m3u"); processErr != nil {
+						ShowError(processErr, 0)
+					}
+				}()
+			}
+
+			continue
 
 		case "updateFileM3U":
-			// Reset cache for urls.json
-			var filename = getPlatformFile(System.Folder.Config + "urls.json")
-			saveMapToJSONFile(filename, make(map[string]StreamInfo))
-			Data.Cache.StreamingURLS = make(map[string]StreamInfo)
-
-			err = updateFile(request, "m3u")
-			if err == nil {
-				response.OpenMenu = strconv.Itoa(indexOfString("playlist", System.WEB.Menu))
-				// Rebuild XEPG database to ensure URLs are updated
-				err = createXEPGDatabase()
-				if err != nil {
-					ShowError(err, 000)
-					break
-				}
-				// Update URLs
-				updateUrlsJson()
-				// Create M3U file to ensure URLs are properly generated
-				createM3UFile()
+			err = processStartupWorkflow("update", "m3u")
+			if err != nil {
+				ShowError(err, 0)
+				return
 			}
+
+			continue
 
 		case "saveFilesHDHR":
-			err = saveFiles(request, "hdhr")
-			if err == nil {
-				response.OpenMenu = strconv.Itoa(indexOfString("playlist", System.WEB.Menu))
+
+			if err = conn.WriteJSON(response); err != nil {
+				ShowError(err, 1022)
+				return
 			}
 
-		case "updateFileHDHR":
-			err = updateFile(request, "hdhr")
-			if err == nil {
-				response.OpenMenu = strconv.Itoa(indexOfString("playlist", System.WEB.Menu))
+			err = processStartupWorkflow("save", "hdhr")
+			if err != nil {
+				ShowError(err, 0)
+				return
 			}
+
+			continue
+
+		case "updateFileHDHR":
+			err = processStartupWorkflow("update", "hdhr")
+			if err != nil {
+				ShowError(err, 0)
+				return
+			}
+
+			continue
 
 		case "saveFilesXMLTV":
 			err = saveFiles(request, "xmltv")
@@ -539,11 +737,25 @@ func WS(w http.ResponseWriter, r *http.Request) {
 				response.OpenMenu = strconv.Itoa(indexOfString("xmltv", System.WEB.Menu))
 			}
 
-		case "updateFileXMLTV":
-			err = updateFile(request, "xmltv")
+			// Send immediate response to close modal
 			if err == nil {
-				response.OpenMenu = strconv.Itoa(indexOfString("xmltv", System.WEB.Menu))
+				go func() {
+					if processErr := processStartupWorkflow("save", "xmltv"); processErr != nil {
+						ShowError(processErr, 0)
+					}
+				}()
 			}
+
+			continue
+
+		case "updateFileXMLTV":
+			err = processStartupWorkflow("update", "xmltv")
+			if err != nil {
+				ShowError(err, 0)
+				return
+			}
+
+			continue
 
 		case "saveFilter":
 			response.Settings, err = saveFilter(request)
@@ -667,23 +879,18 @@ func Web(w http.ResponseWriter, r *http.Request) {
 
 	var language LanguageUI
 
-	systemMutex.Lock()
 	if Settings.HttpThreadfinDomain != "" {
 		setGlobalDomain(getBaseUrl(Settings.HttpThreadfinDomain, Settings.Port))
 	} else {
 		setGlobalDomain(r.Host)
 	}
-	systemMutex.Unlock()
 
-	systemMutex.Lock()
 	if System.Dev == true {
 		lang, err = loadJSONFileToMap(fmt.Sprintf("html/lang/%s.json", Settings.Language))
-		systemMutex.Unlock()
 		if err != nil {
 			ShowError(err, 000)
 		}
 	} else {
-		systemMutex.Unlock()
 		var languageFile = "html/lang/en.json"
 
 		if value, ok := webUI[languageFile].(string); ok {
@@ -708,9 +915,6 @@ func Web(w http.ResponseWriter, r *http.Request) {
 			file = requestFile + "index.html"
 		}
 
-		if System.ScanInProgress == 1 {
-			file = requestFile + "maintenance.html"
-		}
 		authenticationWebEnabled := Settings.AuthenticationWEB
 		systemMutex.Unlock()
 
@@ -914,11 +1118,6 @@ func API(w http.ResponseWriter, r *http.Request) {
 
 	response.Status = true
 
-	if Settings.API == false {
-		httpStatusError(w, r, 423)
-		return
-	}
-
 	if r.Method == "GET" {
 		httpStatusError(w, r, 404)
 		return
@@ -1005,7 +1204,7 @@ func API(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 
-		buildXEPG(false)
+		buildXEPG()
 
 	case "update.hdhr":
 
@@ -1019,7 +1218,7 @@ func API(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 
-		buildXEPG(false)
+		buildXEPG()
 
 	case "update.xmltv":
 		err = getProviderData("xmltv", "")
@@ -1027,10 +1226,10 @@ func API(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 
-		buildXEPG(false)
+		buildXEPG()
 
 	case "update.xepg":
-		buildXEPG(false)
+		buildXEPG()
 
 	default:
 		err = errors.New(getErrMsg(5000))
@@ -1096,20 +1295,45 @@ func setDefaultResponseData(response ResponseStruct, data bool) (defaults Respon
 	// Folgende Daten immer an den Client übergeben
 	defaults.ClientInfo.ARCH = System.ARCH
 	defaults.ClientInfo.EpgSource = Settings.EpgSource
+
 	defaults.ClientInfo.DVR = System.Addresses.DVR
 	defaults.ClientInfo.M3U = System.Addresses.M3U
 	defaults.ClientInfo.XML = System.Addresses.XML
+
+	// Use configured STRM directory or fallback to default
+	if Settings.StrmDirectory != "" {
+		defaults.ClientInfo.StrmDirectory = Settings.StrmDirectory
+	} else {
+		defaults.ClientInfo.StrmDirectory = System.Folder.Data + "vod/"
+	}
+
 	defaults.ClientInfo.OS = System.OS
 	defaults.ClientInfo.Streams = fmt.Sprintf("%d / %d", len(Data.Streams.Active), len(Data.Streams.All))
 	defaults.ClientInfo.UUID = Settings.UUID
+
+	// Safely access WebScreenLog to avoid race conditions
+	logMutex.Lock()
 	defaults.ClientInfo.Errors = WebScreenLog.Errors
 	defaults.ClientInfo.Warnings = WebScreenLog.Warnings
+	logMutex.Unlock()
+
 	defaults.ClientInfo.ActiveClients = getActiveClientCount()
 	defaults.ClientInfo.ActivePlaylist = getActivePlaylistCount()
 	defaults.ClientInfo.TotalClients = Settings.Tuner
 	defaults.ClientInfo.TotalPlaylist = totalPlaylistCount
-	defaults.Notification = System.Notification
+
+	// Safely copy notification data to avoid race conditions
+	if System.Notification != nil {
+		defaults.Notification = make(map[string]Notification)
+		for k, v := range System.Notification {
+			defaults.Notification[k] = v
+		}
+	}
+
+	// Safely copy WebScreenLog to avoid race conditions
+	logMutex.Lock()
 	defaults.Log = WebScreenLog
+	logMutex.Unlock()
 
 	switch System.Branch {
 
@@ -1131,21 +1355,20 @@ func setDefaultResponseData(response ResponseStruct, data bool) (defaults Respon
 
 			defaults.ClientInfo.XEPGCount = Data.XEPG.XEPGCount
 
+			// Safely access XEPG data with mutex protection
+			xepgMutex.Lock()
 			var XEPG = make(map[string]interface{})
 
 			if len(Data.Streams.Active) > 0 {
-
 				XEPG["epgMapping"] = Data.XEPG.Channels
 				XEPG["xmltvMap"] = Data.XMLTV.Mapping
-
 			} else {
-
 				XEPG["epgMapping"] = make(map[string]interface{})
 				XEPG["xmltvMap"] = make(map[string]interface{})
-
 			}
 
 			defaults.XEPG = XEPG
+			xepgMutex.Unlock()
 
 		}
 
@@ -1190,7 +1413,7 @@ func enablePPV(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(405)
 		return
 	}
-	buildXEPG(false)
+	buildXEPG()
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
@@ -1223,7 +1446,7 @@ func disablePPV(w http.ResponseWriter, r *http.Request) {
 		response.Error = err.Error()
 		w.Write([]byte(mapToJSON(response)))
 	}
-	buildXEPG(false)
+	buildXEPG()
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)

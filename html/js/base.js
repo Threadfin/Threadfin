@@ -329,3 +329,72 @@ function setCookie(token) {
   document.cookie = "Token=" + token
 }
 
+// Check processing status for large files
+function checkProcessingStatus() {
+    var xhr = new XMLHttpRequest();
+    xhr.open("POST", "/api/", true);
+    xhr.setRequestHeader("Content-Type", "application/json");
+    
+    var data = {
+        "cmd": "startup.status"
+    };
+    
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+                try {
+                    var response = JSON.parse(xhr.responseText);
+                    if (response.startupStatus) {
+                        var status = response.startupStatus;
+                        
+                        if (status.systemProcessing || status.imageCachingInProgress) {
+                            // Show processing indicator
+                            showProcessingIndicator(status.message);
+                            
+                            // Check again in 5 seconds
+                            setTimeout(checkProcessingStatus, 5000);
+                        } else {
+                            // Processing complete, hide indicator
+                            hideProcessingIndicator();
+                        }
+                    }
+                } catch (e) {
+                    console.error("Error parsing processing status:", e);
+                }
+            }
+        }
+    };
+    
+    xhr.send(JSON.stringify(data));
+}
+
+// Show processing indicator
+function showProcessingIndicator(message) {
+    var indicator = document.getElementById("processing-indicator");
+    if (!indicator) {
+        // Create indicator if it doesn't exist
+        indicator = document.createElement("div");
+        indicator.id = "processing-indicator";
+        indicator.style.cssText = "position: fixed; top: 20px; right: 20px; background: #007bff; color: white; padding: 15px; border-radius: 5px; z-index: 9999; box-shadow: 0 2px 10px rgba(0,0,0,0.3);";
+        indicator.innerHTML = '<div style="display: flex; align-items: center;"><div style="margin-right: 10px;">🔄</div><div>' + message + '</div></div>';
+        document.body.appendChild(indicator);
+    } else {
+        // Update existing indicator
+        indicator.innerHTML = '<div style="display: flex; align-items: center;"><div style="margin-right: 10px;">🔄</div><div>' + message + '</div></div>';
+    }
+}
+
+// Hide processing indicator
+function hideProcessingIndicator() {
+    var indicator = document.getElementById("processing-indicator");
+    if (indicator) {
+        indicator.remove();
+    }
+}
+
+// Start checking processing status when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    // Check status after a short delay to allow page to load
+    setTimeout(checkProcessingStatus, 2000);
+});
+

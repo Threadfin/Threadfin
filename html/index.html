@@ -79,6 +79,8 @@
                     <input type="text" class="form-control" id="xepg-url" aria-describedby="basic-addon3" readonly>
                     <button class="input-group-text copy-btn" data-clipboard-target="#xepg-url" data-bs-title="Copy to clipboard" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="far fa-clipboard"></i></button>
                   </div>
+                  <label for="strm-directory" class="form-label">STRM Directory</label>
+                  <input type="text" class="form-control" id="strm-directory" aria-describedby="basic-addon3" readonly disabled>
                   <label for="streams" class="form-label">Filtered Channels</label>
                   <input type="text" class="form-control" id="streams" aria-describedby="basic-addon3" readonly disabled>
                   <label for="xepg" class="form-label">Mapped Channels</label>
@@ -91,6 +93,21 @@
       </div>
     </div>
   </div>
+  
+  <div class="toast-container position-fixed top-0 start-50 translate-middle-x p-3">
+    <div id="toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="toast-body" id="toast-body">
+      </div>
+    </div>
+  </div>
+
+        <style>
+        .toast.text-bg-orange {
+          background-color: #d95a42 !important;
+          color: white !important;
+        }
+      </style>
+
   <nav class="navbar navbar-expand-lg sticky-top navbar-dark bg-black">
     <div class="container-fluid">
       <a class="navbar-brand" href="/web">
@@ -109,11 +126,30 @@
           </p>
         </div>
         <ul class="navbar-nav mx-auto mb-2 mb-lg-0">
+          <li class="nav-link" id="processing-status-nav" style="display: none;">
+            <div class="d-flex align-items-center">
+              <div class="spinner-border spinner-border-sm me-2" role="status" style="width: 1rem; height: 1rem;">
+                <span class="visually-hidden">Processing...</span>
+              </div>
+              <span class="me-2">Processing</span>
+              <div class="progress me-2" style="width: 80px; height: 6px;">
+                <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                     role="progressbar" 
+                     style="width: 0%" 
+                     aria-valuenow="0" 
+                     aria-valuemin="0" 
+                     aria-valuemax="100">
+                </div>
+              </div>
+              <small class="text-light">0%</small>
+            </div>
+          </li>
           <li class="nav-link" data-bs-toggle="modal" data-bs-target="#server_information"><i class="fas fa-info-circle"></i> Server Information</li>
         </ul>
       </div>
     </div>
   </nav>
+  
   <div class="container-flex">
       <div class="row">
         <div class="col-md-12 col-sm-12">

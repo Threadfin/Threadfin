@@ -42,13 +42,13 @@ var GitHub = GitHubStruct{Branch: "Main", User: "Threadfin", Repo: "Threadfin", 
 const Name = "Threadfin"
 
 // Version : Version, die Build Nummer wird in der main func geparst.
-const Version = "1.2.36"
+const Version = "1.3.0"
 
 // DBVersion : Datanbank Version
 const DBVersion = "0.5.0"
 
 // APIVersion : API Version
-const APIVersion = "1.2.36"
+const APIVersion = "1.3.0"
 
 var homeDirectory = fmt.Sprintf("%s%s.%s%s", src.GetUserHomeDirectory(), string(os.PathSeparator), strings.ToLower(Name), string(os.PathSeparator))
 var samplePath = fmt.Sprintf("%spath%sto%sthreadfin%s", string(os.PathSeparator), string(os.PathSeparator), string(os.PathSeparator), string(os.PathSeparator))
@@ -200,23 +200,37 @@ func main() {
 		src.ShowError(err, 0)
 	}
 
-	err = src.StartSystem(false)
-	if err != nil {
-		src.ShowError(err, 0)
-		os.Exit(0)
-	}
+	fmt.Println("Starting Threadfin...")
+	fmt.Println("Web interface will be available immediately while system processing happens in background...")
 
-	err = src.InitMaintenance()
-	if err != nil {
-		src.ShowError(err, 0)
-		os.Exit(0)
-	}
-
+	// Start webserver immediately so users can access the interface
 	err = src.StartWebserver()
 	if err != nil {
 		src.ShowError(err, 0)
 		os.Exit(0)
 	}
+
+	fmt.Println("Web interface is now available!")
+	fmt.Println("System processing (M3U/XML files) is running in background...")
+
+	// Initialize maintenance in background - DISABLED
+	// err = src.InitMaintenance()
+	// if err != nil {
+	// 	src.ShowError(err, 0)
+	// }
+
+	// Start system processing in background (this handles large M3U/XML files)
+	go func() {
+		fmt.Println("Starting background system processing...")
+		err := src.StartSystem(false)
+		if err != nil {
+			src.ShowError(err, 0)
+		}
+		fmt.Println("Background system processing completed!")
+	}()
+
+	// Keep main thread alive for the webserver
+	select {}
 
 }
 

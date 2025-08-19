@@ -11,9 +11,18 @@ import (
 	"strings"
 	"time"
 
+	"regexp"
 	"threadfin/src/internal/authentication"
 	"threadfin/src/internal/imgcache"
 )
+
+// min returns the smaller of two integers
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
 
 // Einstellungen ändern (WebUI)
 func updateServerSettings(request RequestStruct) (settings SettingsStruct, err error) {
@@ -199,7 +208,7 @@ func updateServerSettings(request RequestStruct) (settings SettingsStruct, err e
 				return
 			}
 
-			buildXEPG(false)
+			buildXEPG()
 
 		}
 
@@ -232,7 +241,7 @@ func updateServerSettings(request RequestStruct) (settings SettingsStruct, err e
 
 						System.ImageCachingInProgress = 0
 
-						buildXEPG(false)
+						buildXEPG()
 
 					}()
 
@@ -352,7 +361,7 @@ func saveFiles(request RequestStruct, fileType string) (err error) {
 				return err
 			}
 
-			buildXEPG(false)
+			buildXEPG()
 
 		}
 
@@ -385,7 +394,7 @@ func updateFile(request RequestStruct, fileType string) (err error) {
 		err = getProviderData(fileType, dataID)
 		if err == nil {
 			err = buildDatabaseDVR()
-			buildXEPG(false)
+			buildXEPG()
 		}
 
 	}
@@ -498,7 +507,7 @@ func saveFilter(request RequestStruct) (settings SettingsStruct, err error) {
 		return
 	}
 
-	buildXEPG(false)
+	buildXEPG()
 
 	return
 }
@@ -527,43 +536,8 @@ func saveXEpgMapping(request RequestStruct) (err error) {
 
 	Data.XEPG.Channels = request.EpgMapping
 
-	if System.ScanInProgress == 0 {
-
-		System.ScanInProgress = 1
-		cleanupXEPG()
-		System.ScanInProgress = 0
-		buildXEPG(true)
-
-	} else {
-
-		// Wenn während des erstellen der Datanbank das Mapping erneut gespeichert wird, wird die Datenbank erst später erneut aktualisiert.
-		go func() {
-
-			if System.BackgroundProcess == true {
-				return
-			}
-
-			System.BackgroundProcess = true
-
-			for {
-				time.Sleep(time.Duration(1) * time.Second)
-				if System.ScanInProgress == 0 {
-					break
-				}
-
-			}
-
-			System.ScanInProgress = 1
-			cleanupXEPG()
-			System.ScanInProgress = 0
-			buildXEPG(false)
-			showInfo("XEPG:" + fmt.Sprintf("Ready to use"))
-
-			System.BackgroundProcess = false
-
-		}()
-
-	}
+	cleanupXEPG()
+	buildXEPG()
 
 	return
 }
@@ -728,8 +702,7 @@ func saveWizard(request RequestStruct) (nextStep int, err error) {
 
 				}
 
-				buildXEPG(false)
-				System.ScanInProgress = 0
+				buildXEPG()
 
 			}
 
@@ -796,7 +769,8 @@ func createFilterRules() (err error) {
 // Datenbank für das DVR System erstellen
 func buildDatabaseDVR() (err error) {
 
-	System.ScanInProgress = 1
+	// Don't send progress updates here - they're handled by the calling function
+	// This prevents conflicts with the main progress tracking
 
 	Data.Streams.All = make([]interface{}, 0, System.UnfilteredChannelLimit)
 	Data.Streams.Active = make([]interface{}, 0, System.UnfilteredChannelLimit)
@@ -815,6 +789,27 @@ func buildDatabaseDVR() (err error) {
 		return
 	}
 
+	// Calculate total channels for progress tracking
+	totalChannels := 0
+	for _, fileType := range availableFileTypes {
+		playlistFile := getLocalProviderFiles(fileType)
+		for _, i := range playlistFile {
+			channels, _ := parsePlaylist(i, fileType)
+			totalChannels += len(channels)
+		}
+	}
+
+	// Reset for actual processing
+	Data.Streams.All = make([]interface{}, 0, System.UnfilteredChannelLimit)
+	Data.Streams.Active = make([]interface{}, 0, System.UnfilteredChannelLimit)
+	Data.Streams.Inactive = make([]interface{}, 0, System.UnfilteredChannelLimit)
+	Data.Playlist.M3U.Groups.Text = []string{}
+	Data.Playlist.M3U.Groups.Value = []string{}
+	Data.StreamPreviewUI.Active = []string{}
+	Data.StreamPreviewUI.Inactive = []string{}
+
+	processedChannels := 0
+
 	for _, fileType := range availableFileTypes {
 
 		var playlistFile = getLocalProviderFiles(fileType)
@@ -828,6 +823,15 @@ func buildDatabaseDVR() (err error) {
 
 			var id = strings.TrimSuffix(getFilenameFromPath(i), path.Ext(getFilenameFromPath(i)))
 			var playlistName = getProviderParameter(id, fileType, "name")
+
+			// Check file size for progress reporting
+			fileInfo, err := os.Stat(i)
+			if err == nil {
+				fileSizeMB := float64(fileInfo.Size()) / (1024 * 1024)
+				if fileSizeMB > 50 {
+					showInfo(fmt.Sprintf("DVR: Large %s file detected (%.1f MB), this may take a while...", fileType, fileSizeMB))
+				}
+			}
 
 			switch fileType {
 
@@ -845,12 +849,87 @@ func buildDatabaseDVR() (err error) {
 				playlistFile = append(playlistFile[:n], playlistFile[n+1:]...)
 			}
 
+			// Progress reporting for large playlists
+			playlistChannels := len(channels)
+			if playlistChannels > 1000 {
+				showDebug(fmt.Sprintf("DVR: Processing %d channels from %s", playlistChannels, playlistName), 1)
+			}
+
 			// Streams analysieren
-			for _, stream := range channels {
+			for j, stream := range channels {
+				// Progress reporting for large playlists
+				if playlistChannels > 1000 && j%1000 == 0 {
+					showDebug(fmt.Sprintf("DVR: Processed %d/%d channels from %s", j, playlistChannels, playlistName), 1)
+				}
+
+				// Send WebSocket progress updates every 5000 channels for real-time feedback
+				if processedChannels%5000 == 0 && totalChannels > 0 {
+					progressPercent := 15 + int(float64(processedChannels)/float64(totalChannels)*20) // 15% to 35%
+					broadcastProgressUpdate(ProcessingProgress{
+						Percentage:   progressPercent,
+						Current:      processedChannels,
+						Total:        totalChannels,
+						Operation:    fmt.Sprintf("Building DVR Database - Processing %s (%d/%d)", playlistName, processedChannels, totalChannels),
+						IsProcessing: true,
+					})
+				}
+
 				var s = stream.(map[string]string)
 				s["_file.m3u.path"] = i
 				s["_file.m3u.name"] = playlistName
 				s["_file.m3u.id"] = id
+
+				// Detect VOD content (episode patterns like "S01 E01", "S1E1", etc.)
+				if name, ok := s["name"]; ok {
+					// Clean the name if it contains URLs or is suspiciously long
+					if len(name) > 100 || strings.Contains(name, "https___") || strings.Contains(name, "http___") {
+						showDebug(fmt.Sprintf("buildDatabaseDVR: Truncating long stream name: %s", name[:min(100, len(name))]+"..."), 1)
+						// Remove URLs and truncate
+						if idx := strings.Index(name, "https___"); idx != -1 {
+							name = name[:idx]
+						} else if idx := strings.Index(name, "http___"); idx != -1 {
+							name = name[:idx]
+						}
+						// Truncate if still too long
+						if len(name) > 100 {
+							name = name[:100]
+							// Try to truncate at word boundary
+							if lastSpace := strings.LastIndex(name, " "); lastSpace > 50 {
+								name = name[:lastSpace]
+							}
+						}
+						s["name"] = strings.TrimSpace(name)
+					}
+
+					// Check for various episode patterns
+					vodPatterns := []string{
+						"S\\d{1,2}\\s*E\\d{1,2}",                    // S01 E01, S1E1, S10 E10, etc.
+						"Season\\s*\\d{1,2}\\s*Episode\\s*\\d{1,2}", // Season 1 Episode 1
+						"\\d{1,2}x\\d{1,2}",                         // 1x01, 10x10, etc.
+						"Episode\\s*\\d{1,2}",                       // Episode 1, Episode 10, etc.
+					}
+
+					isVOD := false
+					for _, pattern := range vodPatterns {
+						matched, _ := regexp.MatchString(pattern, name)
+						if matched {
+							isVOD = true
+							break
+						}
+					}
+
+					if isVOD {
+						s["_is_vod"] = "true"
+						s["_vod_type"] = "episode"
+
+						// Extract season and episode numbers if possible
+						if seasonEpisode := extractSeasonEpisode(name); seasonEpisode != "" {
+							s["_season_episode"] = seasonEpisode
+						}
+					} else {
+						s["_is_vod"] = "false"
+					}
+				}
 
 				// Kompatibilität berechnen
 				for _, key := range keys {
@@ -925,6 +1004,12 @@ func buildDatabaseDVR() (err error) {
 
 				}
 
+				// Increment processed channels counter
+				processedChannels++
+			}
+
+			if playlistChannels > 1000 {
+				showDebug(fmt.Sprintf("DVR: Completed processing %d channels from %s", playlistChannels, playlistName), 1)
 			}
 
 			if tvgID == 0 {
@@ -945,14 +1030,15 @@ func buildDatabaseDVR() (err error) {
 				compatibility["stream.id"] = int(uuid * 100 / len(channels))
 			}
 
-			compatibility["streams"] = len(channels)
-
 			setProviderCompatibility(id, fileType, compatibility)
 
 		}
 
 	}
 
+	showDebug(fmt.Sprintf("DVR: Database created with %d active and %d inactive streams", len(Data.Streams.Active), len(Data.Streams.Inactive)), 1)
+
+	// Process groups
 	for group, count := range tmpGroupsM3U {
 		var text = fmt.Sprintf("%s (%d)", group, count)
 		var value = fmt.Sprintf("%s", group)
@@ -963,15 +1049,16 @@ func buildDatabaseDVR() (err error) {
 	sort.Strings(Data.Playlist.M3U.Groups.Text)
 	sort.Strings(Data.Playlist.M3U.Groups.Value)
 
+	// Handle case where no filters are set
 	if len(Data.Streams.Active) == 0 && len(Data.Streams.All) <= System.UnfilteredChannelLimit && len(Settings.Filter) == 0 {
 		Data.Streams.Active = Data.Streams.All
 		Data.Streams.Inactive = make([]interface{}, 0)
 
 		Data.StreamPreviewUI.Active = Data.StreamPreviewUI.Inactive
 		Data.StreamPreviewUI.Inactive = []string{}
-
 	}
 
+	// Check channel limits
 	if len(Data.Streams.Active) > System.PlexChannelLimit {
 		showWarning(2000)
 	}
@@ -980,13 +1067,22 @@ func buildDatabaseDVR() (err error) {
 		showWarning(2001)
 	}
 
-	System.ScanInProgress = 0
-	showInfo(fmt.Sprintf("All streams:%d", len(Data.Streams.All)))
-	showInfo(fmt.Sprintf("Active streams:%d", len(Data.Streams.Active)))
-	showInfo(fmt.Sprintf("Filter:%d", len(Data.Filter)))
-
+	// Sort preview lists
 	sort.Strings(Data.StreamPreviewUI.Active)
 	sort.Strings(Data.StreamPreviewUI.Inactive)
+
+	showDebug(fmt.Sprintf("All streams:%d", len(Data.Streams.All)), 1)
+	showDebug(fmt.Sprintf("Active streams:%d", len(Data.Streams.Active)), 1)
+	showDebug(fmt.Sprintf("Filter:%d", len(Data.Filter)), 1)
+
+	// Send final progress update for DVR processing completion
+	broadcastProgressUpdate(ProcessingProgress{
+		Percentage:   35,
+		Current:      processedChannels,
+		Total:        processedChannels,
+		Operation:    fmt.Sprintf("Building DVR Database - Complete (%d streams processed)", processedChannels),
+		IsProcessing: true,
+	})
 
 	return
 }
@@ -1084,4 +1180,205 @@ func setProviderCompatibility(id, fileType string, compatibility map[string]int)
 
 	}
 
+}
+
+// extractSeasonEpisode extracts season and episode information from VOD titles
+func extractSeasonEpisode(title string) string {
+	// Try various patterns to extract season and episode
+	patterns := []struct {
+		regex  *regexp.Regexp
+		format string
+	}{
+		{regexp.MustCompile(`S(\d{1,2})\s*E(\d{1,2})`), "S%02dE%02d"},                  // S01 E01, S1E1
+		{regexp.MustCompile(`Season\s*(\d{1,2})\s*Episode\s*(\d{1,2})`), "S%02dE%02d"}, // Season 1 Episode 1
+		{regexp.MustCompile(`(\d{1,2})x(\d{1,2})`), "S%02dE%02d"},                      // 1x01, 10x10
+		{regexp.MustCompile(`Episode\s*(\d{1,2})`), "E%02d"},                           // Episode 1
+	}
+
+	for _, pattern := range patterns {
+		matches := pattern.regex.FindStringSubmatch(title)
+		if len(matches) >= 3 { // Has season and episode
+			season, _ := strconv.Atoi(matches[1])
+			episode, _ := strconv.Atoi(matches[2])
+			return fmt.Sprintf(pattern.format, season, episode)
+		} else if len(matches) == 2 { // Has only episode
+			episode, _ := strconv.Atoi(matches[1])
+			return fmt.Sprintf("E%02d", episode)
+		}
+	}
+
+	return ""
+}
+
+// generateStrmFiles creates .strm files for VOD content
+func generateStrmFiles() error {
+	// Prevent concurrent .strm generation when webserver is handling updates
+	if webserverXEPGInProgress {
+		showInfo("generateStrmFiles: Skipping - webserver is handling updates")
+		return nil
+	}
+
+	showDebug("generateStrmFiles: Starting .strm file generation", 1)
+
+	// Use configured STRM directory or fallback to default
+	vodDir := Settings.StrmDirectory
+	if vodDir == "" {
+		vodDir = System.Folder.Data + "vod"
+	}
+	showDebug(fmt.Sprintf("generateStrmFiles: VOD directory path: %s", vodDir), 1)
+
+	if err := os.MkdirAll(vodDir, 0755); err != nil {
+		showDebug(fmt.Sprintf("generateStrmFiles: Failed to create VOD directory: %v", err), 1)
+		return fmt.Errorf("failed to create VOD directory: %v", err)
+	}
+
+	// Clear existing .strm files before generating new ones
+	showDebug("generateStrmFiles: Clearing existing .strm files", 1)
+	if err := removeChildItems(vodDir); err != nil {
+		showDebug(fmt.Sprintf("generateStrmFiles: Warning - failed to clear VOD directory: %v", err), 1)
+		// Don't return on error, continue with generation
+	} else {
+		showDebug("generateStrmFiles: VOD directory cleared successfully", 1)
+	}
+
+	showDebug(fmt.Sprintf("generateStrmFiles: VOD directory created/verified: %s", vodDir), 1)
+
+	vodCount := 0
+	totalStreams := len(Data.Streams.Active)
+	showDebug(fmt.Sprintf("generateStrmFiles: Processing %d total streams for VOD content", totalStreams), 1)
+
+	// Count total VOD streams first for progress calculation
+	totalVODStreams := 0
+	for _, stream := range Data.Streams.Active {
+		if s, ok := stream.(map[string]string); ok {
+			if isVOD, exists := s["_is_vod"]; exists && isVOD == "true" {
+				totalVODStreams++
+			}
+		}
+	}
+
+	showDebug(fmt.Sprintf("generateStrmFiles: Found %d VOD streams to process", totalVODStreams), 1)
+
+	for _, stream := range Data.Streams.Active {
+		if s, ok := stream.(map[string]string); ok {
+			if isVOD, exists := s["_is_vod"]; exists && isVOD == "true" {
+				// Found VOD stream, generating .strm file
+				// Generate .strm file for this VOD content
+				if err := createStrmFile(s, vodDir); err != nil {
+					showDebug(fmt.Sprintf("generateStrmFiles: Failed to create .strm file for %s: %v", s["name"], err), 1)
+					ShowError(err, 0)
+					continue
+				}
+				vodCount++
+
+				// Send progress updates every 100 VOD streams processed
+				if vodCount%100 == 0 && totalVODStreams > 0 {
+					progressPercent := 35 + int(float64(vodCount)/float64(totalVODStreams)*25) // 35% to 60%
+					broadcastProgressUpdate(ProcessingProgress{
+						Percentage:   progressPercent,
+						Current:      vodCount,
+						Total:        totalVODStreams,
+						Operation:    fmt.Sprintf("Generating .strm files (%d/%d)", vodCount, totalVODStreams),
+						IsProcessing: true,
+					})
+				}
+			}
+		}
+	}
+
+	showDebug(fmt.Sprintf("generateStrmFiles: Completed. Generated %d .strm files for VOD content", vodCount), 1)
+	return nil
+}
+
+// createStrmFile creates a single .strm file for VOD content
+func createStrmFile(stream map[string]string, vodDir string) error {
+	name, ok := stream["name"]
+	if !ok {
+		return fmt.Errorf("stream missing name")
+	}
+
+	url, ok := stream["url"]
+	if !ok {
+		return fmt.Errorf("stream missing URL")
+	}
+
+	// Log original name for debugging if it's suspiciously long
+	if len(name) > 100 {
+		showDebug(fmt.Sprintf("createStrmFile: Long stream name detected (%d chars): %s", len(name), name[:100]+"..."), 1)
+	}
+
+	// Clean filename for filesystem
+	cleanName := cleanFileName(name)
+
+	// Add season/episode info if available
+	if seasonEpisode, exists := stream["_season_episode"]; exists && seasonEpisode != "" {
+		cleanName = cleanName + " " + seasonEpisode
+	}
+
+	// Final safety check - ensure filename is not too long
+	maxFilenameLength := 200 // Conservative limit for most filesystems
+	if len(cleanName) > maxFilenameLength {
+		showDebug(fmt.Sprintf("createStrmFile: Truncating filename from %d to %d characters", len(cleanName), maxFilenameLength), 1)
+		cleanName = cleanName[:maxFilenameLength]
+		// Try to truncate at a word boundary
+		if lastSpace := strings.LastIndex(cleanName, " "); lastSpace > maxFilenameLength/2 {
+			cleanName = cleanName[:lastSpace]
+		}
+	}
+
+	// Create .strm file
+	strmPath := vodDir + string(os.PathSeparator) + cleanName + ".strm"
+
+	// Write URL to .strm file
+	file, err := os.Create(strmPath)
+	if err != nil {
+		return fmt.Errorf("failed to create .strm file: %v", err)
+	}
+	defer file.Close()
+
+	_, err = file.WriteString(url)
+	if err != nil {
+		return fmt.Errorf("failed to write URL to .strm file: %v", err)
+	}
+
+	return nil
+}
+
+// cleanFileName removes invalid characters for filesystem and truncates long names
+func cleanFileName(name string) string {
+	// Replace invalid filesystem characters
+	invalidChars := []string{"/", "\\", ":", "*", "?", "\"", "<", ">", "|"}
+	cleanName := name
+
+	for _, char := range invalidChars {
+		cleanName = strings.ReplaceAll(cleanName, char, "_")
+	}
+
+	// Remove or replace other problematic characters
+	cleanName = strings.ReplaceAll(cleanName, "&", "and")
+	cleanName = strings.ReplaceAll(cleanName, "'", "")
+	cleanName = strings.ReplaceAll(cleanName, "`", "")
+
+	// Remove URLs that might have been concatenated with the name
+	// Look for patterns like "https___" or "http___" and remove everything after
+	if idx := strings.Index(cleanName, "https___"); idx != -1 {
+		cleanName = cleanName[:idx]
+	} else if idx := strings.Index(cleanName, "http___"); idx != -1 {
+		cleanName = cleanName[:idx]
+	}
+
+	// Trim whitespace
+	cleanName = strings.TrimSpace(cleanName)
+
+	// Truncate filename if it's still too long (max 100 characters to be safe)
+	maxLength := 100
+	if len(cleanName) > maxLength {
+		cleanName = cleanName[:maxLength]
+		// Try to truncate at a word boundary
+		if lastSpace := strings.LastIndex(cleanName, " "); lastSpace > maxLength/2 {
+			cleanName = cleanName[:lastSpace]
+		}
+	}
+
+	return cleanName
 }

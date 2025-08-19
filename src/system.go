@@ -103,7 +103,7 @@ func updateUrlsJson() {
 		return
 	}
 
-	buildXEPG(false)
+	buildXEPG()
 }
 
 // Einstellungen laden und default Werte setzen (Threadfin)
@@ -134,7 +134,7 @@ func loadSettings() (settings SettingsStruct, err error) {
 	defaults["buffer.size.kb"] = 1024
 	defaults["buffer.timeout"] = 500
 	defaults["cache.images"] = false
-	defaults["epgSource"] = "PMS"
+	defaults["epgSource"] = "XEPG"
 	defaults["ffmpeg.options"] = System.FFmpeg.DefaultOptions
 	defaults["vlc.options"] = System.VLC.DefaultOptions
 	defaults["files"] = dataMap
@@ -168,6 +168,7 @@ func loadSettings() (settings SettingsStruct, err error) {
 		defaults["ThreadfinAutoUpdate"] = false
 	}
 	defaults["temp.path"] = System.Folder.Temp
+	defaults["strm.directory"] = System.Folder.Data + "vod"
 
 	// Default Werte setzen
 	for key, value := range defaults {

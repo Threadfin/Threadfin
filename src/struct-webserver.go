@@ -88,6 +88,7 @@ type RequestStruct struct {
 
 // ResponseStruct : Antworten an den Client (WEB)
 type ResponseStruct struct {
+	Cmd        string `json:"cmd,omitempty"`
 	ClientInfo struct {
 		ARCH           string `json:"arch"`
 		Branch         string `json:"branch,omitempty"`
@@ -106,6 +107,7 @@ type ResponseStruct struct {
 		Warnings       int    `json:"warnings"`
 		XEPGCount      int64  `json:"xepg"`
 		XML            string `json:"xepg-url,required"`
+		StrmDirectory  string `json:"strm-directory,omitempty"`
 	} `json:"clientInfo,omitempty"`
 
 	Data struct {
@@ -147,6 +149,15 @@ type ProbeInfoStruct struct {
 	Resolution   string `json:"resolution,omitempty"`
 	FrameRate    string `json:"frameRate,omitempty"`
 	AudioChannel string `json:"audioChannel,omitempty"`
+}
+
+// ProcessingProgress : Progress information for background operations
+type ProcessingProgress struct {
+	Percentage   int    `json:"percentage"`
+	Current      int    `json:"current"`
+	Total        int    `json:"total"`
+	Operation    string `json:"operation"`
+	IsProcessing bool   `json:"isProcessing"`
 }
 
 // APIRequestStruct : Anfrage über die API Schnittstelle

@@ -242,10 +242,6 @@ func StartSystem(updateProviderFiles bool) (err error) {
 
 	setDeviceID()
 
-	if System.ScanInProgress == 1 {
-		return
-	}
-
 	// Systeminformationen in der Konsole ausgeben
 	showInfo(fmt.Sprintf("UUID:%s", Settings.UUID))
 	showInfo(fmt.Sprintf("Tuner (Plex / Emby):%d", Settings.Tuner))
@@ -270,13 +266,13 @@ func StartSystem(updateProviderFiles bool) (err error) {
 
 	}
 
-	err = buildDatabaseDVR()
+	// Use the centralized function that contains the exact startup workflow
+	// This will process all files that need to be saved/updated during startup
+	err = processStartupWorkflow("startup", "")
 	if err != nil {
 		ShowError(err, 0)
 		return
 	}
-
-	buildXEPG(true)
 
 	return
 }
