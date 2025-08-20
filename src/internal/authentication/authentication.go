@@ -136,6 +136,7 @@ func Init(databasePath string, validity int) (err error) {
 		defaults["dbVersion"] = "1.0"
 		defaults["hash"] = "sha256"
 		defaults["users"] = make(map[string]interface{})
+		defaults["tokens"] = make(map[string]interface{})
 
 		if saveDatabase(defaults) != nil {
 			return
@@ -144,6 +145,9 @@ func Init(databasePath string, validity int) (err error) {
 
 	// Loading the database
 	err = loadDatabase()
+
+	// Load persisted tokens
+	loadTokens()
 
 	// Set Token Validity
 	tokenValidity = validity
@@ -260,6 +264,8 @@ func CheckTheValidityOfTheToken(token string) (newToken string, err error) {
 		var userID = v.(map[string]interface{})["id"].(string)
 
 		if expires.Sub(time.Now().Local()) < 0 {
+			delete(tokens, token)
+			saveTokens()
 			return
 		}
 
@@ -570,6 +576,7 @@ loopToken:
 	tmp["expires"] = time.Now().Local().Add(time.Minute * time.Duration(tokenValidity))
 
 	tokens[newToken] = tmp
+	saveTokens()
 
 	return
 }
@@ -580,6 +587,41 @@ func mapToJSON(tmpMap interface{}) string {
 		return "{}"
 	}
 	return string(jsonString)
+}
+
+func loadTokens() {
+	if tokensData, ok := data["tokens"].(map[string]interface{}); ok {
+		for tokenStr, tokenData := range tokensData {
+			if tokenMap, ok := tokenData.(map[string]interface{}); ok {
+				if expiresStr, ok := tokenMap["expires"].(string); ok {
+					if expires, err := time.Parse(time.RFC3339, expiresStr); err == nil {
+						if expires.Sub(time.Now().Local()) > 0 {
+							tokenMap["expires"] = expires
+							tokens[tokenStr] = tokenMap
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+func saveTokens() {
+	if data["tokens"] == nil {
+		data["tokens"] = make(map[string]interface{})
+	}
+	tokenData := data["tokens"].(map[string]interface{})
+	for tokenStr, tokenInfo := range tokens {
+		if tokenMap, ok := tokenInfo.(map[string]interface{}); ok {
+			if expires, ok := tokenMap["expires"].(time.Time); ok {
+				tokenMapCopy := make(map[string]interface{})
+				tokenMapCopy["id"] = tokenMap["id"]
+				tokenMapCopy["expires"] = expires.Format(time.RFC3339)
+				tokenData[tokenStr] = tokenMapCopy
+			}
+		}
+	}
+	saveDatabase(data)
 }
 
 // SetCookieToken : set cookie
