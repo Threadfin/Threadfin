@@ -598,31 +598,35 @@ func WS(w http.ResponseWriter, r *http.Request) {
 
 			case true:
 
-				var token string
-				tokens, ok := r.URL.Query()["Token"]
+				allUserData, _ := authentication.GetAllUserData()
+				if len(allUserData) > 0 {
 
-				if !ok || len(tokens[0]) < 1 {
-					token = "-"
-				} else {
-					token = tokens[0]
-				}
+					var token string
+					tokens, ok := r.URL.Query()["Token"]
 
-				newToken, err = tokenAuthentication(token)
-				if err != nil {
-					response.Status = false
-					response.Reload = true
-					response.Error = err.Error()
-					request.Cmd = "-"
-
-					if err = conn.WriteJSON(response); err != nil {
-						ShowError(err, 1102)
+					if !ok || len(tokens[0]) < 1 {
+						token = "-"
+					} else {
+						token = tokens[0]
 					}
 
-					systemMutex.Unlock()
-					return
-				}
+					newToken, err = tokenAuthentication(token)
+					if err != nil {
+						response.Status = false
+						response.Reload = true
+						response.Error = err.Error()
+						request.Cmd = "-"
 
-				response.Token = newToken
+						if err = conn.WriteJSON(response); err != nil {
+							ShowError(err, 1102)
+						}
+
+						systemMutex.Unlock()
+						return
+					}
+
+					response.Token = newToken
+				}
 				response.Users, _ = authentication.GetAllUserData()
 
 			}
@@ -934,10 +938,15 @@ func Web(w http.ResponseWriter, r *http.Request) {
 
 		if authenticationWebEnabled == true {
 			var username, password, confirm string
+			allUserData, err := authentication.GetAllUserData()
+			if err != nil {
+				ShowError(err, 000)
+				httpStatusError(w, r, 403)
+				return
+			}
+
 			switch r.Method {
 			case "POST":
-				var allUserData, _ = authentication.GetAllUserData()
-
 				username = r.FormValue("username")
 				password = r.FormValue("password")
 
@@ -982,6 +991,12 @@ func Web(w http.ResponseWriter, r *http.Request) {
 
 			case "GET":
 				lang["authenticationErr"] = ""
+				
+				if len(allUserData) == 0 {
+					file = requestFile + "create-first-user.html"
+					break
+				}
+
 				_, token, err := authentication.CheckTheValidityOfTheTokenFromHTTPHeader(w, r)
 
 				if err != nil {
@@ -996,19 +1011,6 @@ func Web(w http.ResponseWriter, r *http.Request) {
 				}
 
 			}
-
-			allUserData, err := authentication.GetAllUserData()
-			if err != nil {
-				ShowError(err, 000)
-				httpStatusError(w, r, 403)
-				return
-			}
-
-			systemMutex.Lock()
-			if len(allUserData) == 0 && Settings.AuthenticationWEB == true {
-				file = requestFile + "create-first-user.html"
-			}
-			systemMutex.Unlock()
 		}
 
 		requestFile = file

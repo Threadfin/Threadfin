@@ -590,6 +590,10 @@ func mapToJSON(tmpMap interface{}) string {
 }
 
 func loadTokens() {
+	if data["tokens"] == nil {
+		data["tokens"] = make(map[string]interface{})
+		return
+	}
 	if tokensData, ok := data["tokens"].(map[string]interface{}); ok {
 		for tokenStr, tokenData := range tokensData {
 			if tokenMap, ok := tokenData.(map[string]interface{}); ok {
@@ -611,6 +615,11 @@ func saveTokens() {
 		data["tokens"] = make(map[string]interface{})
 	}
 	tokenData := data["tokens"].(map[string]interface{})
+	
+	for k := range tokenData {
+		delete(tokenData, k)
+	}
+	
 	for tokenStr, tokenInfo := range tokens {
 		if tokenMap, ok := tokenInfo.(map[string]interface{}); ok {
 			if expires, ok := tokenMap["expires"].(time.Time); ok {
