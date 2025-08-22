@@ -92,7 +92,7 @@ jobs:
           file: ./Dockerfile
           push: true
           platforms: linux/amd64,linux/arm64,linux/arm/v7
-          tags: n0pad/threadfin:latest,n0pad/threadfin:${{ github.ref_name }}
+          tags: classifed200/threadfin:latest,classifed200/threadfin:${{ github.ref_name }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
