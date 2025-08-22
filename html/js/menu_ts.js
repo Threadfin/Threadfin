@@ -110,72 +110,113 @@ class Content {
         return element;
     }
     createTableContent(menuKey) {
+        var _a;
         var data = new Object();
         var rows = new Array();
         switch (menuKey) {
-            case "playlist":
-                var fileTypes = new Array("m3u", "hdhr");
-                fileTypes.forEach(fileType => {
-                    data = SERVER["settings"]["files"][fileType];
-                    var keys = getObjKeys(data);
-                    keys.forEach(key => {
-                        var tr = document.createElement("TR");
+            case "playlist": {
+                const fileTypes = ["m3u", "hdhr"];
+                // Treat the global as 'any' to access nested props safely
+                const settings = ((_a = SERVER === null || SERVER === void 0 ? void 0 : SERVER.settings) !== null && _a !== void 0 ? _a : {});
+                fileTypes.forEach((fileType) => {
+                    var _a, _b;
+                    const data = ((_b = (_a = settings.files) === null || _a === void 0 ? void 0 : _a[fileType]) !== null && _b !== void 0 ? _b : {});
+                    const keys = Object.keys(data);
+                    keys.forEach((key) => {
+                        var _a, _b, _c, _d, _e, _f;
+                        const f = ((_a = data[key]) !== null && _a !== void 0 ? _a : {});
+                        const comp = ((_b = f["compatibility"]) !== null && _b !== void 0 ? _b : {});
+                        const tr = document.createElement("TR");
                         tr.id = key;
-                        tr.setAttribute('onclick', 'javascript: openPopUp("' + fileType + '", this)');
-                        var cell = new Cell();
-                        cell.child = true;
-                        cell.childType = "P";
-                        cell.value = data[key]["name"];
-                        tr.appendChild(cell.createCell());
-                        var cell = new Cell();
-                        cell.child = true;
-                        cell.childType = "P";
-                        if (SERVER["settings"]["buffer"] != "-") {
-                            cell.value = data[key]["tuner"];
+                        tr.setAttribute("onclick", `javascript: openPopUp("${fileType}", this)`);
+                        const numOrDash = (v) => typeof v === "number" && Number.isFinite(v) && v >= 0 ? v : "-";
+                        const textOrDash = (v) => v === undefined || v === null || v === "" ? "-" : v;
+                        // Playlist
+                        {
+                            const cell = new Cell();
+                            cell.child = true;
+                            cell.childType = "P";
+                            cell.value = textOrDash(f["name"]);
+                            tr.appendChild(cell.createCell());
                         }
-                        else {
-                            cell.value = "-";
+                        // Tuner (respect buffer == "-")
+                        {
+                            const cell = new Cell();
+                            cell.child = true;
+                            cell.childType = "P";
+                            const f = data[key] || {};
+                            // prefer per-playlist tuner; fall back to global if you want
+                            const raw = ((_e = (_c = f.tuner) !== null && _c !== void 0 ? _c : (_d = SERVER === null || SERVER === void 0 ? void 0 : SERVER.settings) === null || _d === void 0 ? void 0 : _d.tuner) !== null && _e !== void 0 ? _e : null);
+                            let n = null;
+                            if (typeof raw === "number" && Number.isFinite(raw))
+                                n = raw;
+                            else if (typeof raw === "string" && raw.trim() !== "" && !Number.isNaN(+raw))
+                                n = +raw;
+                            cell.value = n !== null ? String(n) : "-";
+                            tr.appendChild(cell.createCell());
                         }
-                        tr.appendChild(cell.createCell());
-                        var cell = new Cell();
-                        cell.child = true;
-                        cell.childType = "P";
-                        cell.value = data[key]["last.update"];
-                        tr.appendChild(cell.createCell());
-                        var cell = new Cell();
-                        cell.child = true;
-                        cell.childType = "P";
-                        cell.value = data[key]["provider.availability"];
-                        tr.appendChild(cell.createCell());
-                        var cell = new Cell();
-                        cell.child = true;
-                        cell.childType = "P";
-                        cell.value = data[key]["type"].toUpperCase();
-                        tr.appendChild(cell.createCell());
-                        var cell = new Cell();
-                        cell.child = true;
-                        cell.childType = "P";
-                        cell.value = data[key]["compatibility"]["streams"];
-                        tr.appendChild(cell.createCell());
-                        var cell = new Cell();
-                        cell.child = true;
-                        cell.childType = "P";
-                        cell.value = data[key]["compatibility"]["group.title"];
-                        tr.appendChild(cell.createCell());
-                        var cell = new Cell();
-                        cell.child = true;
-                        cell.childType = "P";
-                        cell.value = data[key]["compatibility"]["tvg.id"];
-                        tr.appendChild(cell.createCell());
-                        var cell = new Cell();
-                        cell.child = true;
-                        cell.childType = "P";
-                        cell.value = data[key]["compatibility"]["stream.id"];
-                        tr.appendChild(cell.createCell());
+                        // Last Update
+                        {
+                            const cell = new Cell();
+                            cell.child = true;
+                            cell.childType = "P";
+                            cell.value = textOrDash(f["last.update"]);
+                            tr.appendChild(cell.createCell());
+                        }
+                        // Availability %
+                        {
+                            const cell = new Cell();
+                            cell.child = true;
+                            cell.childType = "P";
+                            cell.value = numOrDash(f["provider.availability"]);
+                            tr.appendChild(cell.createCell());
+                        }
+                        // Type
+                        {
+                            const cell = new Cell();
+                            cell.child = true;
+                            cell.childType = "P";
+                            const t = ((_f = f["type"]) !== null && _f !== void 0 ? _f : "").toString().toUpperCase();
+                            cell.value = t || "-";
+                            tr.appendChild(cell.createCell());
+                        }
+                        // Streams
+                        {
+                            const cell = new Cell();
+                            cell.child = true;
+                            cell.childType = "P";
+                            cell.value = numOrDash(comp["streams"]);
+                            tr.appendChild(cell.createCell());
+                        }
+                        // group-title %
+                        {
+                            const cell = new Cell();
+                            cell.child = true;
+                            cell.childType = "P";
+                            cell.value = numOrDash(comp["group.title"]);
+                            tr.appendChild(cell.createCell());
+                        }
+                        // tvg-id %
+                        {
+                            const cell = new Cell();
+                            cell.child = true;
+                            cell.childType = "P";
+                            cell.value = numOrDash(comp["tvg.id"]);
+                            tr.appendChild(cell.createCell());
+                        }
+                        // Unique ID %
+                        {
+                            const cell = new Cell();
+                            cell.child = true;
+                            cell.childType = "P";
+                            cell.value = numOrDash(comp["stream.id"]);
+                            tr.appendChild(cell.createCell());
+                        }
                         rows.push(tr);
                     });
                 });
                 break;
+            }
             case "filter":
                 delete SERVER["settings"]["filter"][-1];
                 data = SERVER["settings"]["filter"];

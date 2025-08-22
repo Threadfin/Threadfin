@@ -10,7 +10,6 @@ import (
 	"net/url"
 	"os"
 	"path"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -142,55 +141,10 @@ func processStartupWorkflow(operationType string, fileType string) error {
 
 // Broadcast progress update to all connected WebSocket clients
 func broadcastProgressUpdate(progress ProcessingProgress) {
-	broadcastMutex.Lock()
-	defer broadcastMutex.Unlock()
-
-	connections := make([]*websocket.Conn, 0, len(wsConnections))
-	wsMutex.RLock()
-	for conn := range wsConnections {
-		connections = append(connections, conn)
-	}
-	wsMutex.RUnlock()
-
-	var deadConnections []*websocket.Conn
-
-	for _, conn := range connections {
-		progressMessage := map[string]interface{}{
-			"cmd":      "progress",
-			"progress": progress,
-		}
-
-		wsWriteMutex.Lock()
-		if conn == nil {
-			deadConnections = append(deadConnections, conn)
-		} else {
-			wsMutex.RLock()
-			_, exists := wsConnections[conn]
-			connMutex, mutexExists := connWriteMutexes[conn]
-			wsMutex.RUnlock()
-
-			if !exists || !mutexExists {
-				continue
-			}
-
-			connMutex.Lock()
-			conn.SetWriteDeadline(time.Now().Add(5 * time.Second))
-
-			if err := conn.WriteJSON(progressMessage); err != nil {
-				deadConnections = append(deadConnections, conn)
-			}
-
-			conn.SetWriteDeadline(time.Time{})
-			connMutex.Unlock()
-		}
-		wsWriteMutex.Unlock()
-	}
-
-	for _, deadConn := range deadConnections {
-		if deadConn != nil {
-			removeWSConnection(deadConn)
-		}
-	}
+	wsBroadcast(map[string]interface{}{
+		"cmd":      "progress",
+		"progress": progress,
+	})
 }
 
 // StartWebserver : Startet den Webserver
@@ -228,6 +182,7 @@ func StartWebserver() (err error) {
 		showHighlight(fmt.Sprintf("Web Interface:%s://%s:%s/web/ | Threadfin is also available via the other %d IP's.", System.ServerProtocol.WEB, ipAddress, Settings.Port, len(System.IPAddressesV4)+len(System.IPAddressesV6)-1))
 	}
 	systemMutex.Unlock()
+	go wsHub.run()
 
 	go func() {
 		if err = http.ListenAndServe(ipAddress+":"+port, nil); err != nil {
@@ -540,20 +495,10 @@ func DataImages(w http.ResponseWriter, r *http.Request) {
 }
 
 func WS(w http.ResponseWriter, r *http.Request) {
-
-	var request RequestStruct
-	var response ResponseStruct
-	response.Status = true
-
-	var newToken string
-
 	upgrader := websocket.Upgrader{
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
-		CheckOrigin: func(r *http.Request) bool {
-
-			return true
-		},
+		CheckOrigin:     func(r *http.Request) bool { return true },
 	}
 
 	conn, err := upgrader.Upgrade(w, r, nil)
@@ -563,323 +508,19 @@ func WS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	addWSConnection(conn)
-	defer removeWSConnection(conn)
-
-	conn.SetPongHandler(func(string) error {
-		conn.SetReadDeadline(time.Now().Add(60 * time.Second))
-		return nil
-	})
-
-	conn.SetReadDeadline(time.Now().Add(60 * time.Second))
-
-	systemMutex.Lock()
-	if Settings.HttpThreadfinDomain != "" {
-		setGlobalDomain(getBaseUrl(Settings.HttpThreadfinDomain, Settings.Port))
-	} else {
-		setGlobalDomain(r.Host)
-	}
-	systemMutex.Unlock()
-
-	for {
-
-		err = conn.ReadJSON(&request)
-
-		if err != nil {
-			return
-		}
-
-		conn.SetReadDeadline(time.Now().Add(60 * time.Second))
-
-		systemMutex.Lock()
-		if System.ConfigurationWizard == false {
-
-			switch Settings.AuthenticationWEB {
-
-			case true:
-
-				var token string
-				tokens, ok := r.URL.Query()["Token"]
-
-				if !ok || len(tokens[0]) < 1 {
-					token = "-"
-				} else {
-					token = tokens[0]
-				}
-
-				newToken, err = tokenAuthentication(token)
-				if err != nil {
-					response.Status = false
-					response.Reload = true
-					response.Error = err.Error()
-					request.Cmd = "-"
-
-					if err = conn.WriteJSON(response); err != nil {
-						ShowError(err, 1102)
-					}
-
-					systemMutex.Unlock()
-					return
-				}
-
-				response.Token = newToken
-				response.Users, _ = authentication.GetAllUserData()
-
-			}
-
-		}
-		systemMutex.Unlock()
-
-		switch request.Cmd {
-
-		case "getServerConfig":
-			response.Settings = Settings
-			response.Cmd = "getServerConfig"
-
-			if err = conn.WriteJSON(response); err != nil {
-				ShowError(err, 1022)
-				return
-			}
-
-			continue
-
-		case "updateLog":
-			response = setDefaultResponseData(response, true)
-			response.Cmd = "updateLog"
-
-			// Progress updates come ONLY through broadcastProgressUpdate calls
-			// updateLog responses should NEVER include progress data
-			// This ensures progress is PUSH-ONLY from the backend
-
-			// Send response and continue listening
-			if err = conn.WriteJSON(response); err != nil {
-				ShowError(err, 1022)
-				return
-			}
-
-			continue
-
-		case "loadFiles":
-			// response.Response = Settings.Files
-
-		// Data write commands
-		case "saveSettings":
-			var authenticationUpdate = Settings.AuthenticationWEB
-			response.Settings, err = updateServerSettings(request)
-			if err == nil {
-				response.OpenMenu = strconv.Itoa(indexOfString("settings", System.WEB.Menu))
-				response.Alert = "Settings saved"
-				if Settings.AuthenticationWEB == true && authenticationUpdate == false {
-					response.Reload = true
-				}
-				initBufferVFS()
-			}
-
-		case "saveFilesM3U":
-			err = saveFiles(request, "m3u")
-			if err == nil {
-				response.OpenMenu = strconv.Itoa(indexOfString("m3u", System.WEB.Menu))
-			}
-
-			// Send immediate response to close modal
-			if err = conn.WriteJSON(response); err != nil {
-				ShowError(err, 1022)
-				return
-			}
-
-			// Run processing in background if save was successful
-			if err == nil {
-				go func() {
-					if processErr := processStartupWorkflow("save", "m3u"); processErr != nil {
-						ShowError(processErr, 0)
-					}
-				}()
-			}
-
-			continue
-
-		case "updateFileM3U":
-			// Send immediate response to close modal
-			if err = conn.WriteJSON(response); err != nil {
-				ShowError(err, 1022)
-				return
-			}
-
-			// Run processing in background
-			go func() {
-				if processErr := processStartupWorkflow("update", "m3u"); processErr != nil {
-					ShowError(processErr, 0)
-				}
-			}()
-
-			continue
-
-		case "saveFilesHDHR":
-
-			if err = conn.WriteJSON(response); err != nil {
-				ShowError(err, 1022)
-				return
-			}
-
-			err = processStartupWorkflow("save", "hdhr")
-			if err != nil {
-				ShowError(err, 0)
-				return
-			}
-
-			continue
-
-		case "updateFileHDHR":
-			err = processStartupWorkflow("update", "hdhr")
-			if err != nil {
-				ShowError(err, 0)
-				return
-			}
-
-			continue
-
-		case "saveFilesXMLTV":
-			err = saveFiles(request, "xmltv")
-			if err == nil {
-				response.OpenMenu = strconv.Itoa(indexOfString("xmltv", System.WEB.Menu))
-			}
-
-			// Send immediate response to close modal
-			if err == nil {
-				go func() {
-					if processErr := processStartupWorkflow("save", "xmltv"); processErr != nil {
-						ShowError(processErr, 0)
-					}
-				}()
-			}
-
-			continue
-
-		case "updateFileXMLTV":
-			// Send immediate response to close modal
-			if err = conn.WriteJSON(response); err != nil {
-				ShowError(err, 1022)
-				return
-			}
-
-			// Run processing in background
-			go func() {
-				if processErr := processStartupWorkflow("update", "xmltv"); processErr != nil {
-					ShowError(processErr, 0)
-				}
-			}()
-
-			continue
-
-		case "saveFilter":
-			response.Settings, err = saveFilter(request)
-			if err == nil {
-				response.OpenMenu = strconv.Itoa(indexOfString("filter", System.WEB.Menu))
-			}
-
-		case "saveEpgMapping":
-			err = saveXEpgMapping(request)
-
-		case "saveUserData":
-			err = saveUserData(request)
-			if err == nil {
-				response.OpenMenu = strconv.Itoa(indexOfString("users", System.WEB.Menu))
-			}
-
-		case "saveNewUser":
-			err = saveNewUser(request)
-			if err == nil {
-				response.OpenMenu = strconv.Itoa(indexOfString("users", System.WEB.Menu))
-			}
-
-		case "resetLogs":
-			WebScreenLog.Log = make([]string, 0)
-			WebScreenLog.Errors = 0
-			WebScreenLog.Warnings = 0
-			response.OpenMenu = strconv.Itoa(indexOfString("log", System.WEB.Menu))
-
-		case "ThreadfinBackup":
-			file, errNew := ThreadfinBackup()
-			err = errNew
-			if err == nil {
-				response.OpenLink = fmt.Sprintf("%s://%s/download/%s", System.ServerProtocol.WEB, System.Domain, file)
-			}
-
-		case "ThreadfinRestore":
-			WebScreenLog.Log = make([]string, 0)
-			WebScreenLog.Errors = 0
-			WebScreenLog.Warnings = 0
-
-			if len(request.Base64) > 0 {
-				newWebURL, err := ThreadfinRestoreFromWeb(request.Base64)
-				if err != nil {
-					ShowError(err, 000)
-					response.Alert = err.Error()
-				}
-
-				if err == nil {
-					if len(newWebURL) > 0 {
-						response.Alert = "Backup was successfully restored.\nThe port of the sTeVe URL has changed, you have to restart Threadfin.\nAfter a restart, Threadfin can be reached again at the following URL:\n" + newWebURL
-					} else {
-						response.Alert = "Backup was successfully restored."
-						response.Reload = true
-					}
-					showInfo("Threadfin:" + "Backup successfully restored.")
-				}
-			}
-
-		case "uploadLogo":
-			if len(request.Base64) > 0 {
-				response.LogoURL, err = uploadLogo(request.Base64, request.Filename)
-				if err == nil {
-					if err = conn.WriteJSON(response); err != nil {
-						ShowError(err, 1022)
-					} else {
-						return
-					}
-				}
-			}
-
-		case "saveWizard":
-			nextStep, errNew := saveWizard(request)
-			err = errNew
-			if err == nil {
-				if nextStep == 10 {
-					System.ConfigurationWizard = false
-					response.Reload = true
-				} else {
-					response.Wizard = nextStep
-				}
-			}
-
-		case "probeChannel":
-			resolution, frameRate, audioChannels, _ := probeChannel(request)
-			response.ProbeInfo = ProbeInfoStruct{Resolution: resolution, FrameRate: frameRate, AudioChannel: audioChannels}
-
-		default:
-			fmt.Println("+ + + + + + + + + + +", request.Cmd)
-		}
-
-		if err != nil {
-			response.Status = false
-			response.Error = err.Error()
-			response.Settings = Settings
-		}
-
-		response = setDefaultResponseData(response, true)
-		if System.ConfigurationWizard == true {
-			response.ConfigurationWizard = System.ConfigurationWizard
-		}
-
-		if err = conn.WriteJSON(response); err != nil {
-			ShowError(err, 1022)
-		} else {
-			break
-		}
-
+	// capture token from URL for per-message auth
+	token := r.URL.Query().Get("Token")
+
+	c := &Client{
+		conn:  conn,
+		send:  make(chan []byte, 256),
+		token: token,
 	}
 
-	return
+	// register and start pumps
+	wsHub.register <- c
+	go c.writePump()
+	c.readPump()
 }
 
 // Web : Web Server /web/

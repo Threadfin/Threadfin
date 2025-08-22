@@ -851,6 +851,7 @@ func buildDatabaseDVR() (err error) {
 
 			// Progress reporting for large playlists
 			playlistChannels := len(channels)
+			compatibility["streams"] = playlistChannels
 			if playlistChannels > 1000 {
 				showDebug(fmt.Sprintf("DVR: Processing %d channels from %s", playlistChannels, playlistName), 1)
 			}
@@ -861,7 +862,6 @@ func buildDatabaseDVR() (err error) {
 				if playlistChannels > 1000 && j%1000 == 0 {
 					showDebug(fmt.Sprintf("DVR: Processed %d/%d channels from %s", j, playlistChannels, playlistName), 1)
 				}
-
 				// Send WebSocket progress updates every 5000 channels for real-time feedback
 				if processedChannels%5000 == 0 && totalChannels > 0 {
 					progressPercent := 15 + int(float64(processedChannels)/float64(totalChannels)*20) // 15% to 35%
@@ -878,7 +878,6 @@ func buildDatabaseDVR() (err error) {
 				s["_file.m3u.path"] = i
 				s["_file.m3u.name"] = playlistName
 				s["_file.m3u.id"] = id
-
 				// Detect VOD content (episode patterns like "S01 E01", "S1E1", etc.)
 				if name, ok := s["name"]; ok {
 					// Clean the name if it contains URLs or is suspiciously long
@@ -1149,23 +1148,21 @@ func getProviderParameter(id, fileType, key string) (s string) {
 
 // Provider Statistiken Kompatibilität aktualisieren
 func setProviderCompatibility(id, fileType string, compatibility map[string]int) {
-
-	var dataMap = make(map[string]interface{})
-
+	var dataMap map[string]interface{}
 	switch fileType {
 	case "m3u":
 		dataMap = Settings.Files.M3U
-
 	case "hdhr":
 		dataMap = Settings.Files.HDHR
-
 	case "xmltv":
 		dataMap = Settings.Files.XMLTV
 	}
-
 	if data, ok := dataMap[id].(map[string]interface{}); ok {
-
 		data["compatibility"] = compatibility
+
+		if _, ok := data["tuner"]; !ok {
+			data["tuner"] = Settings.Tuner
+		}
 
 		switch fileType {
 		case "m3u":
@@ -1175,11 +1172,8 @@ func setProviderCompatibility(id, fileType string, compatibility map[string]int)
 		case "xmltv":
 			Settings.Files.XMLTV = dataMap
 		}
-
 		saveSettings(Settings)
-
 	}
-
 }
 
 // extractSeasonEpisode extracts season and episode information from VOD titles

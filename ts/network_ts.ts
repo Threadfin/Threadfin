@@ -236,32 +236,24 @@ class Server {
     this.cmd = cmd;
   }
 
-  request(data: Object): any {
-    if (SERVER_CONNECTION == true) {
-      return;
+    request(data) {
+        if (SERVER_CONNECTION) return;
+        SERVER_CONNECTION = true;
+
+        if (this.cmd !== "updateLog") { UNDO = new Object(); }
+
+        // ✅ Flattened payload (no "data" wrapper)
+        const payload = { cmd: this.cmd, ...data };
+
+        if (globalWS && globalWS.readyState === WebSocket.OPEN) {
+            console.log("WS SEND:", payload);
+            globalWS.send(JSON.stringify(payload));
+        } else {
+            initWebSocket();
+            // ✅ Queue the final payload as-is
+            pendingRequests.push(payload);
+        }
     }
-
-    SERVER_CONNECTION = true;
-
-    console.log(data);
-    if (this.cmd != "updateLog") {
-      UNDO = new Object();
-    }
-
-    // Prepare the request data
-    data["cmd"] = this.cmd;
-    const requestData = JSON.stringify(data);
-
-    // Use existing WebSocket connection
-    if (globalWS && globalWS.readyState === WebSocket.OPEN) {
-      globalWS.send(requestData);
-    } else {
-      // Initialize connection if not available
-      initWebSocket();
-      // Add to pending requests queue
-      pendingRequests.push({cmd: this.cmd, data: data});
-    }
-  }
 }
 
 // Initialize WebSocket connection when the page loads

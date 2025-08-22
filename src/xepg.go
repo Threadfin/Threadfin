@@ -33,6 +33,7 @@ func checkXMLCompatibility(id string, body []byte) (err error) {
 
 	compatibility["xmltv.channels"] = len(xmltv.Channel)
 	compatibility["xmltv.programs"] = len(xmltv.Program)
+	compatibility["xmltv.streams"] = len(xmltv.Source)
 
 	setProviderCompatibility(id, "xmltv", compatibility)
 
