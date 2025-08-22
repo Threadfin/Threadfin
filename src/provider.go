@@ -1,14 +1,13 @@
 package src
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
-
-	m3u "threadfin/src/internal/m3u-parser"
 )
 
 // fileType: Welcher Dateityp soll aktualisiert werden (m3u, hdhr, xml) | fileID: Update einer bestimmten Datei (Provider ID)
@@ -104,31 +103,9 @@ func getProviderData(fileType, fileID string) (err error) {
 		switch fileType {
 
 		case "m3u":
-			newM3u, err := m3u.MakeInterfaceFromM3U(body)
-			if err != nil {
-				return err
+			if !bytes.HasPrefix(bytes.TrimSpace(body), []byte("#EXTM3U")) {
+				showDebug("M3U missing #EXTM3U header; leaving as-is", 1)
 			}
-
-			var m3uContent strings.Builder
-			m3uContent.WriteString("#EXTM3U\n")
-
-			for _, channel := range newM3u {
-				channelMap := channel.(map[string]string)
-
-				extinf := fmt.Sprintf(`#EXTINF:-1 tvg-id="%s" tvg-name="%s" tvg-chno="%s" tvg-logo="%s" group-title="%s",%s`,
-					channelMap["tvg-id"],
-					channelMap["tvg-name"],
-					channelMap["tvg-chno"],
-					channelMap["tvg-logo"],
-					channelMap["group-title"],
-					channelMap["name"],
-				)
-
-				m3uContent.WriteString(extinf + "\n" + channelMap["url"] + "\n")
-			}
-
-			m3uBytes := []byte(m3uContent.String())
-			body = m3uBytes
 
 		case "hdhr":
 			_, err = jsonToInterface(string(body))

@@ -7,6 +7,7 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
+	"hash/fnv"
 	"os"
 	"path"
 	"regexp"
@@ -45,6 +46,102 @@ var xepgProcessingInProgress bool
 var webserverXEPGInProgress bool
 var globalXEPGProgress int // Track overall progress across multiple XEPG runs
 
+func ensureUniqueXEPGKeys() (int, int) {
+	xepgMutex.Lock()
+	defer xepgMutex.Unlock()
+
+	orig := Data.XEPG.Channels
+	if len(orig) == 0 {
+		return 0, 0
+	}
+
+	rebuilt := make(map[string]interface{}, len(orig))
+	dups := 0
+
+	for _, v := range orig {
+		m := jsonToMap(mapToJSON(v)) // robust across struct/map shapes
+
+		fileID := firstNonEmpty(
+			asString(m, "file.m3u.id"),
+			asString(m, "FileM3UID"),
+			asString(m, "fileM3UID"),
+			asString(m, "_file.m3u.id"),
+		)
+		chno := strings.TrimSpace(firstNonEmpty(
+			asString(m, "tvg-chno"),
+			asString(m, "XChannelID"),
+		))
+		tvid := strings.TrimSpace(firstNonEmpty(
+			asString(m, "tvg-id"),
+			asString(m, "XEPG"), // sometimes used as id-like
+		))
+		name := firstNonEmpty(
+			asString(m, "x-name"),
+			asString(m, "XName"),
+			asString(m, "name"),
+			asString(m, "Name"),
+		)
+		url := firstNonEmpty(
+			asString(m, "url"),
+			asString(m, "URL"),
+		)
+
+		// safety: if fileID absent, still produce stable key namespace
+		if fileID == "" {
+			fileID = "unknown"
+		}
+
+		base := fileID + ":" + firstNonEmpty(
+			chno,
+			func() string {
+				if tvid != "" {
+					return "tvid:" + tvid
+				}
+				return ""
+			}(),
+			"h:"+hashShort(name+"|"+url),
+		)
+
+		key := base
+		for i := 1; ; i++ {
+			if _, exists := rebuilt[key]; !exists {
+				break
+			}
+			dups++
+			key = fmt.Sprintf("%s#%d", base, i)
+		}
+
+		rebuilt[key] = v
+	}
+
+	Data.XEPG.Channels = rebuilt
+	return len(rebuilt), dups
+}
+
+func hashShort(s string) string {
+	h := fnv.New32a()
+	_, _ = h.Write([]byte(s))
+	return fmt.Sprintf("%08x", h.Sum32())
+}
+
+func firstNonEmpty(vals ...string) string {
+	for _, v := range vals {
+		if strings.TrimSpace(v) != "" {
+			return v
+		}
+	}
+	return ""
+}
+
+func asString(m map[string]interface{}, key string) string {
+	if v, ok := m[key]; ok {
+		if s, ok := v.(string); ok {
+			return s
+		}
+	}
+	return ""
+}
+
 // XEPG Daten erstellen
 func buildXEPG() chan bool {
 	// Completely disable background XEPG when webserver.go is handling it
@@ -72,33 +169,28 @@ func buildXEPG() chan bool {
 
 	completionChan := make(chan bool, 1)
 
-	xepgMutex.Lock()
-	defer func() {
-		xepgMutex.Unlock()
-	}()
-
-	// Clear streaming URL cache
+	// These quick inits are safe without holding the mutex for long
 	Data.Cache.StreamingURLS = make(map[string]StreamInfo)
-	saveMapToJSONFile(System.File.URLS, Data.Cache.StreamingURLS)
+	_ = saveMapToJSONFile(System.File.URLS, Data.Cache.StreamingURLS)
 
 	var err error
-
-	Data.Cache.Images, err = imgcache.New(System.Folder.ImagesCache, fmt.Sprintf("%s://%s/images/", System.ServerProtocol.WEB, System.Domain), Settings.CacheImages)
+	Data.Cache.Images, err = imgcache.New(
+		System.Folder.ImagesCache,
+		fmt.Sprintf("%s://%s/images/", System.ServerProtocol.WEB, System.Domain),
+		Settings.CacheImages,
+	)
 	if err != nil {
 		ShowError(err, 0)
 	}
 
 	if Settings.EpgSource == "XEPG" {
-
-		// Always use background processing for better user experience
-		// This prevents the interface from being locked during heavy operations
+		// Always use background processing for better UX
 		go func() {
-
 			showDebug("XEPG: Starting background processing...", 1)
 
 			createXEPGMapping()
 
-			// Send progress update for mapping - continue from previous progress
+			// progress: mapping started
 			globalXEPGProgress = 40
 			broadcastProgressUpdate(ProcessingProgress{
 				Percentage:   globalXEPGProgress,
@@ -108,33 +200,30 @@ func buildXEPG() chan bool {
 				IsProcessing: true,
 			})
 
-			// Create a completion channel for this call
+			// Build XEPG DB (async completion)
 			innerCompletionChan := make(chan bool, 1)
 			createXEPGDatabase(innerCompletionChan)
-			// Wait for completion signal
 			<-innerCompletionChan
 
-			// Don't send conflicting progress updates here - they're handled by the calling function
-			// This prevents conflicts with the main progress tracking
-
+			// Build mapping rows from DB
 			mapping()
+
+			// Deduplicate/ensure unique keys so UI gets all rows (fixes “only ~38 items”)
+			total, dups := ensureUniqueXEPGKeys()
+			showDebug(fmt.Sprintf("XEPG: rebuilt mapping with %d rows (deduped %d collisions)", total, dups), 1)
+
 			cleanupXEPG()
 			createXMLTVFile()
 			createM3UFile()
 
-			// Don't send conflicting progress updates here - they're handled by the calling function
-			// This prevents conflicts with the main progress tracking
-
+			// Optional image caching flow
 			if Settings.CacheImages && System.ImageCachingInProgress == 0 {
-
 				go func() {
-
 					systemMutex.Lock()
 					System.ImageCachingInProgress = 1
 					systemMutex.Unlock()
 
 					showDebug(fmt.Sprintf("Image Caching:Images are cached (%d)", len(Data.Cache.Images.Queue)), 1)
-
 					Data.Cache.Images.Image.Caching()
 					Data.Cache.Images.Image.Remove()
 					showDebug("Image Caching:Done", 1)
@@ -145,34 +234,23 @@ func buildXEPG() chan bool {
 					systemMutex.Lock()
 					System.ImageCachingInProgress = 0
 					systemMutex.Unlock()
-
 				}()
-
 			}
 
-			// Cache löschen
-			/*
-				Data.Cache.XMLTV = make(map[string]XMLTV)
-				Data.Cache.XMLTV = nil
-			*/
+			// GC + finish
 			runtime.GC()
-
 			showInfo("XEPG: Ready to use")
-
 			completionChan <- true
 		}()
 
 		return completionChan
-
-	} else {
-
-		getLineup()
-		completionChan := make(chan bool, 1)
-		completionChan <- true
-		return completionChan
-
 	}
 
+	// PMS mode: just refresh lineup
+	getLineup()
+	done := make(chan bool, 1)
+	done <- true
+	return done
 }
 
 // Update XEPG data

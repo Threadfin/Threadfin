@@ -900,6 +900,11 @@ func buildDatabaseDVR() (err error) {
 						s["name"] = strings.TrimSpace(name)
 					}
 
+					g := s["group-title"]
+					n := s["name"]
+					tID := s["tvg-id"]
+					s["_values"] = strings.TrimSpace(strings.Join([]string{g, n, tID}, " "))
+
 					// Check for various episode patterns
 					vodPatterns := []string{
 						"S\\d{1,2}\\s*E\\d{1,2}",                    // S01 E01, S1E1, S10 E10, etc.
