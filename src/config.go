@@ -215,7 +215,7 @@ func Init() (err error) {
 	// HTML Dateien erstellen, mit dev == true werden die lokalen HTML Dateien verwendet
 	if System.Dev == true {
 
-		HTMLInit("webUI", "src", "html"+string(os.PathSeparator), "src"+string(os.PathSeparator)+"WWebUI.go")
+		HTMLInit("webUI", "src", "html"+string(os.PathSeparator), "src"+string(os.PathSeparator)+"WebUI.go")
 		err = BuildGoFile()
 		if err != nil {
 			return
