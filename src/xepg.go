@@ -113,10 +113,7 @@ func buildXEPG(background bool) {
 				systemMutex.Unlock()
 
 				// Cache löschen
-				/*
-					Data.Cache.XMLTV = make(map[string]XMLTV)
-					Data.Cache.XMLTV = nil
-				*/
+				Data.Cache.XMLTV = make(map[string]XMLTV)
 				runtime.GC()
 
 			}()
@@ -164,8 +161,7 @@ func buildXEPG(background bool) {
 				systemMutex.Unlock()
 
 				// Cache löschen
-				//Data.Cache.XMLTV = make(map[string]XMLTV)
-				//Data.Cache.XMLTV = nil
+				Data.Cache.XMLTV = make(map[string]XMLTV)
 				runtime.GC()
 
 			}()
@@ -222,8 +218,7 @@ func updateXEPG(background bool) {
 	}
 
 	// Cache löschen
-	//Data.Cache.XMLTV = nil //make(map[string]XMLTV)
-	//Data.Cache.XMLTV = make(map[string]XMLTV)
+	Data.Cache.XMLTV = make(map[string]XMLTV)
 
 	return
 }
