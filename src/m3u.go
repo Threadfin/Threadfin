@@ -254,7 +254,7 @@ func buildM3U(groups []string) (m3u string, err error) {
 		//			channel.URL = fmt.Sprintf("https://%s:%d%s", u.Host, Settings.HttpsPort, u.Path)
 		//		}
 		//	}
-		}
+		//}
 
 		logo := ""
 		if channel.TvgLogo != "" {
