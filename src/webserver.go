@@ -7,7 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"net/url"
+	// "net/url"
 	"os"
 	"path"
 	"strconv"
@@ -133,20 +133,21 @@ func Stream(w http.ResponseWriter, r *http.Request) {
 	}
 
 	systemMutex.Lock()
-	forceHttps := Settings.ForceHttps
+	// forceHttps := Settings.ForceHttps
 	systemMutex.Unlock()
 
-	if forceHttps {
-		u, err := url.Parse(streamInfo.URL)
-		if err == nil {
-			u.Scheme = "https"
-			hostSplit := strings.Split(u.Host, ":")
-			if len(hostSplit) > 0 {
-				u.Host = hostSplit[0]
-			}
-			streamInfo.URL = fmt.Sprintf("https://%s:%d%s?%s", u.Host, Settings.HttpsPort, u.Path, u.RawQuery)
-		}
-	}
+	// Dont Change SOurce M3Us to use HTTPs when forceHttps set
+    //if forceHttps {
+	//	u, err := url.Parse(streamInfo.URL)
+	//	if err == nil {
+	//		u.Scheme = "https"
+	//		hostSplit := strings.Split(u.Host, ":")
+	//		if len(hostSplit) > 0 {
+	//			u.Host = hostSplit[0]
+	//		}
+	//		streamInfo.URL = fmt.Sprintf("https://%s:%d%s?%s", u.Host, Settings.HttpsPort, u.Path, u.RawQuery)
+	//	}
+	//}
 
 	if r.Method == "HEAD" {
 		client := &http.Client{}
