@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math"
-	"net/url"
+	//"net/url"
 	"os/exec"
 	"path"
 	"regexp"
@@ -239,20 +239,21 @@ func buildM3U(groups []string) (m3u string, err error) {
 			group = channel.XCategory
 		}
 
-		if Settings.ForceHttps && Settings.HttpsThreadfinDomain != "" {
-			u, err := url.Parse(channel.URL)
-			if err == nil {
-				u.Scheme = "https"
-				host_split := strings.Split(u.Host, ":")
-				if len(host_split) > 0 {
-					u.Host = host_split[0]
-				}
-				if u.RawQuery != "" {
-					channel.URL = fmt.Sprintf("https://%s:%d%s?%s", u.Host, Settings.HttpsPort, u.Path, u.RawQuery)
-				} else {
-					channel.URL = fmt.Sprintf("https://%s:%d%s", u.Host, Settings.HttpsPort, u.Path)
-				}
-			}
+        // Disabling so not to rewrite stream to https domain
+		//if Settings.ForceHttps && Settings.HttpsThreadfinDomain != "" {
+		//	u, err := url.Parse(channel.URL)
+		//	if err == nil {
+		//		u.Scheme = "https"
+		//		host_split := strings.Split(u.Host, ":")
+		//		if len(host_split) > 0 {
+		//			u.Host = host_split[0]
+		//		}
+		//		if u.RawQuery != "" {
+		//			channel.URL = fmt.Sprintf("https://%s:%d%s?%s", u.Host, Settings.HttpsPort, u.Path, u.RawQuery)
+		//		} else {
+		//			channel.URL = fmt.Sprintf("https://%s:%d%s", u.Host, Settings.HttpsPort, u.Path)
+		//		}
+		//	}
 		}
 
 		logo := ""
