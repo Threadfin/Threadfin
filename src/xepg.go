@@ -634,61 +634,79 @@ func createXEPGDatabase() (err error) {
 			newChannel.URL = m3uChannel.URL
 			newChannel.Live, _ = strconv.ParseBool(m3uChannel.LiveEvent)
 
-			for file, xmltvChannels := range Data.XMLTV.Mapping {
-				channelsMap, ok := xmltvChannels.(map[string]interface{})
-				if !ok {
-					continue
-				}
-				if channel, ok := channelsMap[m3uChannel.TvgID]; ok {
-					filters := []FilterStruct{}
-					for _, filter := range Settings.Filter {
-						filter_json, _ := json.Marshal(filter)
-						f := FilterStruct{}
-						json.Unmarshal(filter_json, &f)
-						filters = append(filters, f)
-					}
-					for _, filter := range filters {
-						if newChannel.GroupTitle == filter.Filter {
-							category := &Category{}
-							category.Value = filter.Category
-							category.Lang = "en"
-							newChannel.XCategory = filter.Category
-						}
-					}
-
-					chmap, okk := channel.(map[string]interface{})
-					if !okk {
-						continue
-					}
-
-					if channelID, ok := chmap["id"].(string); ok {
-						newChannel.XmltvFile = file
-						newChannel.XMapping = channelID
-						// AUTO-ACTIVATE NEW CHANNELS - this is for new channels being added
-						newChannel.XActive = true
-
-						// Falls in der XMLTV Datei ein Logo existiert, wird dieses verwendet. Falls nicht, dann das Logo aus der M3U Datei
-						/*if icon, ok := chmap["icon"].(string); ok {
-							if len(icon) > 0 {
-								newChannel.TvgLogo = icon
-							}
-						}*/
-
-						break
-
-					}
-
-				}
-
-			}
-
-			programData, _ := getProgramData(newChannel)
-
-			if newChannel.Live && len(programData.Program) <= 3 {
+			// CRITICAL FIX: Live event channels should ALWAYS use Threadfin Dummy and PPV
+			// They generate their own EPG and should not use regular XMLTV mapping
+			if newChannel.Live {
 				newChannel.XmltvFile = "Threadfin Dummy"
 				newChannel.XMapping = "PPV"
 				// AUTO-ACTIVATE NEW LIVE EVENT CHANNELS - this is for new channels being added
 				newChannel.XActive = true
+
+				// Apply filter categories for live event channels
+				filters := []FilterStruct{}
+				for _, filter := range Settings.Filter {
+					filter_json, _ := json.Marshal(filter)
+					f := FilterStruct{}
+					json.Unmarshal(filter_json, &f)
+					filters = append(filters, f)
+				}
+				for _, filter := range filters {
+					if newChannel.GroupTitle == filter.Filter {
+						category := &Category{}
+						category.Value = filter.Category
+						category.Lang = "en"
+						newChannel.XCategory = filter.Category
+					}
+				}
+			} else {
+				// Regular channels go through normal XMLTV mapping
+				for file, xmltvChannels := range Data.XMLTV.Mapping {
+					channelsMap, ok := xmltvChannels.(map[string]interface{})
+					if !ok {
+						continue
+					}
+					if channel, ok := channelsMap[m3uChannel.TvgID]; ok {
+						filters := []FilterStruct{}
+						for _, filter := range Settings.Filter {
+							filter_json, _ := json.Marshal(filter)
+							f := FilterStruct{}
+							json.Unmarshal(filter_json, &f)
+							filters = append(filters, f)
+						}
+						for _, filter := range filters {
+							if newChannel.GroupTitle == filter.Filter {
+								category := &Category{}
+								category.Value = filter.Category
+								category.Lang = "en"
+								newChannel.XCategory = filter.Category
+							}
+						}
+
+						chmap, okk := channel.(map[string]interface{})
+						if !okk {
+							continue
+						}
+
+						if channelID, ok := chmap["id"].(string); ok {
+							newChannel.XmltvFile = file
+							newChannel.XMapping = channelID
+							// AUTO-ACTIVATE NEW CHANNELS - this is for new channels being added
+							newChannel.XActive = true
+
+							// Falls in der XMLTV Datei ein Logo existiert, wird dieses verwendet. Falls nicht, dann das Logo aus der M3U Datei
+							/*if icon, ok := chmap["icon"].(string); ok {
+								if len(icon) > 0 {
+									newChannel.TvgLogo = icon
+								}
+							}*/
+
+							break
+
+						}
+
+					}
+
+				}
 			}
 
 			if len(m3uChannel.UUIDKey) > 0 {
