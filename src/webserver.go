@@ -134,9 +134,11 @@ func Stream(w http.ResponseWriter, r *http.Request) {
 
 	systemMutex.Lock()
 	forceHttps := Settings.ForceHttps
+    noStreamHttps := Settings.ExcludeStreamHttps
 	systemMutex.Unlock()
 
-	if forceHttps {
+	// Dont Change Source M3Us to use HTTPs when forceHttps set and Exclude Streams from https
+    if forceHttps && noStreamHttps == false {
 		u, err := url.Parse(streamInfo.URL)
 		if err == nil {
 			u.Scheme = "https"
