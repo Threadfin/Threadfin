@@ -56,7 +56,7 @@ class MainMenuItem extends MainMenu {
         break
 
       case "filter":
-        this.tableHeader = ["{{.filter.table.startingNumber}}","{{.filter.table.name}}", "{{.filter.table.type}}", "{{.filter.table.filter}}"]
+        this.tableHeader = ["{{.filter.table.name}}", "{{.filter.table.startingNumber}}", "{{.filter.table.type}}", "{{.filter.table.filter}}"]
         break
 
       case "users":
@@ -232,33 +232,8 @@ class Content {
         
         // CRITICAL FIX: Sort filters by startingNumber in ascending order
         keys.sort((a, b) => {
-          // Get startingNumber values, handle both string and number types
-          var startAStr = data[a]["startingNumber"]
-          var startBStr = data[b]["startingNumber"]
-          
-          // Convert to numbers, handling various formats
-          var startA = 0
-          var startB = 0
-          
-          if (typeof startAStr === 'string') {
-            startA = parseFloat(startAStr) || 0
-          } else if (typeof startAStr === 'number') {
-            startA = startAStr
-          }
-          
-          if (typeof startBStr === 'string') {
-            startB = parseFloat(startBStr) || 0
-          } else if (typeof startBStr === 'number') {
-            startB = startBStr
-          }
-          
-          // Handle NaN values
-          if (isNaN(startA)) startA = 0
-          if (isNaN(startB)) startB = 0
-          
-          // Debug logging
-          console.log(`Sorting: ${data[a]["name"]} (${startAStr} -> ${startA}) vs ${data[b]["name"]} (${startBStr} -> ${startB})`)
-          
+          var startA = parseInt(data[a]["startingNumber"]) || 0
+          var startB = parseInt(data[b]["startingNumber"]) || 0
           return startA - startB
         })
         
@@ -268,18 +243,21 @@ class Content {
 
           tr.setAttribute('onclick', 'javascript: openPopUp("' + data[key]["type"] + '", this)')
 
-          var cell: Cell = new Cell()
-          cell.child = true
-          cell.childType = "P"
-          cell.value = data[key]["startingNumber"]
-          tr.appendChild(cell.createCell())
-          
+          // Filter Name (first column)
           var cell: Cell = new Cell()
           cell.child = true
           cell.childType = "P"
           cell.value = data[key]["name"]
           tr.appendChild(cell.createCell())
 
+          // Starting Number (second column)
+          var cell: Cell = new Cell()
+          cell.child = true
+          cell.childType = "P"
+          cell.value = data[key]["startingNumber"]
+          tr.appendChild(cell.createCell())
+
+          // Filter Type (third column)
           var cell: Cell = new Cell()
           cell.child = true
           cell.childType = "P"
@@ -298,6 +276,7 @@ class Content {
 
           tr.appendChild(cell.createCell())
 
+          // Filter (fourth column)
           var cell: Cell = new Cell()
           cell.child = true
           cell.childType = "P"
