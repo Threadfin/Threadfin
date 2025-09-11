@@ -664,8 +664,8 @@ func createXEPGDatabase() (err error) {
 					if channelID, ok := chmap["id"].(string); ok {
 						newChannel.XmltvFile = file
 						newChannel.XMapping = channelID
-						// CRITICAL FIX: Don't auto-activate new channels - let user decide
-						// newChannel.XActive = true  // REMOVED - don't auto-activate
+						// AUTO-ACTIVATE NEW CHANNELS - this is for new channels being added
+						newChannel.XActive = true
 
 						// Falls in der XMLTV Datei ein Logo existiert, wird dieses verwendet. Falls nicht, dann das Logo aus der M3U Datei
 						/*if icon, ok := chmap["icon"].(string); ok {
@@ -687,8 +687,8 @@ func createXEPGDatabase() (err error) {
 			if newChannel.Live && len(programData.Program) <= 3 {
 				newChannel.XmltvFile = "Threadfin Dummy"
 				newChannel.XMapping = "PPV"
-				// CRITICAL FIX: Don't auto-activate live event channels - let user decide
-				// newChannel.XActive = true  // REMOVED - don't auto-activate
+				// AUTO-ACTIVATE NEW LIVE EVENT CHANNELS - this is for new channels being added
+				newChannel.XActive = true
 			}
 
 			if len(m3uChannel.UUIDKey) > 0 {
@@ -809,10 +809,13 @@ func mapping() (err error) {
 						if channelID, ok := chmap["id"].(string); ok {
 							xepgChannel.XmltvFile = file
 							xepgChannel.XMapping = channelID
-							// CRITICAL FIX: Do not automatically activate channels that were manually deactivated
-							// Only activate if this is a new channel that has never been activated before
-							// Preserve user's explicit deactivation choice
-							// xepgChannel.XActive = true  // REMOVED - don't auto-activate
+							// CRITICAL FIX: Only auto-activate if channel was not previously explicitly deactivated
+							// This preserves user's manual deactivation while auto-activating new mappings
+							if xepgChannel.XmltvFile == "" || xepgChannel.XmltvFile == "-" {
+								// This is a new mapping, auto-activate
+								xepgChannel.XActive = true
+							}
+							// If channel was already mapped and active/inactive, preserve that state
 
 							// Falls in der XMLTV Datei ein Logo existiert, wird dieses verwendet. Falls nicht, dann das Logo aus der M3U Datei
 							/*if icon, ok := chmap["icon"].(string); ok {
@@ -898,14 +901,14 @@ func mapping() (err error) {
 			}
 			if len(xepgChannel.XmltvFile) == 0 {
 				xepgChannel.XmltvFile = "-"
-				// CRITICAL FIX: Don't auto-activate channels with missing XMLTV - let user decide
-				// xepgChannel.XActive = true  // REMOVED - don't auto-activate
+				// AUTO-ACTIVATE channels with no XMLTV file (they don't need one)
+				xepgChannel.XActive = true
 			}
 
 			if len(xepgChannel.XMapping) == 0 {
 				xepgChannel.XMapping = "-"
-				// CRITICAL FIX: Don't auto-activate channels with missing mapping - let user decide
-				// xepgChannel.XActive = true  // REMOVED - don't auto-activate
+				// AUTO-ACTIVATE channels with no mapping (they don't need one)
+				xepgChannel.XActive = true
 			}
 
 			Data.XEPG.Channels[xepg] = xepgChannel
