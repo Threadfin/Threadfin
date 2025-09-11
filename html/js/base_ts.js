@@ -379,10 +379,8 @@ function changeChannelNumber(element) {
         var channelNumber = parseFloat(data[id]["x-channelID"]);
         channelNumbers.push(channelNumber);
     });
-    for (var i = 0; i < channelNumbers.length; i++) {
-        if (channelNumbers.indexOf(newNumber) == -1) {
-            break;
-        }
+    // CRITICAL FIX: Properly handle duplicate channel numbers
+    while (channelNumbers.indexOf(newNumber) != -1) {
         if (Math.floor(newNumber) == newNumber) {
             newNumber = newNumber + 1;
         }

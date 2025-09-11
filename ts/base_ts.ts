@@ -507,12 +507,8 @@ function changeChannelNumber(element) {
 
   })
 
-  for (var i = 0; i < channelNumbers.length; i++) {
-
-    if (channelNumbers.indexOf(newNumber) == -1) {
-      break
-    }
-
+  // CRITICAL FIX: Properly handle duplicate channel numbers
+  while (channelNumbers.indexOf(newNumber) != -1) {
     if (Math.floor(newNumber) == newNumber) {
       newNumber = newNumber + 1
     } else {
@@ -520,7 +516,6 @@ function changeChannelNumber(element) {
       newNumber.toFixed(1)
       newNumber = Math.round(newNumber * 10) / 10
     }
-
   }
 
   data[dbID]["x-channelID"] = newNumber.toString()
