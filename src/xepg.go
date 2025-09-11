@@ -459,13 +459,12 @@ func createXEPGDatabase() (err error) {
 
 		channelHash := channel.TvgName + channel.FileM3UID
 		if channel.Live {
-			// CRITICAL FIX: For live event channels, use a stable identifier that doesn't change
-			// Don't use URL in hash since live event URLs change, causing duplicate channels
-			// Use TvgID if available, otherwise fall back to TvgName + FileM3UID
+			// CRITICAL FIX: For live event channels, use tvg-id + URL as unique identifier
+			// This allows same tvg-id with different URLs, but prevents same tvg-id + URL duplicates
 			if channel.TvgID != "" {
-				channelHash = channel.TvgID + channel.FileM3UID
+				channelHash = channel.TvgID + "|" + channel.URL
 			} else {
-				channelHash = channel.TvgName + channel.FileM3UID
+				channelHash = channel.TvgName + "|" + channel.URL
 			}
 		}
 		xepgChannelsValuesMap[channelHash] = channel
@@ -491,13 +490,12 @@ func createXEPGDatabase() (err error) {
 		// Try to find the channel based on matching all known values.  If that fails, then move to full channel scan
 		m3uChannelHash := m3uChannel.TvgName + m3uChannel.FileM3UID
 		if m3uChannel.LiveEvent == "true" {
-			// CRITICAL FIX: For live event channels, use a stable identifier that doesn't change
-			// Don't use URL in hash since live event URLs change, causing duplicate channels
-			// Use TvgID if available, otherwise fall back to TvgName + FileM3UID
+			// CRITICAL FIX: For live event channels, use tvg-id + URL as unique identifier
+			// This allows same tvg-id with different URLs, but prevents same tvg-id + URL duplicates
 			if m3uChannel.TvgID != "" {
-				m3uChannelHash = m3uChannel.TvgID + m3uChannel.FileM3UID
+				m3uChannelHash = m3uChannel.TvgID + "|" + m3uChannel.URL
 			} else {
-				m3uChannelHash = m3uChannel.TvgName + m3uChannel.FileM3UID
+				m3uChannelHash = m3uChannel.TvgName + "|" + m3uChannel.URL
 			}
 		}
 
@@ -1614,13 +1612,12 @@ func cleanupXEPG() {
 
 			m3uChannelHash := xepgChannel.TvgName + xepgChannel.FileM3UID
 			if xepgChannel.Live {
-				// CRITICAL FIX: For live event channels, use a stable identifier that doesn't change
-				// Don't use URL in hash since live event URLs change, causing duplicate channels
-				// Use TvgID if available, otherwise fall back to TvgName + FileM3UID
+				// CRITICAL FIX: For live event channels, use tvg-id + URL as unique identifier
+				// This allows same tvg-id with different URLs, but prevents same tvg-id + URL duplicates
 				if xepgChannel.TvgID != "" {
-					m3uChannelHash = xepgChannel.TvgID + xepgChannel.FileM3UID
+					m3uChannelHash = xepgChannel.TvgID + "|" + xepgChannel.URL
 				} else {
-					m3uChannelHash = xepgChannel.TvgName + xepgChannel.FileM3UID
+					m3uChannelHash = xepgChannel.TvgName + "|" + xepgChannel.URL
 				}
 			}
 
