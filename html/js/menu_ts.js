@@ -180,6 +180,12 @@ class Content {
                 delete SERVER["settings"]["filter"][-1];
                 data = SERVER["settings"]["filter"];
                 var keys = getObjKeys(data);
+                // CRITICAL FIX: Sort filters by startingNumber in ascending order
+                keys.sort((a, b) => {
+                    var startA = parseFloat(data[a]["startingNumber"]) || 0;
+                    var startB = parseFloat(data[b]["startingNumber"]) || 0;
+                    return startA - startB;
+                });
                 keys.forEach(key => {
                     var tr = document.createElement("TR");
                     tr.id = key;
