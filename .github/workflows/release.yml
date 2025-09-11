@@ -36,6 +36,8 @@ jobs:
           env GOOS=linux GOARCH=arm64 go build -ldflags="-s -w" -o dist/Threadfin_linux_arm64 &
           env GOOS=linux GOARCH=arm go build -ldflags="-s -w" -o dist/Threadfin_linux_arm &
           env GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o dist/Threadfin_linux_amd64 &
+          # Linux (amd64) build compatible with older glibc (e.g., Debian 11 / glibc 2.31)
+          env CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -tags netgo -ldflags="-s -w" -o dist/Threadfin_linux_amd64_glibc_2.31_compat &
           
           # FreeBSD builds
           env GOOS=freebsd GOARCH=amd64 go build -ldflags="-s -w" -o dist/Threadfin_freebsd_amd64 &
