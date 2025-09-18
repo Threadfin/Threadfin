@@ -492,6 +492,11 @@
       "title": "Force HTTPS",
       "description": "With image caching enabled, if checked, will rewrite M3U and EPG urls to include https protocol as well as https port (default is 443)"
     },
+    "excludeStreamHttps":
+    {
+      "title": "Exclude Streams from HTTPS",
+      "description": "will not rewrite M3U stream urls to include https protocol"
+    },
     "httpsPort":
     {
       "title": "HTTPS Port",
