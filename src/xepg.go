@@ -464,6 +464,37 @@ func createXEPGDatabase() (err error) {
 		xepgChannelsValuesMap[channelHash] = channel
 	}
 
+	// Remove duplicate channels from database based on new URL+TvgID hashing
+	var seenURLs = make(map[string]string) // Maps URL+TvgID to channel ID
+	var duplicatesToRemove []string
+
+	for id, dxc := range Data.XEPG.Channels {
+		var channel XEPGChannelStruct
+		err = json.Unmarshal([]byte(mapToJSON(dxc)), &channel)
+		if err != nil {
+			continue
+		}
+
+		// Create the same hash key we use for uniqueness
+		uniqueKey := channel.URL + "|" + channel.FileM3UID
+		if channel.TvgID != "" {
+			uniqueKey = channel.URL + "|" + channel.TvgID + "|" + channel.FileM3UID
+		}
+
+		if existingID, exists := seenURLs[uniqueKey]; exists {
+			// This is a duplicate - mark for removal
+			duplicatesToRemove = append(duplicatesToRemove, id)
+		} else {
+			// First time seeing this URL combination
+			seenURLs[uniqueKey] = id
+		}
+	}
+
+	// Remove all duplicates
+	for _, id := range duplicatesToRemove {
+		delete(Data.XEPG.Channels, id)
+	}
+
 	for _, dsa := range Data.Streams.Active {
 		var channelExists = false  // Entscheidet ob ein Kanal neu zu Datenbank hinzugefügt werden soll.  Decides whether a channel should be added to the database
 		var channelHasUUID = false // Überprüft, ob der Kanal (Stream) eindeutige ID's besitzt.  Checks whether the channel (stream) has unique IDs
