@@ -262,9 +262,13 @@ func buildM3U(groups []string) (m3u string, err error) {
 		var parameter = fmt.Sprintf(`#EXTINF:0 channelID="%s" tvg-chno="%s" tvg-name="%s" tvg-id="%s" tvg-logo="%s" group-title="%s",%s`+"\n", channel.XEPG, channel.XChannelID, channel.XName, channel.XChannelID, logo, group, channel.XName)
 		var stream, err = createStreamingURL("M3U", channel.FileM3UID, channel.XChannelID, channel.XName, channel.URL, channel.BackupChannel1, channel.BackupChannel2, channel.BackupChannel3)
 		if err == nil {
-			// Check for exact duplicate of the entire channel entry
+			// Use URL + channel ID to create truly unique channel entries
+			// This prevents duplicates based on URL rather than just text matching
+			uniqueChannelKey := channel.URL + "|" + channel.XChannelID
 			channelEntry := parameter + stream + "\n"
-			if !strings.Contains(m3u, channelEntry) {
+
+			// Check if this specific URL + channel ID combination already exists
+			if !strings.Contains(m3u, uniqueChannelKey) {
 				m3u = m3u + channelEntry
 			}
 		}
