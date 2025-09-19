@@ -551,8 +551,7 @@ func createXEPGDatabase() (err error) {
 				xepgChannel.TvgName = xepgChannel.Name
 			}
 
-			// Update URL for all channels
-			xepgChannel.URL = m3uChannel.URL
+			// Keep original URL - don't overwrite
 
 			if isLiveEventChannel {
 				// Live Event channel: Update channel name AND generate EPG
