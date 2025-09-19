@@ -564,6 +564,11 @@ func createXEPGDatabase() (err error) {
 			Data.XEPG.Channels[currentXEPGID] = xepgChannel
 
 		case false:
+			// Check if this hash already exists to prevent duplicates
+			if _, exists := xepgChannelsValuesMap[m3uChannelHash]; exists {
+				continue // Skip if hash already exists
+			}
+
 			// Neuer Kanal
 			var firstFreeNumber float64 = Settings.MappingFirstChannel
 			// Check channel start number from Group Filter
