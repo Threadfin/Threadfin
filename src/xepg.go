@@ -481,7 +481,7 @@ func createXEPGDatabase() (err error) {
 			uniqueKey = channel.URL + "|" + channel.TvgID + "|" + channel.FileM3UID
 		}
 
-		if existingID, exists := seenURLs[uniqueKey]; exists {
+		if _, exists := seenURLs[uniqueKey]; exists {
 			// This is a duplicate - mark for removal
 			duplicatesToRemove = append(duplicatesToRemove, id)
 		} else {
