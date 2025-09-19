@@ -493,6 +493,29 @@ func saveFilter(request RequestStruct) (settings SettingsStruct, err error) {
 
 	settings = Settings
 
+	// Check if any Live Event filters were added/changed
+	liveEventFilterChanged := false
+	for _, data := range newData {
+		if filterData, ok := data.(map[string]interface{}); ok {
+			if liveEvent, exists := filterData["liveEvent"].(bool); exists && liveEvent {
+				liveEventFilterChanged = true
+				break
+			}
+		}
+	}
+
+	// If Live Event filter changed, clear all existing Live Event channels first
+	if liveEventFilterChanged {
+		for id, dxc := range Data.XEPG.Channels {
+			var channel XEPGChannelStruct
+			json.Unmarshal([]byte(mapToJSON(dxc)), &channel)
+			if channel.Live {
+				delete(Data.XEPG.Channels, id)
+			}
+		}
+		saveMapToJSONFile(System.File.XEPG, Data.XEPG.Channels)
+	}
+
 	err = buildDatabaseDVR()
 	if err != nil {
 		return
