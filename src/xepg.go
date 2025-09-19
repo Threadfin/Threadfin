@@ -465,10 +465,8 @@ func createXEPGDatabase() (err error) {
 	}
 
 	for _, dsa := range Data.Streams.Active {
-		var channelExists = false  // Entscheidet ob ein Kanal neu zu Datenbank hinzugefügt werden soll.  Decides whether a channel should be added to the database
-		var channelHasUUID = false // Überprüft, ob der Kanal (Stream) eindeutige ID's besitzt.  Checks whether the channel (stream) has unique IDs
-		var currentXEPGID string   // Aktuelle Datenbank ID (XEPG). Wird verwendet, um den Kanal in der Datenbank mit dem Stream der M3u zu aktualisieren. Current database ID (XEPG) Used to update the channel in the database with the stream of the M3u
-		var currentChannelNumber string
+		var channelExists = false // Entscheidet ob ein Kanal neu zu Datenbank hinzugefügt werden soll.  Decides whether a channel should be added to the database
+		var currentXEPGID string  // Aktuelle Datenbank ID (XEPG). Wird verwendet, um den Kanal in der Datenbank mit dem Stream der M3u zu aktualisieren. Current database ID (XEPG) Used to update the channel in the database with the stream of the M3u
 
 		var m3uChannel M3UChannelStructXEPG
 
@@ -492,10 +490,6 @@ func createXEPGDatabase() (err error) {
 		if val, ok := xepgChannelsValuesMap[m3uChannelHash]; ok {
 			channelExists = true
 			currentXEPGID = val.XEPG
-			currentChannelNumber = val.TvgChno
-			if len(m3uChannel.UUIDValue) > 0 {
-				channelHasUUID = true
-			}
 		} else {
 			// XEPG Datenbank durchlaufen um nach dem Kanal zu suchen.  Run through the XEPG database to search for the channel (full scan)
 			for _, dxc := range xepgChannelsValuesMap {
@@ -509,9 +503,7 @@ func createXEPGDatabase() (err error) {
 						if dxc.UUIDValue == m3uChannel.UUIDValue {
 
 							channelExists = true
-							channelHasUUID = true
 							currentXEPGID = dxc.XEPG
-							currentChannelNumber = dxc.TvgChno
 							break
 
 						}
