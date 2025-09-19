@@ -530,9 +530,10 @@ func saveXEpgMapping(request RequestStruct) (err error) {
 	if System.ScanInProgress == 0 {
 
 		System.ScanInProgress = 1
-		cleanupXEPG()
+		createXMLTVFile()
+		createM3UFile()
 		System.ScanInProgress = 0
-		buildXEPG(true)
+		showInfo("XEPG:" + fmt.Sprintf("Ready to use"))
 
 	} else {
 
@@ -554,9 +555,9 @@ func saveXEpgMapping(request RequestStruct) (err error) {
 			}
 
 			System.ScanInProgress = 1
-			cleanupXEPG()
+			createXMLTVFile()
+			createM3UFile()
 			System.ScanInProgress = 0
-			buildXEPG(false)
 			showInfo("XEPG:" + fmt.Sprintf("Ready to use"))
 
 			System.BackgroundProcess = false
