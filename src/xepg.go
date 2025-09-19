@@ -457,11 +457,18 @@ func createXEPGDatabase() (err error) {
 			channel.TvgName = channel.Name
 		}
 
+		// Use new URL-based hash
 		channelHash := channel.URL + "|" + channel.FileM3UID
 		if channel.TvgID != "" {
 			channelHash = channel.URL + "|" + channel.TvgID + "|" + channel.FileM3UID
 		}
+
+		// Update the ChannelUniqueID in database to use new hash
+		channel.ChannelUniqueID = channelHash
+		Data.XEPG.Channels[channel.XEPG] = channel
+
 		xepgChannelsValuesMap[channelHash] = channel
+
 	}
 
 	for _, dsa := range Data.Streams.Active {
