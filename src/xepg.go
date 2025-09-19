@@ -1,8 +1,6 @@
 package src
 
 import (
-	"crypto/md5"
-	"encoding/hex"
 	"encoding/json"
 	"encoding/xml"
 	"errors"
@@ -459,10 +457,9 @@ func createXEPGDatabase() (err error) {
 			channel.TvgName = channel.Name
 		}
 
-		channelHash := channel.TvgName + channel.FileM3UID
-		if channel.Live {
-			hash := md5.Sum([]byte(channel.URL + channel.FileM3UID))
-			channelHash = hex.EncodeToString(hash[:])
+		channelHash := channel.URL + "|" + channel.FileM3UID
+		if channel.TvgID != "" {
+			channelHash = channel.URL + "|" + channel.TvgID + "|" + channel.FileM3UID
 		}
 		xepgChannelsValuesMap[channelHash] = channel
 	}
@@ -485,10 +482,9 @@ func createXEPGDatabase() (err error) {
 		}
 
 		// Try to find the channel based on matching all known values.  If that fails, then move to full channel scan
-		m3uChannelHash := m3uChannel.TvgName + m3uChannel.FileM3UID
-		if m3uChannel.LiveEvent == "true" {
-			hash := md5.Sum([]byte(m3uChannel.URL + m3uChannel.FileM3UID))
-			m3uChannelHash = hex.EncodeToString(hash[:])
+		m3uChannelHash := m3uChannel.URL + "|" + m3uChannel.FileM3UID
+		if m3uChannel.TvgID != "" {
+			m3uChannelHash = m3uChannel.URL + "|" + m3uChannel.TvgID + "|" + m3uChannel.FileM3UID
 		}
 
 		Data.Cache.Streams.Active = append(Data.Cache.Streams.Active, m3uChannelHash)
@@ -1558,10 +1554,9 @@ func cleanupXEPG() {
 				xepgChannel.TvgName = xepgChannel.Name
 			}
 
-			m3uChannelHash := xepgChannel.TvgName + xepgChannel.FileM3UID
-			if xepgChannel.Live {
-				hash := md5.Sum([]byte(xepgChannel.URL + xepgChannel.FileM3UID))
-				m3uChannelHash = hex.EncodeToString(hash[:])
+			m3uChannelHash := xepgChannel.URL + "|" + xepgChannel.FileM3UID
+			if xepgChannel.TvgID != "" {
+				m3uChannelHash = xepgChannel.URL + "|" + xepgChannel.TvgID + "|" + xepgChannel.FileM3UID
 			}
 
 			if indexOfString(m3uChannelHash, Data.Cache.Streams.Active) == -1 {
