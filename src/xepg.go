@@ -564,8 +564,21 @@ func createXEPGDatabase() (err error) {
 			Data.XEPG.Channels[currentXEPGID] = xepgChannel
 
 		case false:
-			// Check if this hash already exists to prevent duplicates
-			if _, exists := xepgChannelsValuesMap[m3uChannelHash]; exists {
+			// Check if this hash already exists in database to prevent duplicates
+			hashExists := false
+			for _, dxc := range Data.XEPG.Channels {
+				var existingChannel XEPGChannelStruct
+				json.Unmarshal([]byte(mapToJSON(dxc)), &existingChannel)
+				existingHash := existingChannel.URL + "|" + existingChannel.FileM3UID
+				if existingChannel.TvgID != "" {
+					existingHash = existingChannel.URL + "|" + existingChannel.TvgID + "|" + existingChannel.FileM3UID
+				}
+				if existingHash == m3uChannelHash {
+					hashExists = true
+					break
+				}
+			}
+			if hashExists {
 				continue // Skip if hash already exists
 			}
 

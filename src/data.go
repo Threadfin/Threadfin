@@ -493,9 +493,12 @@ func saveFilter(request RequestStruct) (settings SettingsStruct, err error) {
 
 	settings = Settings
 
-	// Just regenerate EPG files, don't rebuild database
-	createXMLTVFile()
-	createM3UFile()
+	err = buildDatabaseDVR()
+	if err != nil {
+		return
+	}
+
+	buildXEPG(false)
 
 	return
 }
