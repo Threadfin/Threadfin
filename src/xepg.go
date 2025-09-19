@@ -464,37 +464,6 @@ func createXEPGDatabase() (err error) {
 		xepgChannelsValuesMap[channelHash] = channel
 	}
 
-	// Remove duplicate channels from database based on new URL+TvgID hashing
-	var seenURLs = make(map[string]string) // Maps URL+TvgID to channel ID
-	var duplicatesToRemove []string
-
-	for id, dxc := range Data.XEPG.Channels {
-		var channel XEPGChannelStruct
-		err = json.Unmarshal([]byte(mapToJSON(dxc)), &channel)
-		if err != nil {
-			continue
-		}
-
-		// Create the same hash key we use for uniqueness
-		uniqueKey := channel.URL + "|" + channel.FileM3UID
-		if channel.TvgID != "" {
-			uniqueKey = channel.URL + "|" + channel.TvgID + "|" + channel.FileM3UID
-		}
-
-		if _, exists := seenURLs[uniqueKey]; exists {
-			// This is a duplicate - mark for removal
-			duplicatesToRemove = append(duplicatesToRemove, id)
-		} else {
-			// First time seeing this URL combination
-			seenURLs[uniqueKey] = id
-		}
-	}
-
-	// Remove all duplicates
-	for _, id := range duplicatesToRemove {
-		delete(Data.XEPG.Channels, id)
-	}
-
 	for _, dsa := range Data.Streams.Active {
 		var channelExists = false  // Entscheidet ob ein Kanal neu zu Datenbank hinzugefügt werden soll.  Decides whether a channel should be added to the database
 		var channelHasUUID = false // Überprüft, ob der Kanal (Stream) eindeutige ID's besitzt.  Checks whether the channel (stream) has unique IDs
@@ -562,34 +531,42 @@ func createXEPGDatabase() (err error) {
 				return
 			}
 
-			if xepgChannel.Live && xepgChannel.ChannelUniqueID == m3uChannelHash {
-				if xepgChannel.TvgName == "" {
-					xepgChannel.TvgName = xepgChannel.Name
+			// Only process if channel is active
+			if !xepgChannel.XActive {
+				continue // Skip inactive channels
+			}
+
+			// Check if this is a Live Event channel
+			isLiveEventChannel := false
+			for _, filter := range Settings.Filter {
+				filter_json, _ := json.Marshal(filter)
+				f := FilterStruct{}
+				json.Unmarshal(filter_json, &f)
+				if f.LiveEvent && m3uChannel.GroupTitle == f.Filter {
+					isLiveEventChannel = true
+					break
 				}
+			}
 
-				xepgChannel.XChannelID = currentChannelNumber
-				xepgChannel.TvgChno = currentChannelNumber
+			if xepgChannel.TvgName == "" {
+				xepgChannel.TvgName = xepgChannel.Name
+			}
 
-				// Streaming URL aktualisieren
-				xepgChannel.URL = m3uChannel.URL
+			// Update URL for all channels
+			xepgChannel.URL = m3uChannel.URL
 
-				if m3uChannel.LiveEvent == "true" {
-					xepgChannel.Live = true
-				}
+			if isLiveEventChannel {
+				// Live Event channel: Update channel name AND generate EPG
+				xepgChannel.Live = true
+				xepgChannel.XName = m3uChannel.Name
+				xepgChannel.Name = m3uChannel.Name
+			}
+			// For non-Live Event channels: Only EPG gets updated (happens in createXMLTVFile)
 
-				// Kanalname aktualisieren, nur mit Kanal ID's möglich
-				if channelHasUUID {
-					programData, _ := getProgramData(xepgChannel)
-					if xepgChannel.XUpdateChannelName || strings.Contains(xepgChannel.TvgID, "threadfin-") || (m3uChannel.LiveEvent == "true" && len(programData.Program) <= 3) {
-						xepgChannel.XName = m3uChannel.Name
-					}
-				}
-
-				// Kanallogo aktualisieren. Wird bei vorhandenem Logo in der XMLTV Datei wieder überschrieben
-				if xepgChannel.XUpdateChannelIcon {
-					var imgc = Data.Cache.Images
-					xepgChannel.TvgLogo = imgc.Image.GetURL(m3uChannel.TvgLogo, Settings.HttpThreadfinDomain, Settings.Port, Settings.ForceHttps, Settings.HttpsPort, Settings.HttpsThreadfinDomain)
-				}
+			// Update logo if needed
+			if xepgChannel.XUpdateChannelIcon {
+				var imgc = Data.Cache.Images
+				xepgChannel.TvgLogo = imgc.Image.GetURL(m3uChannel.TvgLogo, Settings.HttpThreadfinDomain, Settings.Port, Settings.ForceHttps, Settings.HttpsPort, Settings.HttpsThreadfinDomain)
 			}
 
 			Data.XEPG.Channels[currentXEPGID] = xepgChannel
