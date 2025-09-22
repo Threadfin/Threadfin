@@ -33,6 +33,7 @@ type Icon struct {
 
 // Program : Programme
 type Program struct {
+	XMLName xml.Name `xml:"programme"`
 	Channel string `xml:"channel,attr"`
 	Start   string `xml:"start,attr"`
 	Stop    string `xml:"stop,attr"`
