@@ -210,6 +210,24 @@ func buildM3U(groups []string) (m3u string, err error) {
 		}
 	}
 
+	// Count deactivated channels per group
+	deactivatedPerGroup := make(map[string]int)
+	for _, dxc := range Data.XEPG.Channels {
+		var ch XEPGChannelStruct
+		if err := json.Unmarshal([]byte(mapToJSON(dxc)), &ch); err == nil {
+			group := ch.XGroupTitle
+			if ch.XCategory != "" {
+				group = ch.XCategory
+			}
+			if group == "" {
+				group = ch.GroupTitle
+			}
+			if !ch.XActive || ch.XHideChannel {
+				deactivatedPerGroup[group] = deactivatedPerGroup[group] + 1
+			}
+		}
+	}
+
 	for _, dxc := range Data.XEPG.Channels {
 		var xepgChannel XEPGChannelStruct
 		err := json.Unmarshal([]byte(mapToJSON(dxc)), &xepgChannel)
@@ -240,7 +258,7 @@ func buildM3U(groups []string) (m3u string, err error) {
 	}
 	m3u = fmt.Sprintf(`#EXTM3U url-tvg="%s" x-tvg-url="%s"`+"\n", xmltvURL, xmltvURL)
 
-	// Avoid duplicate exact stream URLs within the same group and cap per-group by expected count
+	// Avoid duplicate exact stream URLs within the same group and cap per-group by expected minus deactivated
 	seenURLInGroup := make(map[string]struct{})
 	emittedGroupCount := make(map[string]int)
 	for _, e := range entries {
@@ -254,9 +272,13 @@ func buildM3U(groups []string) (m3u string, err error) {
 			group = channel.GroupTitle
 		}
 
-		// Cap per expected group count if present
+		// Determine allowed active count = expected - deactivated
 		if expected, ok := expectedGroupCount[group]; ok {
-			if emittedGroupCount[group] >= expected {
+			allowed := expected - deactivatedPerGroup[group]
+			if allowed < 0 {
+				allowed = 0
+			}
+			if emittedGroupCount[group] >= allowed {
 				continue
 			}
 		}
