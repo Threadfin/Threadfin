@@ -384,8 +384,8 @@ func updateFile(request RequestStruct, fileType string) (err error) {
 
 		err = getProviderData(fileType, dataID)
 		if err == nil {
-			err = buildDatabaseDVR()
-			buildXEPG(false)
+			// For playlist updates, just update EPG data and Live Event channel names
+			updateXEPG(false)
 		}
 
 	}
