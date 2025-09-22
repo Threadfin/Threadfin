@@ -470,16 +470,9 @@ func createXEPGDatabase() (err error) {
 			channel.TvgName = channel.Name
 		}
 
-		// Create consistent channel hash using URL, tvg-id, and tvg-name
-		// For Live Events, prioritize tvg-id for stable identification
-		var hashInput string
-		if channel.Live && channel.TvgID != "" {
-			// For Live Events with tvg-id, use URL + tvg-id for stable hash
-			hashInput = channel.URL + channel.TvgID + channel.FileM3UID
-		} else {
-			// For regular channels or Live Events without tvg-id, use URL + tvg-name
-			hashInput = channel.URL + channel.TvgName + channel.FileM3UID
-		}
+		// Create consistent channel hash using URL as primary identifier
+		// Each unique URL should create a separate channel, even if tvg-id/name are similar (backup channels)
+		hashInput := channel.URL + channel.TvgName + channel.FileM3UID
 		hash := md5.Sum([]byte(hashInput))
 		channelHash := hex.EncodeToString(hash[:])
 		xepgChannelsValuesMap[channelHash] = channel
@@ -503,16 +496,9 @@ func createXEPGDatabase() (err error) {
 		}
 
 		// Try to find the channel based on matching all known values.  If that fails, then move to full channel scan
-		// Create consistent channel hash using URL, tvg-id, and tvg-name
-		// For Live Events, prioritize tvg-id for stable identification
-		var hashInput string
-		if m3uChannel.LiveEvent == "true" && m3uChannel.TvgID != "" {
-			// For Live Events with tvg-id, use URL + tvg-id for stable hash
-			hashInput = m3uChannel.URL + m3uChannel.TvgID + m3uChannel.FileM3UID
-		} else {
-			// For regular channels or Live Events without tvg-id, use URL + tvg-name
-			hashInput = m3uChannel.URL + m3uChannel.TvgName + m3uChannel.FileM3UID
-		}
+		// Create consistent channel hash using URL as primary identifier
+		// Each unique URL should create a separate channel, even if tvg-id/name are similar (backup channels)
+		hashInput := m3uChannel.URL + m3uChannel.TvgName + m3uChannel.FileM3UID
 		hash := md5.Sum([]byte(hashInput))
 		m3uChannelHash := hex.EncodeToString(hash[:])
 
@@ -1719,16 +1705,9 @@ func cleanupXEPG() {
 				xepgChannel.TvgName = xepgChannel.Name
 			}
 
-			// Create consistent channel hash using URL, tvg-id, and tvg-name
-			// For Live Events, prioritize tvg-id for stable identification
-			var hashInput string
-			if xepgChannel.Live && xepgChannel.TvgID != "" {
-				// For Live Events with tvg-id, use URL + tvg-id for stable hash
-				hashInput = xepgChannel.URL + xepgChannel.TvgID + xepgChannel.FileM3UID
-			} else {
-				// For regular channels or Live Events without tvg-id, use URL + tvg-name
-				hashInput = xepgChannel.URL + xepgChannel.TvgName + xepgChannel.FileM3UID
-			}
+			// Create consistent channel hash using URL as primary identifier
+			// Each unique URL should create a separate channel, even if tvg-id/name are similar (backup channels)
+			hashInput := xepgChannel.URL + xepgChannel.TvgName + xepgChannel.FileM3UID
 			hash := md5.Sum([]byte(hashInput))
 			m3uChannelHash := hex.EncodeToString(hash[:])
 
@@ -1767,9 +1746,8 @@ func cleanupXEPG() {
 func removeDuplicateChannels() {
 	showInfo("XEPG:" + "Remove duplicate channels")
 
-	// Track channels by different criteria to identify various types of duplicates
-	hashToChannelID := make(map[string]string)       // Hash-based duplicates
-	nameToChannelID := make(map[string][]string)     // Name-based duplicates for backup channels
+	// Track channels by hash to identify exact duplicates (same URL + name + source)
+	hashToChannelID := make(map[string]string)
 	var channelsToRemove []string
 	var duplicatesFound int
 
@@ -1784,15 +1762,9 @@ func removeDuplicateChannels() {
 			xepgChannel.TvgName = xepgChannel.Name
 		}
 
-		// Create consistent channel hash using same logic as in createXEPGDatabase
-		var hashInput string
-		if xepgChannel.Live && xepgChannel.TvgID != "" {
-			// For Live Events with tvg-id, use URL + tvg-id for stable hash
-			hashInput = xepgChannel.URL + xepgChannel.TvgID + xepgChannel.FileM3UID
-		} else {
-			// For regular channels or Live Events without tvg-id, use URL + tvg-name
-			hashInput = xepgChannel.URL + xepgChannel.TvgName + xepgChannel.FileM3UID
-		}
+		// Create consistent channel hash using URL as primary identifier
+		// Each unique URL should create a separate channel, even if tvg-id/name are similar (backup channels)
+		hashInput := xepgChannel.URL + xepgChannel.TvgName + xepgChannel.FileM3UID
 		hash := md5.Sum([]byte(hashInput))
 		channelHash := hex.EncodeToString(hash[:])
 
@@ -1804,28 +1776,11 @@ func removeDuplicateChannels() {
 			hashToChannelID[channelHash] = id
 		}
 
-		// Check for name-based duplicates (backup channels with same content)
-		// Clean channel name by removing backup indicators and extra info
-		cleanName := cleanChannelNameForDuplicateDetection(xepgChannel.XName)
-		if cleanName != "" {
-			if existingIDs, exists := nameToChannelID[cleanName]; exists {
-				// Found channels with similar names - check if they're actually duplicates
-				for _, existingID := range existingIDs {
-					if shouldRemoveAsNameDuplicate(id, existingID) {
-						channelsToRemove = append(channelsToRemove, id)
-						showInfo(fmt.Sprintf("XEPG:Removing name-based duplicate %s (%s), keeping %s",
-							id, xepgChannel.XName, existingID))
-						duplicatesFound++
-						goto nextChannel
-					}
-				}
-				nameToChannelID[cleanName] = append(nameToChannelID[cleanName], id)
-			} else {
-				nameToChannelID[cleanName] = []string{id}
-			}
-		}
-
-	nextChannel:
+		// DISABLED: Name-based duplicate removal - backup channels with different URLs are legitimate
+		// Only remove true duplicates (exact same URL + tvg-id + source) via hash-based detection
+		//
+		// Note: Channels like "NFL RedZone (1)", "NFL RedZone (2)", "NFL RedZone (3)" with same tvg-id
+		// but different URLs are backup channels and should be preserved, not treated as duplicates
 	}
 
 	// Remove duplicate channels
