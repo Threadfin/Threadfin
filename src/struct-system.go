@@ -333,6 +333,7 @@ type SettingsStruct struct {
 	ThreadfinAutoUpdate       bool                  `json:"ThreadfinAutoUpdate"`
 	StoreBufferInRAM          bool                  `json:"storeBufferInRAM"`
 	ForceHttps                bool                  `json:"forceHttps"`
+    ExcludeStreamHttps        bool                  `json:"excludeStreamHttps"`
 	HttpsPort                 int                   `json:"httpsPort"`
 	BindIpAddress             string                `json:"bindIpAddress"`
 	HttpsThreadfinDomain      string                `json:"httpsThreadfinDomain"`

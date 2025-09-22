@@ -314,6 +314,20 @@ class SettingsCategory {
         setting.appendChild(tdRight)
         break
 
+      case"excludeStreamHttps":
+        var tdLeft = document.createElement("TD")
+        tdLeft.innerHTML = "{{.settings.excludeStreamHttps.title}}" + ":"
+
+        var tdRight = document.createElement("TD")
+        var input = content.createCheckbox(settingsKey)
+        input.checked = data
+        input.setAttribute("onchange", "javascript: this.className = 'changed'")
+        tdRight.appendChild(input)
+
+        setting.appendChild(tdLeft)
+        setting.appendChild(tdRight)
+        break
+
       case "httpsPort":
           var tdLeft = document.createElement("TD")
           tdLeft.innerHTML = "{{.settings.httpsPort.title}}" + ":"
@@ -664,6 +678,10 @@ class SettingsCategory {
 
       case "forceHttps":
         text = "{{.settings.forceHttps.description}}"
+        break
+
+      case "excludeStreamHttps":
+        text = "{{.settings.excludeStreamHttps.description}}"
         break
 
       case "httpsPort":

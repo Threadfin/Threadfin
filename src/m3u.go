@@ -329,7 +329,8 @@ func buildM3U(groups []string) (m3u string, err error) {
 			}
 		}
 
-		if Settings.ForceHttps && Settings.HttpsThreadfinDomain != "" {
+        // Disabling so not to rewrite stream to https domain when disable stream from https set
+		if Settings.ForceHttps && Settings.HttpsThreadfinDomain != "" && Settings.ExcludeStreamHttps == false {
 			u, err := url.Parse(channel.URL)
 			if err == nil {
 				u.Scheme = "https"
@@ -343,7 +344,7 @@ func buildM3U(groups []string) (m3u string, err error) {
 					channel.URL = fmt.Sprintf("https://%s:%d%s", u.Host, Settings.HttpsPort, u.Path)
 				}
 			}
-		}
+	    }
 
 		logo := ""
 		if channel.TvgLogo != "" {
