@@ -1767,8 +1767,9 @@ func cleanupXEPG() {
 func removeDuplicateChannels() {
 	showInfo("XEPG:" + "Remove duplicate channels")
 
-	// Track channels by their hash to identify duplicates
-	hashToChannelID := make(map[string]string)
+	// Track channels by different criteria to identify various types of duplicates
+	hashToChannelID := make(map[string]string)       // Hash-based duplicates
+	nameToChannelID := make(map[string][]string)     // Name-based duplicates for backup channels
 	var channelsToRemove []string
 	var duplicatesFound int
 
@@ -1795,49 +1796,36 @@ func removeDuplicateChannels() {
 		hash := md5.Sum([]byte(hashInput))
 		channelHash := hex.EncodeToString(hash[:])
 
-		// Check if we've seen this hash before
+		// Check for hash-based duplicates (exact same content)
 		if existingChannelID, exists := hashToChannelID[channelHash]; exists {
-			// Found a duplicate - decide which one to keep
-			var existingChannel XEPGChannelStruct
-			err := json.Unmarshal([]byte(mapToJSON(Data.XEPG.Channels[existingChannelID])), &existingChannel)
-			if err == nil {
-				// Keep the channel with better data (has XMLTV mapping, is active, etc.)
-				keepCurrent := false
-
-				// Prefer active channels over inactive ones
-				if xepgChannel.XActive && !existingChannel.XActive {
-					keepCurrent = true
-				} else if !xepgChannel.XActive && existingChannel.XActive {
-					keepCurrent = false
-				} else {
-					// Both have same active status, prefer one with XMLTV mapping
-					if xepgChannel.XmltvFile != "" && xepgChannel.XmltvFile != "-" &&
-					   (existingChannel.XmltvFile == "" || existingChannel.XmltvFile == "-") {
-						keepCurrent = true
-					} else {
-						// Prefer the one created later (larger XEPG ID suggests later creation)
-						keepCurrent = id > existingChannelID
-					}
-				}
-
-				if keepCurrent {
-					// Remove the existing channel, keep current
-					channelsToRemove = append(channelsToRemove, existingChannelID)
-					hashToChannelID[channelHash] = id
-					showInfo(fmt.Sprintf("XEPG:Removing duplicate channel %s (%s), keeping %s (%s)",
-						existingChannelID, existingChannel.XName, id, xepgChannel.XName))
-				} else {
-					// Remove current channel, keep existing
-					channelsToRemove = append(channelsToRemove, id)
-					showInfo(fmt.Sprintf("XEPG:Removing duplicate channel %s (%s), keeping %s (%s)",
-						id, xepgChannel.XName, existingChannelID, existingChannel.XName))
-				}
-				duplicatesFound++
-			}
+			channelsToRemove = append(channelsToRemove, handleDuplicate(id, existingChannelID, "hash"))
+			duplicatesFound++
 		} else {
-			// First time seeing this hash
 			hashToChannelID[channelHash] = id
 		}
+
+		// Check for name-based duplicates (backup channels with same content)
+		// Clean channel name by removing backup indicators and extra info
+		cleanName := cleanChannelNameForDuplicateDetection(xepgChannel.XName)
+		if cleanName != "" {
+			if existingIDs, exists := nameToChannelID[cleanName]; exists {
+				// Found channels with similar names - check if they're actually duplicates
+				for _, existingID := range existingIDs {
+					if shouldRemoveAsNameDuplicate(id, existingID) {
+						channelsToRemove = append(channelsToRemove, id)
+						showInfo(fmt.Sprintf("XEPG:Removing name-based duplicate %s (%s), keeping %s",
+							id, xepgChannel.XName, existingID))
+						duplicatesFound++
+						goto nextChannel
+					}
+				}
+				nameToChannelID[cleanName] = append(nameToChannelID[cleanName], id)
+			} else {
+				nameToChannelID[cleanName] = []string{id}
+			}
+		}
+
+	nextChannel:
 	}
 
 	// Remove duplicate channels
@@ -1854,6 +1842,120 @@ func removeDuplicateChannels() {
 		}
 	} else {
 		showInfo("XEPG:No duplicate channels found")
+	}
+}
+
+// Helper function to clean channel names for duplicate detection
+func cleanChannelNameForDuplicateDetection(name string) string {
+	// Remove backup indicators like (1), (2), etc.
+	re := regexp.MustCompile(`\s*\([0-9]+\)\s*$`)
+	cleaned := re.ReplaceAllString(name, "")
+
+	// Remove extra whitespace
+	cleaned = strings.TrimSpace(cleaned)
+
+	return cleaned
+}
+
+// Helper function to determine if a channel should be removed as name duplicate
+func shouldRemoveAsNameDuplicate(currentID, existingID string) bool {
+	currentChannel := getChannelByID(currentID)
+	existingChannel := getChannelByID(existingID)
+
+	if currentChannel == nil || existingChannel == nil {
+		return false
+	}
+
+	// Don't remove if they're in different groups
+	if currentChannel.XGroupTitle != existingChannel.XGroupTitle {
+		return false
+	}
+
+	// Prefer active channels
+	if currentChannel.XActive && !existingChannel.XActive {
+		return false // Keep current, remove existing (handled elsewhere)
+	}
+	if !currentChannel.XActive && existingChannel.XActive {
+		return true // Remove current, keep existing
+	}
+
+	// Prefer channels with XMLTV mapping
+	currentHasMapping := currentChannel.XmltvFile != "" && currentChannel.XmltvFile != "-"
+	existingHasMapping := existingChannel.XmltvFile != "" && existingChannel.XmltvFile != "-"
+
+	if currentHasMapping && !existingHasMapping {
+		return false // Keep current
+	}
+	if !currentHasMapping && existingHasMapping {
+		return true // Remove current
+	}
+
+	// If everything else is equal, keep the one with lower channel number
+	currentChno, err1 := strconv.ParseFloat(currentChannel.TvgChno, 64)
+	existingChno, err2 := strconv.ParseFloat(existingChannel.TvgChno, 64)
+
+	if err1 == nil && err2 == nil {
+		return currentChno > existingChno // Remove current if it has higher channel number
+	}
+
+	// Default: remove current (keep existing)
+	return true
+}
+
+// Helper function to get channel by ID
+func getChannelByID(id string) *XEPGChannelStruct {
+	if dxc, exists := Data.XEPG.Channels[id]; exists {
+		var channel XEPGChannelStruct
+		if err := json.Unmarshal([]byte(mapToJSON(dxc)), &channel); err == nil {
+			return &channel
+		}
+	}
+	return nil
+}
+
+// Helper function to handle duplicate channel removal
+func handleDuplicate(currentID, existingID, duplicateType string) string {
+	currentChannel := getChannelByID(currentID)
+	existingChannel := getChannelByID(existingID)
+
+	if currentChannel == nil || existingChannel == nil {
+		return currentID // Default to removing current
+	}
+
+	// Prefer active channels over inactive ones
+	if currentChannel.XActive && !existingChannel.XActive {
+		showInfo(fmt.Sprintf("XEPG:Removing %s duplicate %s (%s), keeping %s (%s)",
+			duplicateType, existingID, existingChannel.XName, currentID, currentChannel.XName))
+		return existingID
+	} else if !currentChannel.XActive && existingChannel.XActive {
+		showInfo(fmt.Sprintf("XEPG:Removing %s duplicate %s (%s), keeping %s (%s)",
+			duplicateType, currentID, currentChannel.XName, existingID, existingChannel.XName))
+		return currentID
+	}
+
+	// Both have same active status, prefer one with XMLTV mapping
+	currentHasMapping := currentChannel.XmltvFile != "" && currentChannel.XmltvFile != "-"
+	existingHasMapping := existingChannel.XmltvFile != "" && existingChannel.XmltvFile != "-"
+
+	if currentHasMapping && !existingHasMapping {
+		showInfo(fmt.Sprintf("XEPG:Removing %s duplicate %s (%s), keeping %s (%s)",
+			duplicateType, existingID, existingChannel.XName, currentID, currentChannel.XName))
+		return existingID
+	} else if !currentHasMapping && existingHasMapping {
+		showInfo(fmt.Sprintf("XEPG:Removing %s duplicate %s (%s), keeping %s (%s)",
+			duplicateType, currentID, currentChannel.XName, existingID, existingChannel.XName))
+		return currentID
+	}
+
+	// Prefer the one created later (larger XEPG ID suggests later creation)
+	if currentID > existingID {
+		showInfo(fmt.Sprintf("XEPG:Removing %s duplicate %s (%s), keeping %s (%s)",
+			duplicateType, existingID, existingChannel.XName, currentID, currentChannel.XName))
+		return existingID
+	} else {
+		showInfo(fmt.Sprintf("XEPG:Removing %s duplicate %s (%s), keeping %s (%s)",
+			duplicateType, currentID, currentChannel.XName, existingID, existingChannel.XName))
+		return currentID
 	}
 }
 

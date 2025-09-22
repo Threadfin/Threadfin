@@ -278,10 +278,10 @@ func buildM3U(groups []string) (m3u string, err error) {
 		m3u = header
 	}
 
-	// Sort entries by channel ID numerically
+	// Sort entries by tvg-chno numerically
 	sort.Slice(entries, func(i, j int) bool {
-		chI := entries[i].ch.XChannelID
-		chJ := entries[j].ch.XChannelID
+		chI := entries[i].ch.TvgChno
+		chJ := entries[j].ch.TvgChno
 
 		// Try to parse as numbers for proper numeric sorting
 		numI, errI := strconv.ParseFloat(chI, 64)
