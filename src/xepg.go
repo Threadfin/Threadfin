@@ -583,10 +583,10 @@ func createXEPGDatabase() (err error) {
 				xepgChannel.TvgName = m3uChannel.TvgName
 			}
 
-			// For Live Event channels, ensure they use Live Event EPG instead of cached XMLTV data
+			// For Live Event channels, ensure they use Live Event EPG if they have insufficient program data
 			if m3uChannel.LiveEvent == "true" && xepgChannel.Live {
 				programData, _ := getProgramData(xepgChannel)
-				if len(programData.Program) <= 3 || !strings.Contains(xepgChannel.XmltvFile, "Threadfin Dummy") {
+				if len(programData.Program) <= 3 {
 					showInfo(fmt.Sprintf("XEPG: Updating Live Event channel to use Live EPG: %s", xepgChannel.XName))
 					xepgChannel.XmltvFile = "Threadfin Dummy"
 					xepgChannel.XMapping = "PPV"
