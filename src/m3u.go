@@ -10,6 +10,7 @@ import (
 	"os/exec"
 	"path"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -276,6 +277,32 @@ func buildM3U(groups []string) (m3u string, err error) {
 	} else {
 		m3u = header
 	}
+
+	// Sort entries by channel ID numerically
+	sort.Slice(entries, func(i, j int) bool {
+		chI := entries[i].ch.XChannelID
+		chJ := entries[j].ch.XChannelID
+
+		// Try to parse as numbers for proper numeric sorting
+		numI, errI := strconv.ParseFloat(chI, 64)
+		numJ, errJ := strconv.ParseFloat(chJ, 64)
+
+		// If both are numbers, sort numerically
+		if errI == nil && errJ == nil {
+			return numI < numJ
+		}
+
+		// If one is a number and other isn't, number comes first
+		if errI == nil && errJ != nil {
+			return true
+		}
+		if errI != nil && errJ == nil {
+			return false
+		}
+
+		// If both are strings, sort alphabetically
+		return chI < chJ
+	})
 
 	// Avoid duplicate exact stream URLs within the same group and cap per-group by expected minus deactivated
 	seenURLInGroup := make(map[string]struct{})
