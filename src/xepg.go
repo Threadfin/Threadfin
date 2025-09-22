@@ -583,6 +583,16 @@ func createXEPGDatabase() (err error) {
 				xepgChannel.TvgName = m3uChannel.TvgName
 			}
 
+			// For Live Event channels, ensure they use Live Event EPG instead of cached XMLTV data
+			if m3uChannel.LiveEvent == "true" && xepgChannel.Live {
+				programData, _ := getProgramData(xepgChannel)
+				if len(programData.Program) <= 3 || !strings.Contains(xepgChannel.XmltvFile, "Threadfin Dummy") {
+					showInfo(fmt.Sprintf("XEPG: Updating Live Event channel to use Live EPG: %s", xepgChannel.XName))
+					xepgChannel.XmltvFile = "Threadfin Dummy"
+					xepgChannel.XMapping = "PPV"
+				}
+			}
+
 			// Update channel logo
 			if xepgChannel.XUpdateChannelIcon {
 				var imgc = Data.Cache.Images
@@ -989,23 +999,75 @@ func createXMLTVFile() (err error) {
 		return err
 	}
 
-	// Channels and programs
+	// Collect and sort channels by tvg-chno (same as M3U sorting)
+	type channelEntry struct {
+		idx int
+		ch  XEPGChannelStruct
+	}
+	var entries []channelEntry
+
 	for _, dxc := range Data.XEPG.Channels {
 		var xepgChannel XEPGChannelStruct
 		err := json.Unmarshal([]byte(mapToJSON(dxc)), &xepgChannel)
 		if err == nil {
-			if xepgChannel.TvgName == "" {
-				xepgChannel.TvgName = xepgChannel.Name
-			}
-			if xepgChannel.XName == "" {
-				xepgChannel.XName = xepgChannel.TvgName
+			entries = append(entries, channelEntry{idx: len(entries), ch: xepgChannel})
+		}
+	}
+
+	// Sort entries by tvg-chno numerically (same logic as M3U)
+	sort.Slice(entries, func(i, j int) bool {
+		chI := entries[i].ch.TvgChno
+		chJ := entries[j].ch.TvgChno
+
+		// Try to parse as numbers for proper numeric sorting
+		numI, errI := strconv.ParseFloat(chI, 64)
+		numJ, errJ := strconv.ParseFloat(chJ, 64)
+
+		// If both are numbers, sort numerically
+		if errI == nil && errJ == nil {
+			return numI < numJ
+		}
+
+		// If one is a number and other isn't, number comes first
+		if errI == nil && errJ != nil {
+			return true
+		}
+		if errI != nil && errJ == nil {
+			return false
+		}
+
+		// If both are strings, sort alphabetically
+		return chI < chJ
+	})
+
+	// Channels and programs
+	for _, e := range entries {
+		xepgChannel := e.ch
+		if xepgChannel.TvgName == "" {
+			xepgChannel.TvgName = xepgChannel.Name
+		}
+		if xepgChannel.XName == "" {
+			xepgChannel.XName = xepgChannel.TvgName
+		}
+
+		if xepgChannel.XActive && !xepgChannel.XHideChannel {
+			if (Settings.XepgReplaceChannelTitle && xepgChannel.XMapping == "PPV") || xepgChannel.XName != "" {
+				// Write channel entry
+				channel := Channel{ID: xepgChannel.XChannelID, Icon: Icon{Src: imgc.Image.GetURL(xepgChannel.TvgLogo, Settings.HttpThreadfinDomain, Settings.Port, Settings.ForceHttps, Settings.HttpsPort, Settings.HttpsThreadfinDomain)}, DisplayName: []DisplayName{{Value: xepgChannel.XName}}, Active: xepgChannel.XActive, Live: xepgChannel.Live}
+				bytes, _ := xml.MarshalIndent(channel, "  ", "    ")
+				if _, err = writer.Write(bytes); err != nil {
+					return err
+				}
+				if _, err = writer.WriteString("\n"); err != nil {
+					return err
+				}
 			}
 
-			if xepgChannel.XActive && !xepgChannel.XHideChannel {
-				if (Settings.XepgReplaceChannelTitle && xepgChannel.XMapping == "PPV") || xepgChannel.XName != "" {
-					// Write channel entry
-					channel := Channel{ID: xepgChannel.XChannelID, Icon: Icon{Src: imgc.Image.GetURL(xepgChannel.TvgLogo, Settings.HttpThreadfinDomain, Settings.Port, Settings.ForceHttps, Settings.HttpsPort, Settings.HttpsThreadfinDomain)}, DisplayName: []DisplayName{{Value: xepgChannel.XName}}, Active: xepgChannel.XActive, Live: xepgChannel.Live}
-					bytes, _ := xml.MarshalIndent(channel, "  ", "    ")
+			// Programme
+			*tmpProgram, err = getProgramData(xepgChannel)
+			if err == nil {
+				for _, p := range tmpProgram.Program {
+					bytes, _ := xml.MarshalIndent(p, "  ", "    ")
 					if _, err = writer.Write(bytes); err != nil {
 						return err
 					}
@@ -1013,23 +1075,9 @@ func createXMLTVFile() (err error) {
 						return err
 					}
 				}
-
-				// Programme
-				*tmpProgram, err = getProgramData(xepgChannel)
-				if err == nil {
-					for _, p := range tmpProgram.Program {
-						bytes, _ := xml.MarshalIndent(p, "  ", "    ")
-						if _, err = writer.Write(bytes); err != nil {
-							return err
-						}
-						if _, err = writer.WriteString("\n"); err != nil {
-							return err
-						}
-					}
-				}
+			} else {
+				showDebug("XEPG:"+fmt.Sprintf("Error: %s", err), 3)
 			}
-		} else {
-			showDebug("XEPG:"+fmt.Sprintf("Error: %s", err), 3)
 		}
 	}
 
