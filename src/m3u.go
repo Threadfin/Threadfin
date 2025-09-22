@@ -1,10 +1,12 @@
 package src
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"math"
 	"net/url"
+	"os"
 	"os/exec"
 	"path"
 	"regexp"
@@ -250,13 +252,30 @@ func buildM3U(groups []string) (m3u string, err error) {
 	Done:
 	}
 
-	// M3U Inhalt erstellen
-
+	// Prepare header
 	var xmltvURL = fmt.Sprintf("%s://%s/xmltv/threadfin.xml", System.ServerProtocol.XML, System.Domain)
 	if Settings.ForceHttps && Settings.HttpsThreadfinDomain != "" {
 		xmltvURL = fmt.Sprintf("https://%s/xmltv/threadfin.xml", Settings.HttpsThreadfinDomain)
 	}
-	m3u = fmt.Sprintf(`#EXTM3U url-tvg="%s" x-tvg-url="%s"`+"\n", xmltvURL, xmltvURL)
+	header := fmt.Sprintf(`#EXTM3U url-tvg="%s" x-tvg-url="%s"`+"\n", xmltvURL, xmltvURL)
+
+	// If generating the full file, stream to disk to avoid huge in-memory strings
+	var writer *bufio.Writer
+	var file *os.File
+	if len(groups) == 0 {
+		filename := System.Folder.Data + "threadfin.m3u"
+		file, err = os.Create(filename)
+		if err != nil {
+			return "", err
+		}
+		defer file.Close()
+		writer = bufio.NewWriterSize(file, 1<<20) // 1MB buffer
+		if _, err = writer.WriteString(header); err != nil {
+			return "", err
+		}
+	} else {
+		m3u = header
+	}
 
 	// Avoid duplicate exact stream URLs within the same group and cap per-group by expected minus deactivated
 	seenURLInGroup := make(map[string]struct{})
@@ -311,17 +330,25 @@ func buildM3U(groups []string) (m3u string, err error) {
 				continue
 			}
 			seenURLInGroup[key] = struct{}{}
-			m3u = m3u + parameter + stream + "\n"
+			if writer != nil {
+				if _, err = writer.WriteString(parameter); err != nil {
+					return "", err
+				}
+				if _, err = writer.WriteString(stream + "\n"); err != nil {
+					return "", err
+				}
+			} else {
+				m3u = m3u + parameter + stream + "\n"
+			}
 			emittedGroupCount[group] = emittedGroupCount[group] + 1
 		}
 
 	}
 
-	if len(groups) == 0 {
-
-		var filename = System.Folder.Data + "threadfin.m3u"
-		err = writeByteToFile(filename, []byte(m3u))
-
+	if writer != nil {
+		if err = writer.Flush(); err != nil {
+			return "", err
+		}
 	}
 
 	return

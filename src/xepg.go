@@ -17,6 +17,7 @@ import (
 	"time"
 	"unicode"
 
+	"bufio"
 	"threadfin/src/internal/imgcache"
 	_ "time/tzdata"
 )
@@ -54,6 +55,7 @@ func buildXEPG(background bool) {
 	}
 
 	System.ScanInProgress = 1
+	// Enter maintenance during core steps
 
 	// Clear streaming URL cache
 	Data.Cache.StreamingURLS = make(map[string]StreamInfo)
@@ -108,6 +110,7 @@ func buildXEPG(background bool) {
 
 				}
 
+				// Core work is done; exit maintenance
 				systemMutex.Lock()
 				System.ScanInProgress = 0
 				systemMutex.Unlock()
@@ -126,6 +129,9 @@ func buildXEPG(background bool) {
 			cleanupXEPG()
 			createXMLTVFile()
 			createM3UFile()
+
+			// Exit maintenance before long file generation to keep UI responsive
+			System.ScanInProgress = 0
 
 			go func() {
 
@@ -155,10 +161,6 @@ func buildXEPG(background bool) {
 				}
 
 				showInfo("XEPG:" + fmt.Sprintf("Ready to use"))
-
-				systemMutex.Lock()
-				System.ScanInProgress = 0
-				systemMutex.Unlock()
 
 				// Cache löschen
 				Data.Cache.XMLTV = make(map[string]XMLTV)
@@ -196,13 +198,14 @@ func updateXEPG(background bool) {
 			mapping()
 			cleanupXEPG()
 
+			// Exit maintenance before long file generation to keep UI responsive
+			System.ScanInProgress = 0
+
 			go func() {
 
 				createXMLTVFile()
 				createM3UFile()
 				showInfo("XEPG:" + fmt.Sprintf("Ready to use"))
-
-				System.ScanInProgress = 0
 
 			}()
 
@@ -920,6 +923,15 @@ func createXMLTVFile() (err error) {
 
 	showInfo("XEPG:" + fmt.Sprintf("Create XMLTV file (%s)", System.File.XML))
 
+	// Stream XML to disk to avoid huge memory usage
+	xmlFile, err := os.Create(System.File.XML)
+	if err != nil {
+		return err
+	}
+	defer xmlFile.Close()
+	writer := bufio.NewWriterSize(xmlFile, 1<<20) // 1MB buffer
+	defer writer.Flush()
+
 	var xepgXML XMLTV
 
 	xepgXML.Generator = System.Name
@@ -932,6 +944,23 @@ func createXMLTVFile() (err error) {
 
 	var tmpProgram = &XMLTV{}
 
+	// Start writing XML header and open tags
+	if _, err = writer.WriteString(xml.Header); err != nil {
+		return err
+	}
+	if _, err = writer.WriteString("<tv>\n"); err != nil {
+		return err
+	}
+
+	// Write generator/source
+	if _, err = writer.WriteString(fmt.Sprintf("  <generator>%s</generator>\n", xepgXML.Generator)); err != nil {
+		return err
+	}
+	if _, err = writer.WriteString(fmt.Sprintf("  <source>%s</source>\n", xepgXML.Source)); err != nil {
+		return err
+	}
+
+	// Channels and programs
 	for _, dxc := range Data.XEPG.Channels {
 		var xepgChannel XEPGChannelStruct
 		err := json.Unmarshal([]byte(mapToJSON(dxc)), &xepgChannel)
@@ -945,20 +974,29 @@ func createXMLTVFile() (err error) {
 
 			if xepgChannel.XActive && !xepgChannel.XHideChannel {
 				if (Settings.XepgReplaceChannelTitle && xepgChannel.XMapping == "PPV") || xepgChannel.XName != "" {
-					// Kanäle
-					var channel Channel
-					channel.ID = xepgChannel.XChannelID
-					channel.Icon = Icon{Src: imgc.Image.GetURL(xepgChannel.TvgLogo, Settings.HttpThreadfinDomain, Settings.Port, Settings.ForceHttps, Settings.HttpsPort, Settings.HttpsThreadfinDomain)}
-					channel.DisplayName = append(channel.DisplayName, DisplayName{Value: xepgChannel.XName})
-					channel.Active = xepgChannel.XActive
-					channel.Live = xepgChannel.Live
-					xepgXML.Channel = append(xepgXML.Channel, &channel)
+					// Write channel entry
+					channel := Channel{ID: xepgChannel.XChannelID, Icon: Icon{Src: imgc.Image.GetURL(xepgChannel.TvgLogo, Settings.HttpThreadfinDomain, Settings.Port, Settings.ForceHttps, Settings.HttpsPort, Settings.HttpsThreadfinDomain)}, DisplayName: []DisplayName{{Value: xepgChannel.XName}}, Active: xepgChannel.XActive, Live: xepgChannel.Live}
+					bytes, _ := xml.MarshalIndent(channel, "  ", "    ")
+					if _, err = writer.Write(bytes); err != nil {
+						return err
+					}
+					if _, err = writer.WriteString("\n"); err != nil {
+						return err
+					}
 				}
 
 				// Programme
 				*tmpProgram, err = getProgramData(xepgChannel)
 				if err == nil {
-					xepgXML.Program = append(xepgXML.Program, tmpProgram.Program...)
+					for _, p := range tmpProgram.Program {
+						bytes, _ := xml.MarshalIndent(p, "  ", "    ")
+						if _, err = writer.Write(bytes); err != nil {
+							return err
+						}
+						if _, err = writer.WriteString("\n"); err != nil {
+							return err
+						}
+					}
 				}
 			}
 		} else {
@@ -966,14 +1004,16 @@ func createXMLTVFile() (err error) {
 		}
 	}
 
-	var content, _ = xml.MarshalIndent(xepgXML, "  ", "    ")
-	var xmlOutput = []byte(xml.Header + string(content))
-	writeByteToFile(System.File.XML, xmlOutput)
+	// Close tv root
+	if _, err = writer.WriteString("</tv>\n"); err != nil {
+		return err
+	}
 
 	showInfo("XEPG:" + fmt.Sprintf("Compress XMLTV file (%s)", System.Compressed.GZxml))
-	err = compressGZIP(&xmlOutput, System.Compressed.GZxml)
-
-	xepgXML = XMLTV{}
+	// Streaming file compression
+	if err = compressGZIPFile(System.File.XML, System.Compressed.GZxml); err != nil {
+		return err
+	}
 
 	return
 }
