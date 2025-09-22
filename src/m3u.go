@@ -1,10 +1,12 @@
 package src
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"math"
 	"net/url"
+	"os"
 	"os/exec"
 	"path"
 	"regexp"
@@ -189,15 +191,50 @@ func checkConditions(streamValues, conditions, coType string) (status bool) {
 func buildM3U(groups []string) (m3u string, err error) {
 
 	var imgc = Data.Cache.Images
-	var m3uChannels = make(map[float64]XEPGChannelStruct)
-	var channelNumbers []float64
+	// Preserve every active channel as a distinct entry by iteration order, not keyed by number
+	type channelEntry struct {
+		idx int
+		ch  XEPGChannelStruct
+	}
+	var entries []channelEntry
+
+	// Build a map of group -> expectedCount from Data.Playlist.M3U.Groups.Text (format: "Group (N)")
+	expectedGroupCount := make(map[string]int)
+	for _, label := range Data.Playlist.M3U.Groups.Text {
+		// label example: "nfl (42)"
+		open := strings.LastIndex(label, " (")
+		close := strings.LastIndex(label, ")")
+		if open > 0 && close > open+2 {
+			name := label[:open]
+			countStr := label[open+2 : close]
+			if n, e := strconv.Atoi(countStr); e == nil {
+				expectedGroupCount[name] = n
+			}
+		}
+	}
+
+	// Count deactivated channels per group
+	deactivatedPerGroup := make(map[string]int)
+	for _, dxc := range Data.XEPG.Channels {
+		var ch XEPGChannelStruct
+		if err := json.Unmarshal([]byte(mapToJSON(dxc)), &ch); err == nil {
+			group := ch.XGroupTitle
+			if ch.XCategory != "" {
+				group = ch.XCategory
+			}
+			if group == "" {
+				group = ch.GroupTitle
+			}
+			if !ch.XActive || ch.XHideChannel {
+				deactivatedPerGroup[group] = deactivatedPerGroup[group] + 1
+			}
+		}
+	}
 
 	for _, dxc := range Data.XEPG.Channels {
 		var xepgChannel XEPGChannelStruct
 		err := json.Unmarshal([]byte(mapToJSON(dxc)), &xepgChannel)
 		if err == nil {
-			var channelNumber, err = strconv.ParseFloat(strings.TrimSpace(xepgChannel.XChannelID), 64)
-
 			if xepgChannel.TvgName == "" {
 				xepgChannel.TvgName = xepgChannel.Name
 			}
@@ -209,34 +246,87 @@ func buildM3U(groups []string) (m3u string, err error) {
 					}
 
 				}
-
-				if err == nil {
-					m3uChannels[channelNumber] = xepgChannel
-					channelNumbers = append(channelNumbers, channelNumber)
-				}
-
+				entries = append(entries, channelEntry{idx: len(entries), ch: xepgChannel})
 			}
 		}
 
 	Done:
 	}
 
-	// M3U Inhalt erstellen
-	sort.Float64s(channelNumbers)
-
+	// Prepare header
 	var xmltvURL = fmt.Sprintf("%s://%s/xmltv/threadfin.xml", System.ServerProtocol.XML, System.Domain)
 	if Settings.ForceHttps && Settings.HttpsThreadfinDomain != "" {
 		xmltvURL = fmt.Sprintf("https://%s/xmltv/threadfin.xml", Settings.HttpsThreadfinDomain)
 	}
-	m3u = fmt.Sprintf(`#EXTM3U url-tvg="%s" x-tvg-url="%s"`+"\n", xmltvURL, xmltvURL)
+	header := fmt.Sprintf(`#EXTM3U url-tvg="%s" x-tvg-url="%s"`+"\n", xmltvURL, xmltvURL)
 
-	for _, channelNumber := range channelNumbers {
+	// If generating the full file, stream to disk to avoid huge in-memory strings
+	var writer *bufio.Writer
+	var file *os.File
+	if len(groups) == 0 {
+		filename := System.Folder.Data + "threadfin.m3u"
+		file, err = os.Create(filename)
+		if err != nil {
+			return "", err
+		}
+		defer file.Close()
+		writer = bufio.NewWriterSize(file, 1<<20) // 1MB buffer
+		if _, err = writer.WriteString(header); err != nil {
+			return "", err
+		}
+	} else {
+		m3u = header
+	}
 
-		var channel = m3uChannels[channelNumber]
+	// Sort entries by tvg-chno numerically
+	sort.Slice(entries, func(i, j int) bool {
+		chI := entries[i].ch.TvgChno
+		chJ := entries[j].ch.TvgChno
+
+		// Try to parse as numbers for proper numeric sorting
+		numI, errI := strconv.ParseFloat(chI, 64)
+		numJ, errJ := strconv.ParseFloat(chJ, 64)
+
+		// If both are numbers, sort numerically
+		if errI == nil && errJ == nil {
+			return numI < numJ
+		}
+
+		// If one is a number and other isn't, number comes first
+		if errI == nil && errJ != nil {
+			return true
+		}
+		if errI != nil && errJ == nil {
+			return false
+		}
+
+		// If both are strings, sort alphabetically
+		return chI < chJ
+	})
+
+	// Avoid duplicate exact stream URLs within the same group and cap per-group by expected minus deactivated
+	seenURLInGroup := make(map[string]struct{})
+	emittedGroupCount := make(map[string]int)
+	for _, e := range entries {
+		var channel = e.ch
 
 		group := channel.XGroupTitle
 		if channel.XCategory != "" {
 			group = channel.XCategory
+		}
+		if group == "" {
+			group = channel.GroupTitle
+		}
+
+		// Determine allowed active count = expected - deactivated
+		if expected, ok := expectedGroupCount[group]; ok {
+			allowed := expected - deactivatedPerGroup[group]
+			if allowed < 0 {
+				allowed = 0
+			}
+			if emittedGroupCount[group] >= allowed {
+				continue
+			}
 		}
 
         // Disabling so not to rewrite stream to https domain when disable stream from https set
@@ -263,20 +353,30 @@ func buildM3U(groups []string) (m3u string, err error) {
 		var parameter = fmt.Sprintf(`#EXTINF:0 channelID="%s" tvg-chno="%s" tvg-name="%s" tvg-id="%s" tvg-logo="%s" group-title="%s",%s`+"\n", channel.XEPG, channel.XChannelID, channel.XName, channel.XChannelID, logo, group, channel.XName)
 		var stream, err = createStreamingURL("M3U", channel.FileM3UID, channel.XChannelID, channel.XName, channel.URL, channel.BackupChannel1, channel.BackupChannel2, channel.BackupChannel3)
 		if err == nil {
-			// Check for exact duplicate of the entire channel entry
-			channelEntry := parameter + stream + "\n"
-			if !strings.Contains(m3u, channelEntry) {
-				m3u = m3u + channelEntry
+			key := group + "|" + stream
+			if _, ok := seenURLInGroup[key]; ok {
+				continue
 			}
+			seenURLInGroup[key] = struct{}{}
+			if writer != nil {
+				if _, err = writer.WriteString(parameter); err != nil {
+					return "", err
+				}
+				if _, err = writer.WriteString(stream + "\n"); err != nil {
+					return "", err
+				}
+			} else {
+				m3u = m3u + parameter + stream + "\n"
+			}
+			emittedGroupCount[group] = emittedGroupCount[group] + 1
 		}
 
 	}
 
-	if len(groups) == 0 {
-
-		var filename = System.Folder.Data + "threadfin.m3u"
-		err = writeByteToFile(filename, []byte(m3u))
-
+	if writer != nil {
+		if err = writer.Flush(); err != nil {
+			return "", err
+		}
 	}
 
 	return

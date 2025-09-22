@@ -62,7 +62,7 @@ func maintenance() {
 					}
 
 					// XEPG Dateien erstellen
-					buildXEPG(false)
+					buildXEPG(true)
 
 				}
 

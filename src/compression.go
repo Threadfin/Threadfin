@@ -163,3 +163,23 @@ func compressGZIP(data *[]byte, file string) (err error) {
 
 	return
 }
+
+func compressGZIPFile(sourcePath, targetPath string) (err error) {
+	in, err := os.Open(sourcePath)
+	if err != nil {
+		return err
+	}
+	defer in.Close()
+
+	out, err := os.Create(targetPath)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+
+	gw := gzip.NewWriter(out)
+	defer gw.Close()
+
+	_, err = io.Copy(gw, in)
+	return err
+}

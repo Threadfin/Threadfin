@@ -8,8 +8,8 @@ import (
 	"strings"
 )
 
-// MakeInterfaceFromM3U :
-func MakeInterfaceFromM3U(byteStream []byte) (allChannels []interface{}, err error) {
+// makeInterfaceFromM3UOriginal : Original implementation for smaller files
+func makeInterfaceFromM3UOriginal(byteStream []byte) (allChannels []interface{}, err error) {
 
 	var content = string(byteStream)
 
