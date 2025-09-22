@@ -506,20 +506,14 @@ func WS(w http.ResponseWriter, r *http.Request) {
 			saveMapToJSONFile(filename, make(map[string]StreamInfo))
 			Data.Cache.StreamingURLS = make(map[string]StreamInfo)
 
-			err = updateFile(request, "m3u")
-			if err == nil {
-				response.OpenMenu = strconv.Itoa(indexOfString("playlist", System.WEB.Menu))
-				// Rebuild XEPG database to ensure URLs are updated
-				err = createXEPGDatabase()
-				if err != nil {
-					ShowError(err, 000)
-					break
+			// Run update in background to avoid blocking WS
+			go func(req RequestStruct) {
+				if e := updateFile(req, "m3u"); e == nil {
+					updateUrlsJson()
 				}
-				// Update URLs
-				updateUrlsJson()
-				// Create M3U file to ensure URLs are properly generated
-				createM3UFile()
-			}
+			}(request)
+			response.OpenMenu = strconv.Itoa(indexOfString("playlist", System.WEB.Menu))
+			response.Alert = "Updating playlist in background"
 
 		case "saveFilesHDHR":
 			err = saveFiles(request, "hdhr")
@@ -528,10 +522,11 @@ func WS(w http.ResponseWriter, r *http.Request) {
 			}
 
 		case "updateFileHDHR":
-			err = updateFile(request, "hdhr")
-			if err == nil {
-				response.OpenMenu = strconv.Itoa(indexOfString("playlist", System.WEB.Menu))
-			}
+			go func(req RequestStruct) {
+				_ = updateFile(req, "hdhr")
+			}(request)
+			response.OpenMenu = strconv.Itoa(indexOfString("playlist", System.WEB.Menu))
+			response.Alert = "Updating HDHR in background"
 
 		case "saveFilesXMLTV":
 			err = saveFiles(request, "xmltv")
@@ -540,10 +535,11 @@ func WS(w http.ResponseWriter, r *http.Request) {
 			}
 
 		case "updateFileXMLTV":
-			err = updateFile(request, "xmltv")
-			if err == nil {
-				response.OpenMenu = strconv.Itoa(indexOfString("xmltv", System.WEB.Menu))
-			}
+			go func(req RequestStruct) {
+				_ = updateFile(req, "xmltv")
+			}(request)
+			response.OpenMenu = strconv.Itoa(indexOfString("xmltv", System.WEB.Menu))
+			response.Alert = "Updating XMLTV in background"
 
 		case "saveFilter":
 			response.Settings, err = saveFilter(request)
