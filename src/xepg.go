@@ -482,7 +482,6 @@ func createXEPGDatabase() (err error) {
 		var channelExists = false  // Entscheidet ob ein Kanal neu zu Datenbank hinzugefügt werden soll.  Decides whether a channel should be added to the database
 		var channelHasUUID = false // Überprüft, ob der Kanal (Stream) eindeutige ID's besitzt.  Checks whether the channel (stream) has unique IDs
 		var currentXEPGID string   // Aktuelle Datenbank ID (XEPG). Wird verwendet, um den Kanal in der Datenbank mit dem Stream der M3u zu aktualisieren. Current database ID (XEPG) Used to update the channel in the database with the stream of the M3u
-		var currentChannelNumber string
 
 		var m3uChannel M3UChannelStructXEPG
 
@@ -507,7 +506,6 @@ func createXEPGDatabase() (err error) {
 		if val, ok := xepgChannelsValuesMap[m3uChannelHash]; ok {
 			channelExists = true
 			currentXEPGID = val.XEPG
-			currentChannelNumber = val.TvgChno
 			if len(m3uChannel.UUIDValue) > 0 {
 				channelHasUUID = true
 			}
@@ -526,7 +524,6 @@ func createXEPGDatabase() (err error) {
 							channelExists = true
 							channelHasUUID = true
 							currentXEPGID = dxc.XEPG
-							currentChannelNumber = dxc.TvgChno
 							break
 
 						}
@@ -546,13 +543,21 @@ func createXEPGDatabase() (err error) {
 				return
 			}
 
+			// IMPORTANT: Skip updates for manually deactivated channels
+			// If user has deactivated a channel, respect that choice during updates
+			if !xepgChannel.XActive {
+				showInfo(fmt.Sprintf("XEPG:Skipping update for deactivated channel: %s (%s)", currentXEPGID, xepgChannel.XName))
+				continue // Skip to next channel, don't update deactivated channels
+			}
+
 			// Update existing channel - since we found it via hash, it's the same logical channel
 			if xepgChannel.TvgName == "" {
 				xepgChannel.TvgName = xepgChannel.Name
 			}
 
-			xepgChannel.XChannelID = currentChannelNumber
-			xepgChannel.TvgChno = currentChannelNumber
+			// PRESERVE manual channel number assignments
+			// Don't overwrite XChannelID/TvgChno for existing channels
+			// User's manual channel number settings should be respected
 
 			// Always update streaming URL
 			xepgChannel.URL = m3uChannel.URL
@@ -583,6 +588,9 @@ func createXEPGDatabase() (err error) {
 				var imgc = Data.Cache.Images
 				xepgChannel.TvgLogo = imgc.Image.GetURL(m3uChannel.TvgLogo, Settings.HttpThreadfinDomain, Settings.Port, Settings.ForceHttps, Settings.HttpsPort, Settings.HttpsThreadfinDomain)
 			}
+
+			// PRESERVE XActive status - don't change user's activation choice
+			// The XActive field is NOT updated here, preserving user's manual setting
 
 			Data.XEPG.Channels[currentXEPGID] = xepgChannel
 
@@ -657,7 +665,10 @@ func createXEPGDatabase() (err error) {
 					if channelID, ok := chmap["id"].(string); ok {
 						newChannel.XmltvFile = file
 						newChannel.XMapping = channelID
-						newChannel.XActive = true
+						// NEW CHANNELS: Start as INACTIVE by default to prevent unwanted activation
+						// This ensures users must explicitly choose which channels they want
+						newChannel.XActive = false
+						showInfo(fmt.Sprintf("XEPG:New channel created (inactive): %s (%s)", newChannel.Name, newChannel.XGroupTitle))
 
 						// Falls in der XMLTV Datei ein Logo existiert, wird dieses verwendet. Falls nicht, dann das Logo aus der M3U Datei
 						/*if icon, ok := chmap["icon"].(string); ok {
@@ -679,7 +690,9 @@ func createXEPGDatabase() (err error) {
 			if newChannel.Live && len(programData.Program) <= 3 {
 				newChannel.XmltvFile = "Threadfin Dummy"
 				newChannel.XMapping = "PPV"
-				newChannel.XActive = true
+				// NEW CHANNELS: Start as INACTIVE by default to prevent unwanted activation
+				newChannel.XActive = false
+				showInfo(fmt.Sprintf("XEPG:New live channel created (inactive): %s (%s)", newChannel.Name, newChannel.XGroupTitle))
 			}
 
 			if len(m3uChannel.UUIDKey) > 0 {
