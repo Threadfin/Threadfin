@@ -8,7 +8,6 @@ import (
 	"os/exec"
 	"path"
 	"regexp"
-	"sort"
 	"strconv"
 	"strings"
 
@@ -189,15 +188,32 @@ func checkConditions(streamValues, conditions, coType string) (status bool) {
 func buildM3U(groups []string) (m3u string, err error) {
 
 	var imgc = Data.Cache.Images
-	var m3uChannels = make(map[float64]XEPGChannelStruct)
-	var channelNumbers []float64
+	// Preserve every active channel as a distinct entry by iteration order, not keyed by number
+	type channelEntry struct {
+		idx int
+		ch  XEPGChannelStruct
+	}
+	var entries []channelEntry
+
+	// Build a map of group -> expectedCount from Data.Playlist.M3U.Groups.Text (format: "Group (N)")
+	expectedGroupCount := make(map[string]int)
+	for _, label := range Data.Playlist.M3U.Groups.Text {
+		// label example: "nfl (42)"
+		open := strings.LastIndex(label, " (")
+		close := strings.LastIndex(label, ")")
+		if open > 0 && close > open+2 {
+			name := label[:open]
+			countStr := label[open+2 : close]
+			if n, e := strconv.Atoi(countStr); e == nil {
+				expectedGroupCount[name] = n
+			}
+		}
+	}
 
 	for _, dxc := range Data.XEPG.Channels {
 		var xepgChannel XEPGChannelStruct
 		err := json.Unmarshal([]byte(mapToJSON(dxc)), &xepgChannel)
 		if err == nil {
-			var channelNumber, err = strconv.ParseFloat(strings.TrimSpace(xepgChannel.XChannelID), 64)
-
 			if xepgChannel.TvgName == "" {
 				xepgChannel.TvgName = xepgChannel.Name
 			}
@@ -209,12 +225,7 @@ func buildM3U(groups []string) (m3u string, err error) {
 					}
 
 				}
-
-				if err == nil {
-					m3uChannels[channelNumber] = xepgChannel
-					channelNumbers = append(channelNumbers, channelNumber)
-				}
-
+				entries = append(entries, channelEntry{idx: len(entries), ch: xepgChannel})
 			}
 		}
 
@@ -222,7 +233,6 @@ func buildM3U(groups []string) (m3u string, err error) {
 	}
 
 	// M3U Inhalt erstellen
-	sort.Float64s(channelNumbers)
 
 	var xmltvURL = fmt.Sprintf("%s://%s/xmltv/threadfin.xml", System.ServerProtocol.XML, System.Domain)
 	if Settings.ForceHttps && Settings.HttpsThreadfinDomain != "" {
@@ -230,13 +240,25 @@ func buildM3U(groups []string) (m3u string, err error) {
 	}
 	m3u = fmt.Sprintf(`#EXTM3U url-tvg="%s" x-tvg-url="%s"`+"\n", xmltvURL, xmltvURL)
 
-	for _, channelNumber := range channelNumbers {
-
-		var channel = m3uChannels[channelNumber]
+	// Avoid duplicate exact stream URLs within the same group and cap per-group by expected count
+	seenURLInGroup := make(map[string]struct{})
+	emittedGroupCount := make(map[string]int)
+	for _, e := range entries {
+		var channel = e.ch
 
 		group := channel.XGroupTitle
 		if channel.XCategory != "" {
 			group = channel.XCategory
+		}
+		if group == "" {
+			group = channel.GroupTitle
+		}
+
+		// Cap per expected group count if present
+		if expected, ok := expectedGroupCount[group]; ok {
+			if emittedGroupCount[group] >= expected {
+				continue
+			}
 		}
 
 		if Settings.ForceHttps && Settings.HttpsThreadfinDomain != "" {
@@ -262,11 +284,13 @@ func buildM3U(groups []string) (m3u string, err error) {
 		var parameter = fmt.Sprintf(`#EXTINF:0 channelID="%s" tvg-chno="%s" tvg-name="%s" tvg-id="%s" tvg-logo="%s" group-title="%s",%s`+"\n", channel.XEPG, channel.XChannelID, channel.XName, channel.XChannelID, logo, group, channel.XName)
 		var stream, err = createStreamingURL("M3U", channel.FileM3UID, channel.XChannelID, channel.XName, channel.URL, channel.BackupChannel1, channel.BackupChannel2, channel.BackupChannel3)
 		if err == nil {
-			// Check for exact duplicate of the entire channel entry
-			channelEntry := parameter + stream + "\n"
-			if !strings.Contains(m3u, channelEntry) {
-				m3u = m3u + channelEntry
+			key := group + "|" + stream
+			if _, ok := seenURLInGroup[key]; ok {
+				continue
 			}
+			seenURLInGroup[key] = struct{}{}
+			m3u = m3u + parameter + stream + "\n"
+			emittedGroupCount[group] = emittedGroupCount[group] + 1
 		}
 
 	}

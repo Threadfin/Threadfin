@@ -506,14 +506,11 @@ func WS(w http.ResponseWriter, r *http.Request) {
 			saveMapToJSONFile(filename, make(map[string]StreamInfo))
 			Data.Cache.StreamingURLS = make(map[string]StreamInfo)
 
-			// Run update in background to avoid blocking WS
-			go func(req RequestStruct) {
-				if e := updateFile(req, "m3u"); e == nil {
-					updateUrlsJson()
-				}
-			}(request)
-			response.OpenMenu = strconv.Itoa(indexOfString("playlist", System.WEB.Menu))
-			response.Alert = "Updating playlist in background"
+			err = updateFile(request, "m3u")
+			if err == nil {
+				updateUrlsJson()
+				response.OpenMenu = strconv.Itoa(indexOfString("playlist", System.WEB.Menu))
+			}
 
 		case "saveFilesHDHR":
 			err = saveFiles(request, "hdhr")
@@ -522,11 +519,10 @@ func WS(w http.ResponseWriter, r *http.Request) {
 			}
 
 		case "updateFileHDHR":
-			go func(req RequestStruct) {
-				_ = updateFile(req, "hdhr")
-			}(request)
-			response.OpenMenu = strconv.Itoa(indexOfString("playlist", System.WEB.Menu))
-			response.Alert = "Updating HDHR in background"
+			err = updateFile(request, "hdhr")
+			if err == nil {
+				response.OpenMenu = strconv.Itoa(indexOfString("playlist", System.WEB.Menu))
+			}
 
 		case "saveFilesXMLTV":
 			err = saveFiles(request, "xmltv")
@@ -535,11 +531,10 @@ func WS(w http.ResponseWriter, r *http.Request) {
 			}
 
 		case "updateFileXMLTV":
-			go func(req RequestStruct) {
-				_ = updateFile(req, "xmltv")
-			}(request)
-			response.OpenMenu = strconv.Itoa(indexOfString("xmltv", System.WEB.Menu))
-			response.Alert = "Updating XMLTV in background"
+			err = updateFile(request, "xmltv")
+			if err == nil {
+				response.OpenMenu = strconv.Itoa(indexOfString("xmltv", System.WEB.Menu))
+			}
 
 		case "saveFilter":
 			response.Settings, err = saveFilter(request)
