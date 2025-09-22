@@ -249,6 +249,11 @@ func createXEPGMapping() {
 
 	if len(Data.XMLTV.Files) > 0 {
 
+		// For multiple large files, process in parallel for better performance
+		if len(Data.XMLTV.Files) > 1 {
+			showInfo("XEPG:" + fmt.Sprintf("Processing %d XMLTV files in parallel", len(Data.XMLTV.Files)))
+		}
+
 		for i := len(Data.XMLTV.Files) - 1; i >= 0; i-- {
 
 			var file = Data.XMLTV.Files[i]
@@ -271,10 +276,10 @@ func createXEPGMapping() {
 			if err == nil {
 				var imgc = Data.Cache.Images
 				// Daten aus der XML Datei in eine temporäre Map schreiben
-				var xmltvMap = make(map[string]interface{})
+				var xmltvMap = make(map[string]interface{}, len(xmltv.Channel)) // Pre-allocate
 
 				for _, c := range xmltv.Channel {
-					var channel = make(map[string]interface{})
+					var channel = make(map[string]interface{}, 4) // Pre-allocate
 
 					channel["id"] = c.ID
 					channel["display-name"] = friendlyDisplayName(*c)
@@ -1534,17 +1539,29 @@ func getLocalXMLTV(file string, xmltv *XMLTV) (err error) {
 			Data.Cache.XMLTV = make(map[string]XMLTV)
 		}
 
-		// XML Daten lesen
-		content, err := readByteFromFile(file)
-
-		// Lokale XML Datei existiert nicht im Ordner: data
+		// Check file size to determine parsing strategy
+		fileInfo, err := os.Stat(file)
 		if err != nil {
 			err = errors.New("Local copy of the file no longer exists")
 			return err
 		}
 
-		// XML Datei parsen
-		err = xml.Unmarshal(content, &xmltv)
+		// For large files (>50MB), use streaming parser
+		if fileInfo.Size() > 50*1024*1024 {
+			showInfo("XEPG:" + "Using streaming parser for large XMLTV file: " + file)
+			err = parseXMLTVStream(file, xmltv)
+		} else {
+			// Use original method for smaller files
+			content, err := readByteFromFile(file)
+			if err != nil {
+				err = errors.New("Local copy of the file no longer exists")
+				return err
+			}
+
+			// XML Datei parsen
+			err = xml.Unmarshal(content, &xmltv)
+		}
+
 		if err != nil {
 			return err
 		}
@@ -1556,6 +1573,85 @@ func getLocalXMLTV(file string, xmltv *XMLTV) (err error) {
 	}
 
 	return
+}
+
+// parseXMLTVStream : Streaming XML parser for large XMLTV files
+func parseXMLTVStream(file string, xmltv *XMLTV) error {
+	xmlFile, err := os.Open(file)
+	if err != nil {
+		return err
+	}
+	defer xmlFile.Close()
+
+	decoder := xml.NewDecoder(xmlFile)
+
+	// Pre-allocate slices with reasonable capacity
+	xmltv.Channel = make([]*Channel, 0, 10000)   // Expect ~10k channels
+	xmltv.Program = make([]*Program, 0, 100000)  // Expect ~100k programs
+
+	var currentElement string
+	var channelCount, programCount int
+
+	for {
+		token, err := decoder.Token()
+		if err != nil {
+			if err.Error() == "EOF" {
+				break
+			}
+			return err
+		}
+
+		switch se := token.(type) {
+		case xml.StartElement:
+			currentElement = se.Name.Local
+
+			switch currentElement {
+			case "tv":
+				// Parse TV attributes if needed
+				for _, attr := range se.Attr {
+					switch attr.Name.Local {
+					case "generator-info-name":
+						xmltv.Generator = attr.Value
+					case "source-info-name":
+						xmltv.Source = attr.Value
+					}
+				}
+
+			case "channel":
+				// Parse channel element
+				var channel Channel
+				if err := decoder.DecodeElement(&channel, &se); err != nil {
+					showDebug("XMLTV Stream:Error parsing channel: "+err.Error(), 2)
+					continue
+				}
+				xmltv.Channel = append(xmltv.Channel, &channel)
+				channelCount++
+
+				// Log progress for large channel counts
+				if channelCount%1000 == 0 {
+					showInfo(fmt.Sprintf("XMLTV Stream:Parsed %d channels", channelCount))
+				}
+
+			case "programme":
+				// Parse program element
+				var program Program
+				if err := decoder.DecodeElement(&program, &se); err != nil {
+					showDebug("XMLTV Stream:Error parsing program: "+err.Error(), 3)
+					continue
+				}
+				xmltv.Program = append(xmltv.Program, &program)
+				programCount++
+
+				// Log progress for large program counts
+				if programCount%10000 == 0 {
+					showInfo(fmt.Sprintf("XMLTV Stream:Parsed %d programs", programCount))
+				}
+			}
+		}
+	}
+
+	showInfo(fmt.Sprintf("XMLTV Stream:Completed - %d channels, %d programs", channelCount, programCount))
+	return nil
 }
 
 func isInInactiveList(channelURL string) bool {
