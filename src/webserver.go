@@ -134,9 +134,11 @@ func Stream(w http.ResponseWriter, r *http.Request) {
 
 	systemMutex.Lock()
 	forceHttps := Settings.ForceHttps
+    noStreamHttps := Settings.ExcludeStreamHttps
 	systemMutex.Unlock()
 
-	if forceHttps {
+	// Dont Change Source M3Us to use HTTPs when forceHttps set and Exclude Streams from https
+    if forceHttps && noStreamHttps == false {
 		u, err := url.Parse(streamInfo.URL)
 		if err == nil {
 			u.Scheme = "https"
@@ -508,17 +510,8 @@ func WS(w http.ResponseWriter, r *http.Request) {
 
 			err = updateFile(request, "m3u")
 			if err == nil {
-				response.OpenMenu = strconv.Itoa(indexOfString("playlist", System.WEB.Menu))
-				// Rebuild XEPG database to ensure URLs are updated
-				err = createXEPGDatabase()
-				if err != nil {
-					ShowError(err, 000)
-					break
-				}
-				// Update URLs
 				updateUrlsJson()
-				// Create M3U file to ensure URLs are properly generated
-				createM3UFile()
+				response.OpenMenu = strconv.Itoa(indexOfString("playlist", System.WEB.Menu))
 			}
 
 		case "saveFilesHDHR":

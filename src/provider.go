@@ -325,7 +325,13 @@ func downloadFileFromServer(providerURL string, proxyUrl string) (filename strin
 		return
 	}
 
-	httpClient := &http.Client{}
+	// Derive a timeout: prefer configured buffer timeout if provided, else default to 30s
+	requestTimeout := 30 * time.Second
+	if Settings.BufferTimeout > 0 {
+		requestTimeout = time.Duration(Settings.BufferTimeout*1000) * time.Millisecond
+	}
+
+	httpClient := &http.Client{Timeout: requestTimeout}
 
 	if proxyUrl != "" {
 		proxyURL, err := url.Parse(proxyUrl)
@@ -334,6 +340,7 @@ func downloadFileFromServer(providerURL string, proxyUrl string) (filename strin
 		}
 
 		httpClient = &http.Client{
+			Timeout: requestTimeout,
 			Transport: &http.Transport{
 				Proxy: http.ProxyURL(proxyURL),
 			},

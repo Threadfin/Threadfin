@@ -151,6 +151,7 @@ func loadSettings() (settings SettingsStruct, err error) {
 	defaults["ssdp"] = true
 	defaults["storeBufferInRAM"] = true
 	defaults["forceHttps"] = false
+    defaults["excludeStreamHttps"] = false
 	defaults["httpsPort"] = 443
 	defaults["httpsThreadfinDomain"] = ""
 	defaults["httpThreadfinDomain"] = ""
