@@ -496,8 +496,15 @@ func createXEPGDatabase() (err error) {
 
 		// Try to find the channel based on matching all known values.  If that fails, then move to full channel scan
 		// Create consistent channel hash using URL as primary identifier
-		// Each unique URL should create a separate channel, even if tvg-id/name are similar (backup channels)
-		hashInput := m3uChannel.URL + m3uChannel.TvgName + m3uChannel.FileM3UID
+		// Use TvgID when available, since names can change but IDs should remain stable
+		var hashInput string
+		if m3uChannel.TvgID != "" {
+			// Use TvgID when available for stable identification
+			hashInput = m3uChannel.URL + m3uChannel.TvgID + m3uChannel.FileM3UID
+		} else {
+			// Fall back to URL + FileM3UID only when TvgID is blank
+			hashInput = m3uChannel.URL + m3uChannel.FileM3UID
+		}
 		hash := md5.Sum([]byte(hashInput))
 		m3uChannelHash := hex.EncodeToString(hash[:])
 
