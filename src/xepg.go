@@ -997,7 +997,6 @@ func createXMLTVFile() (err error) {
 
 	var tmpProgram = &XMLTV{}
 
-	// Start writing XML header and open tags
 	if _, err = writer.WriteString(xml.Header); err != nil {
 		return err
 	}
@@ -1005,7 +1004,6 @@ func createXMLTVFile() (err error) {
 		return err
 	}
 
-	// Write generator/source
 	if _, err = writer.WriteString(fmt.Sprintf("  <generator>%s</generator>\n", xepgXML.Generator)); err != nil {
 		return err
 	}
@@ -1013,7 +1011,6 @@ func createXMLTVFile() (err error) {
 		return err
 	}
 
-	// Collect and sort channels by tvg-chno (same as M3U sorting)
 	type channelEntry struct {
 		idx int
 		ch  XEPGChannelStruct
@@ -1028,21 +1025,17 @@ func createXMLTVFile() (err error) {
 		}
 	}
 
-	// Sort entries by tvg-chno numerically (same logic as M3U)
 	sort.Slice(entries, func(i, j int) bool {
 		chI := entries[i].ch.TvgChno
 		chJ := entries[j].ch.TvgChno
 
-		// Try to parse as numbers for proper numeric sorting
 		numI, errI := strconv.ParseFloat(chI, 64)
 		numJ, errJ := strconv.ParseFloat(chJ, 64)
 
-		// If both are numbers, sort numerically
 		if errI == nil && errJ == nil {
 			return numI < numJ
 		}
 
-		// If one is a number and other isn't, number comes first
 		if errI == nil && errJ != nil {
 			return true
 		}
@@ -1050,11 +1043,9 @@ func createXMLTVFile() (err error) {
 			return false
 		}
 
-		// If both are strings, sort alphabetically
 		return chI < chJ
 	})
 
-	// Channels and programs
 	for _, e := range entries {
 		xepgChannel := e.ch
 		if xepgChannel.TvgName == "" {
@@ -1066,7 +1057,6 @@ func createXMLTVFile() (err error) {
 
 		if xepgChannel.XActive && !xepgChannel.XHideChannel {
 			if (Settings.XepgReplaceChannelTitle && xepgChannel.XMapping == "PPV") || xepgChannel.XName != "" {
-				// Write channel entry
 				channel := Channel{ID: xepgChannel.XChannelID, Icon: Icon{Src: imgc.Image.GetURL(xepgChannel.TvgLogo, Settings.HttpThreadfinDomain, Settings.Port, Settings.ForceHttps, Settings.HttpsPort, Settings.HttpsThreadfinDomain)}, DisplayName: []DisplayName{{Value: xepgChannel.XName}}, Active: xepgChannel.XActive, Live: xepgChannel.Live}
 				bytes, _ := xml.MarshalIndent(channel, "  ", "    ")
 				if _, err = writer.Write(bytes); err != nil {
@@ -1076,8 +1066,12 @@ func createXMLTVFile() (err error) {
 					return err
 				}
 			}
+		}
+	}
 
-			// Programme
+	for _, e := range entries {
+		xepgChannel := e.ch
+		if xepgChannel.XActive && !xepgChannel.XHideChannel {
 			*tmpProgram, err = getProgramData(xepgChannel)
 			if err == nil {
 				for _, p := range tmpProgram.Program {
@@ -1101,7 +1095,6 @@ func createXMLTVFile() (err error) {
 	}
 
 	showInfo("XEPG:" + fmt.Sprintf("Compress XMLTV file (%s)", System.Compressed.GZxml))
-	// Streaming file compression
 	if err = compressGZIPFile(System.File.XML, System.Compressed.GZxml); err != nil {
 		return err
 	}
@@ -1646,9 +1639,8 @@ func parseXMLTVStream(file string, xmltv *XMLTV) error {
 
 	decoder := xml.NewDecoder(xmlFile)
 
-	// Pre-allocate slices with reasonable capacity
-	xmltv.Channel = make([]*Channel, 0, 10000)   // Expect ~10k channels
-	xmltv.Program = make([]*Program, 0, 100000)  // Expect ~100k programs
+	xmltv.Channel = make([]*Channel, 0)
+	xmltv.Program = make([]*Program, 0)
 
 	var currentElement string
 	var channelCount, programCount int
@@ -1668,7 +1660,6 @@ func parseXMLTVStream(file string, xmltv *XMLTV) error {
 
 			switch currentElement {
 			case "tv":
-				// Parse TV attributes if needed
 				for _, attr := range se.Attr {
 					switch attr.Name.Local {
 					case "generator-info-name":
@@ -1679,7 +1670,6 @@ func parseXMLTVStream(file string, xmltv *XMLTV) error {
 				}
 
 			case "channel":
-				// Parse channel element
 				var channel Channel
 				if err := decoder.DecodeElement(&channel, &se); err != nil {
 					showDebug("XMLTV Stream:Error parsing channel: "+err.Error(), 2)
@@ -1688,13 +1678,11 @@ func parseXMLTVStream(file string, xmltv *XMLTV) error {
 				xmltv.Channel = append(xmltv.Channel, &channel)
 				channelCount++
 
-				// Log progress for large channel counts
 				if channelCount%1000 == 0 {
 					showInfo(fmt.Sprintf("XMLTV Stream:Parsed %d channels", channelCount))
 				}
 
 			case "programme":
-				// Parse program element
 				var program Program
 				if err := decoder.DecodeElement(&program, &se); err != nil {
 					showDebug("XMLTV Stream:Error parsing program: "+err.Error(), 3)
@@ -1703,7 +1691,6 @@ func parseXMLTVStream(file string, xmltv *XMLTV) error {
 				xmltv.Program = append(xmltv.Program, &program)
 				programCount++
 
-				// Log progress for large program counts
 				if programCount%10000 == 0 {
 					showInfo(fmt.Sprintf("XMLTV Stream:Parsed %d programs", programCount))
 				}
