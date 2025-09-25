@@ -14,6 +14,7 @@ type XMLTV struct {
 
 // Channel : Kanäle
 type Channel struct {
+	XMLName     xml.Name      `xml:"channel"`
 	ID          string        `xml:"id,attr"`
 	DisplayName []DisplayName `xml:"display-name"`
 	Icon        Icon          `xml:"icon"`
@@ -34,9 +35,9 @@ type Icon struct {
 // Program : Programme
 type Program struct {
 	XMLName xml.Name `xml:"programme"`
-	Channel string `xml:"channel,attr"`
-	Start   string `xml:"start,attr"`
-	Stop    string `xml:"stop,attr"`
+	Channel string   `xml:"channel,attr"`
+	Start   string   `xml:"start,attr"`
+	Stop    string   `xml:"stop,attr"`
 
 	Title           []*Title         `xml:"title"`
 	SubTitle        []*SubTitle      `xml:"sub-title"`
