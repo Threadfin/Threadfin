@@ -287,7 +287,6 @@ func Threadfin(w http.ResponseWriter, r *http.Request) {
 		m3uFilePath := System.Folder.Data + "threadfin.m3u"
 		systemMutex.Unlock()
 
-		queries := r.URL.Query()
 		groupTitle = r.URL.Query().Get("group-title")
 
 		// Check if the m3u file exists - serve it regardless of auth parameters
