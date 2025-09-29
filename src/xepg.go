@@ -479,6 +479,7 @@ func createXEPGDatabase() (err error) {
 		} else {
 			originalName = channel.Name
 		}
+		var hashInput string
 		hashInput = channel.URL + channel.FileM3UID + originalName
 		hash := md5.Sum([]byte(hashInput))
 		channelHash := hex.EncodeToString(hash[:])
@@ -1788,6 +1789,7 @@ func cleanupXEPG() {
 			} else {
 				originalName = xepgChannel.Name
 			}
+			var hashInput string
 			hashInput = xepgChannel.URL + xepgChannel.FileM3UID + originalName
 			hash := md5.Sum([]byte(hashInput))
 			m3uChannelHash := hex.EncodeToString(hash[:])
@@ -1852,6 +1854,7 @@ func removeDuplicateChannels() {
 		} else {
 			originalName = xepgChannel.Name
 		}
+		var hashInput string
 		hashInput = xepgChannel.URL + xepgChannel.FileM3UID + originalName
 		hash := md5.Sum([]byte(hashInput))
 		channelHash := hex.EncodeToString(hash[:])
