@@ -288,13 +288,13 @@ func Threadfin(w http.ResponseWriter, r *http.Request) {
 		systemMutex.Unlock()
 
 		queries := r.URL.Query()
-		// Check if the m3u file exists
-		if len(queries) == 0 {
-			if _, err := os.Stat(m3uFilePath); err == nil {
-				log.Println("Serving existing m3u file")
-				http.ServeFile(w, r, m3uFilePath)
-				return
-			}
+		groupTitle = r.URL.Query().Get("group-title")
+
+		// Check if the m3u file exists - serve it regardless of auth parameters
+		if _, err := os.Stat(m3uFilePath); err == nil {
+			log.Println("Serving existing m3u file")
+			http.ServeFile(w, r, m3uFilePath)
+			return
 		}
 
 		log.Println("M3U file does not exist, building new one")
@@ -314,6 +314,15 @@ func Threadfin(w http.ResponseWriter, r *http.Request) {
 		content, err = buildM3U(groups)
 		if err != nil {
 			ShowError(err, 000)
+		}
+
+		// If buildM3U returned empty content (because it wrote to disk), serve the file
+		if len(content) == 0 && len(groupTitle) == 0 {
+			if _, err := os.Stat(m3uFilePath); err == nil {
+				log.Println("Serving M3U file written to disk")
+				http.ServeFile(w, r, m3uFilePath)
+				return
+			}
 		}
 
 	}
