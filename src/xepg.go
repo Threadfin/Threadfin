@@ -584,17 +584,15 @@ func createXEPGDatabase() (err error) {
 			// Update the ChannelUniqueID to new hash value
 			xepgChannel.ChannelUniqueID = m3uChannelHash
 
-			// Update channel name - for Live Events, allow name updates even without UUID
-			if channelHasUUID {
-				programData, _ := getProgramData(xepgChannel)
-				if xepgChannel.XUpdateChannelName || strings.Contains(xepgChannel.TvgID, "threadfin-") || (m3uChannel.LiveEvent == "true" && len(programData.Program) <= 3) {
-					xepgChannel.XName = m3uChannel.Name
-					xepgChannel.TvgName = m3uChannel.TvgName // Also update TvgName for Live Events
-				}
-			} else if m3uChannel.LiveEvent == "true" {
-				// For Live Events without UUID, still allow name updates since they change frequently
+			// Always update Live Event channel names since they change frequently
+			if m3uChannel.LiveEvent == "true" {
 				xepgChannel.XName = m3uChannel.Name
 				xepgChannel.TvgName = m3uChannel.TvgName
+			} else if channelHasUUID {
+				if xepgChannel.XUpdateChannelName || strings.Contains(xepgChannel.TvgID, "threadfin-") {
+					xepgChannel.XName = m3uChannel.Name
+					xepgChannel.TvgName = m3uChannel.TvgName
+				}
 			}
 
 			// For Live Event channels, ensure they use Live Event EPG if they have insufficient program data
