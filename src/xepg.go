@@ -359,8 +359,8 @@ func createXEPGDatabase() (err error) {
 	settings_json, _ := json.Marshal(settings)
 	json.Unmarshal(settings_json, &Settings)
 
-	// Remove duplicate channels from existing XEPG database based on new hash logic
-	removeDuplicateChannels()
+	// DISABLED: Duplicate removal disabled to preserve all backup channels with different URLs
+	// removeDuplicateChannels()
 
 	// Get current M3U channels
 	m3uChannels := make(map[string]M3UChannelStructXEPG)
