@@ -480,7 +480,7 @@ func createXEPGDatabase() (err error) {
 			originalName = channel.Name
 		}
 		var hashInput string
-		hashInput = channel.URL + channel.FileM3UID + originalName
+		hashInput = channel.URL + channel.FileM3UID + originalName + channel.TvgID
 		hash := md5.Sum([]byte(hashInput))
 		channelHash := hex.EncodeToString(hash[:])
 		xepgChannelsValuesMap[channelHash] = channel
@@ -509,7 +509,7 @@ func createXEPGDatabase() (err error) {
 		var hashInput string
 		// Always use the same format: URL + FileM3UID + Name for consistency
 		// TvgID can be inconsistent (sometimes present, sometimes empty) for the same logical channel
-		hashInput = m3uChannel.URL + m3uChannel.FileM3UID + m3uChannel.Name
+		hashInput = m3uChannel.URL + m3uChannel.FileM3UID + m3uChannel.Name + m3uChannel.TvgID
 		hash := md5.Sum([]byte(hashInput))
 		m3uChannelHash := hex.EncodeToString(hash[:])
 
@@ -1790,7 +1790,7 @@ func cleanupXEPG() {
 				originalName = xepgChannel.Name
 			}
 			var hashInput string
-			hashInput = xepgChannel.URL + xepgChannel.FileM3UID + originalName
+			hashInput = xepgChannel.URL + xepgChannel.FileM3UID + originalName + xepgChannel.TvgID
 			hash := md5.Sum([]byte(hashInput))
 			m3uChannelHash := hex.EncodeToString(hash[:])
 
@@ -1855,7 +1855,7 @@ func removeDuplicateChannels() {
 			originalName = xepgChannel.Name
 		}
 		var hashInput string
-		hashInput = xepgChannel.URL + xepgChannel.FileM3UID + originalName
+		hashInput = xepgChannel.URL + xepgChannel.FileM3UID + originalName + xepgChannel.TvgID
 		hash := md5.Sum([]byte(hashInput))
 		channelHash := hex.EncodeToString(hash[:])
 
