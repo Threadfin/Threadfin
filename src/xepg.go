@@ -472,13 +472,20 @@ func createXEPGDatabase() (err error) {
 
 		// Create consistent channel hash using URL as primary identifier
 		// Use TvgID when available, since names can change but IDs should remain stable
+		// Use original provider name for consistency even when user changes display name
+		var originalName string
+		if channel.XOriginalName != "" {
+			originalName = channel.XOriginalName
+		} else {
+			originalName = channel.Name
+		}
 		var hashInput string
 		if channel.TvgID != "" {
 			// Use TvgID when available for stable identification
-			hashInput = channel.URL + channel.TvgID + channel.FileM3UID
+			hashInput = channel.URL + channel.TvgID + channel.FileM3UID + originalName
 		} else {
-			// Fall back to URL + FileM3UID only when TvgID is blank
-			hashInput = channel.URL + channel.FileM3UID
+			// Fall back to URL + FileM3UID + original name when TvgID is blank
+			hashInput = channel.URL + channel.FileM3UID + originalName
 		}
 		hash := md5.Sum([]byte(hashInput))
 		channelHash := hex.EncodeToString(hash[:])
@@ -504,13 +511,14 @@ func createXEPGDatabase() (err error) {
 		// Try to find the channel based on matching all known values.  If that fails, then move to full channel scan
 		// Create consistent channel hash using URL as primary identifier
 		// Use TvgID when available, since names can change but IDs should remain stable
+		// Include original provider name to ensure hash consistency even when user changes display name
 		var hashInput string
 		if m3uChannel.TvgID != "" {
 			// Use TvgID when available for stable identification
-			hashInput = m3uChannel.URL + m3uChannel.TvgID + m3uChannel.FileM3UID
+			hashInput = m3uChannel.URL + m3uChannel.TvgID + m3uChannel.FileM3UID + m3uChannel.Name
 		} else {
-			// Fall back to URL + FileM3UID only when TvgID is blank
-			hashInput = m3uChannel.URL + m3uChannel.FileM3UID
+			// Fall back to URL + FileM3UID + original name when TvgID is blank
+			hashInput = m3uChannel.URL + m3uChannel.FileM3UID + m3uChannel.Name
 		}
 		hash := md5.Sum([]byte(hashInput))
 		m3uChannelHash := hex.EncodeToString(hash[:])
@@ -526,7 +534,7 @@ func createXEPGDatabase() (err error) {
 		} else {
 			// XEPG Datenbank durchlaufen um nach dem Kanal zu suchen.  Run through the XEPG database to search for the channel (full scan)
 			for _, dxc := range xepgChannelsValuesMap {
-				if m3uChannel.FileM3UID == dxc.FileM3UID && !isInInactiveList(dxc.URL) {
+				if m3uChannel.FileM3UID == dxc.FileM3UID {
 
 					dxc.FileM3UID = m3uChannel.FileM3UID
 					dxc.FileM3UName = m3uChannel.FileM3UName
@@ -541,6 +549,12 @@ func createXEPGDatabase() (err error) {
 							break
 
 						}
+					} else {
+						// For channels without UUIDs, match on FileM3UID alone
+						channelExists = true
+						channelHasUUID = false
+						currentXEPGID = dxc.XEPG
+						break
 					}
 				}
 
@@ -557,11 +571,14 @@ func createXEPGDatabase() (err error) {
 				return
 			}
 
-			// IMPORTANT: Skip updates for manually deactivated channels
-			// If user has deactivated a channel, respect that choice during updates
-			if !xepgChannel.XActive {
-				showInfo(fmt.Sprintf("XEPG:Skipping update for deactivated channel: %s (%s)", currentXEPGID, xepgChannel.XName))
-				continue // Skip to next channel, don't update deactivated channels
+			// Update deactivated channels but preserve their deactivated status
+			// Only skip if user has hidden the channel completely
+			if !xepgChannel.XActive && !xepgChannel.XHideChannel {
+				showInfo(fmt.Sprintf("XEPG:Updating deactivated channel: %s (%s)", currentXEPGID, xepgChannel.XName))
+				// Continue with update but preserve XActive = false
+			} else if xepgChannel.XHideChannel {
+				showInfo(fmt.Sprintf("XEPG:Skipping hidden channel: %s (%s)", currentXEPGID, xepgChannel.XName))
+				continue // Skip hidden channels completely
 			}
 
 			// Update existing channel - since we found it via hash, it's the same logical channel
@@ -584,11 +601,20 @@ func createXEPGDatabase() (err error) {
 			// Update the ChannelUniqueID to new hash value
 			xepgChannel.ChannelUniqueID = m3uChannelHash
 
-			// Always update Live Event channel names since they change frequently
+			// Store original provider name if not already stored
+			if xepgChannel.XOriginalName == "" {
+				xepgChannel.XOriginalName = m3uChannel.Name
+			}
+
+			// Handle channel name updates
 			if m3uChannel.LiveEvent == "true" {
-				xepgChannel.XName = m3uChannel.Name
-				xepgChannel.TvgName = m3uChannel.TvgName
+				// For Live Event channels, only update names if not treated as linear
+				if !xepgChannel.XTreatAsLinear {
+					xepgChannel.XName = m3uChannel.Name
+					xepgChannel.TvgName = m3uChannel.TvgName
+				}
 			} else if channelHasUUID {
+				// For regular channels, update names based on existing logic
 				if xepgChannel.XUpdateChannelName || strings.Contains(xepgChannel.TvgID, "threadfin-") {
 					xepgChannel.XName = m3uChannel.Name
 					xepgChannel.TvgName = m3uChannel.TvgName
@@ -727,6 +753,7 @@ func createXEPGDatabase() (err error) {
 			}
 
 			newChannel.XName = m3uChannel.Name
+			newChannel.XOriginalName = m3uChannel.Name
 			newChannel.XGroupTitle = m3uChannel.GroupTitle
 			newChannel.XEPG = xepg
 			newChannel.TvgChno = xChannelID
@@ -1765,13 +1792,20 @@ func cleanupXEPG() {
 
 			// Create consistent channel hash using URL as primary identifier
 			// Use TvgID when available, since names can change but IDs should remain stable
+			// Use original provider name for consistency even when user changes display name
+			var originalName string
+			if xepgChannel.XOriginalName != "" {
+				originalName = xepgChannel.XOriginalName
+			} else {
+				originalName = xepgChannel.Name
+			}
 			var hashInput string
 			if xepgChannel.TvgID != "" {
 				// Use TvgID when available for stable identification
-				hashInput = xepgChannel.URL + xepgChannel.TvgID + xepgChannel.FileM3UID
+				hashInput = xepgChannel.URL + xepgChannel.TvgID + xepgChannel.FileM3UID + originalName
 			} else {
-				// Fall back to URL + FileM3UID only when TvgID is blank
-				hashInput = xepgChannel.URL + xepgChannel.FileM3UID
+				// Fall back to URL + FileM3UID + original name when TvgID is blank
+				hashInput = xepgChannel.URL + xepgChannel.FileM3UID + originalName
 			}
 			hash := md5.Sum([]byte(hashInput))
 			m3uChannelHash := hex.EncodeToString(hash[:])
@@ -1829,13 +1863,20 @@ func removeDuplicateChannels() {
 
 		// Create consistent channel hash using URL as primary identifier
 		// Use TvgID when available, since names can change but IDs should remain stable
+		// Use original provider name for consistency even when user changes display name
+		var originalName string
+		if xepgChannel.XOriginalName != "" {
+			originalName = xepgChannel.XOriginalName
+		} else {
+			originalName = xepgChannel.Name
+		}
 		var hashInput string
 		if xepgChannel.TvgID != "" {
 			// Use TvgID when available for stable identification
-			hashInput = xepgChannel.URL + xepgChannel.TvgID + xepgChannel.FileM3UID
+			hashInput = xepgChannel.URL + xepgChannel.TvgID + xepgChannel.FileM3UID + originalName
 		} else {
-			// Fall back to URL + FileM3UID only when TvgID is blank
-			hashInput = xepgChannel.URL + xepgChannel.FileM3UID
+			// Fall back to URL + FileM3UID + original name when TvgID is blank
+			hashInput = xepgChannel.URL + xepgChannel.FileM3UID + originalName
 		}
 		hash := md5.Sum([]byte(hashInput))
 		channelHash := hex.EncodeToString(hash[:])

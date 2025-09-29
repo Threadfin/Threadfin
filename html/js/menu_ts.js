@@ -1562,6 +1562,14 @@ function openPopUp(dataType, element) {
                     content.appendRow("{{.mapping.updateChannelName.title}}", input);
                 }
             }
+            // Treat as Linear - only show for Live Event channels
+            if (data["live"] === true) {
+                var dbKey = "x-treat-as-linear";
+                var input = content.createCheckbox(dbKey);
+                input.setAttribute("onchange", "javascript: this.className = 'changed'");
+                input.checked = data[dbKey] || false;
+                content.appendRow("{{.mapping.treatAsLinear.title}}", input);
+            }
             // Logo URL (Kanal) 
             var dbKey = "tvg-logo";
             var input = content.createInput("text", dbKey, data[dbKey]);

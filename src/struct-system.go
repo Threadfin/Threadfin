@@ -211,6 +211,8 @@ type XEPGChannelStruct struct {
 	XName              string        `json:"x-name"`
 	XUpdateChannelIcon bool          `json:"x-update-channel-icon"`
 	XUpdateChannelName bool          `json:"x-update-channel-name"`
+	XTreatAsLinear     bool          `json:"x-treat-as-linear"`
+	XOriginalName      string        `json:"x-original-name"`
 	XDescription       string        `json:"x-description"`
 	Live               bool          `json:"live"`
 	IsBackupChannel    bool          `json:"is_backup_channel"`

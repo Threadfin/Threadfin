@@ -269,6 +269,11 @@
       "placeholder": "",
       "description": ""
     },
+    "treatAsLinear": {
+      "title": "Treat as Linear",
+      "placeholder": "",
+      "description": ""
+    },
     "channelLogo": {
       "title": "Logo URL",
       "placeholder": "",
