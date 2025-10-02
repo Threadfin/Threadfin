@@ -597,15 +597,10 @@ func createXEPGDatabase() (err error) {
 			}
 
 			// Handle channel name updates
-			if m3uChannel.LiveEvent == "true" {
-				// For Live Event channels, only update names if not treated as linear
-				if !xepgChannel.XTreatAsLinear {
-					xepgChannel.XName = m3uChannel.Name
-					xepgChannel.TvgName = m3uChannel.TvgName
-				}
-			} else if channelHasUUID {
-				// For regular channels, update names based on existing logic
-				if xepgChannel.XUpdateChannelName || strings.Contains(xepgChannel.TvgID, "threadfin-") {
+			isLiveEventWithAutoUpdate := m3uChannel.LiveEvent == "true" && !xepgChannel.XTreatAsLinear
+
+			if channelHasUUID {
+				if xepgChannel.XUpdateChannelName || strings.Contains(xepgChannel.TvgID, "threadfin-") || isLiveEventWithAutoUpdate {
 					xepgChannel.XName = m3uChannel.Name
 					xepgChannel.TvgName = m3uChannel.TvgName
 				}
