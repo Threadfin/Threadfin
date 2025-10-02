@@ -471,16 +471,9 @@ func createXEPGDatabase() (err error) {
 		}
 
 		// Create consistent channel hash using URL as primary identifier
-		// Use TvgID when available, since names can change but IDs should remain stable
-		// Use original provider name for consistency even when user changes display name
-		var originalName string
-		if channel.XOriginalName != "" {
-			originalName = channel.XOriginalName
-		} else {
-			originalName = channel.Name
-		}
+		// Do NOT include Name in hash since it can change (e.g., NFL game schedules)
 		var hashInput string
-		hashInput = channel.URL + channel.FileM3UID + originalName + channel.TvgID + channel.UUIDValue
+		hashInput = channel.URL + channel.FileM3UID + channel.TvgID + channel.UUIDValue
 		hash := md5.Sum([]byte(hashInput))
 		channelHash := hex.EncodeToString(hash[:])
 		xepgChannelsValuesMap[channelHash] = channel
@@ -504,12 +497,9 @@ func createXEPGDatabase() (err error) {
 
 		// Try to find the channel based on matching all known values.  If that fails, then move to full channel scan
 		// Create consistent channel hash using URL as primary identifier
-		// Use TvgID when available, since names can change but IDs should remain stable
-		// Include original provider name to ensure hash consistency even when user changes display name
+		// Do NOT include Name in hash since it can change (e.g., NFL game schedules)
 		var hashInput string
-		// Always use the same format: URL + FileM3UID + Name for consistency
-		// TvgID can be inconsistent (sometimes present, sometimes empty) for the same logical channel
-		hashInput = m3uChannel.URL + m3uChannel.FileM3UID + m3uChannel.Name + m3uChannel.TvgID + m3uChannel.UUIDValue
+		hashInput = m3uChannel.URL + m3uChannel.FileM3UID + m3uChannel.TvgID + m3uChannel.UUIDValue
 		hash := md5.Sum([]byte(hashInput))
 		m3uChannelHash := hex.EncodeToString(hash[:])
 
