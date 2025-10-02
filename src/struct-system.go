@@ -20,10 +20,9 @@ type SystemStruct struct {
 	ConfigurationWizard    bool
 	DBVersion              string
 	Dev                    bool
-	DeviceID               string
-	Domain                 string
-	PlexChannelLimit       int
-	UnfilteredChannelLimit int
+	DeviceID         string
+	Domain           string
+	PlexChannelLimit int
 
 	FFmpeg struct {
 		DefaultOptions string
