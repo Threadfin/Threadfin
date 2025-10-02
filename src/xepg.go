@@ -1768,6 +1768,12 @@ func cleanupXEPG() {
 
 			if indexOfString(xepgChannel.FileM3UID, sourceIDs) == -1 {
 				delete(Data.XEPG.Channels, id)
+				continue
+			}
+
+			// Remove channels that are no longer in active streams (filtered out)
+			if indexOfString(xepgChannel.ChannelUniqueID, Data.Cache.Streams.Active) == -1 {
+				delete(Data.XEPG.Channels, id)
 			}
 
 		}
