@@ -470,16 +470,16 @@ func createXEPGDatabase() (err error) {
 			channel.TvgName = channel.Name
 		}
 
-		// Create consistent channel hash using TvgID as primary stable identifier
-		// Do NOT include Name or URL in hash since both can change (e.g., NFL game schedules, rotating tokens)
-		// TvgID + FileM3UID combination uniquely identifies a channel across updates
+		// Create consistent channel hash for matching
+		// For "Treat as Linear" channels: Use TvgID only (allows URL/name changes)
+		// For other channels: Use full URL (preserves backup channels with same TvgID)
 		var hashInput string
-		if channel.TvgID != "" {
-			// Use TvgID + source as the stable identifier
+		if channel.XTreatAsLinear && channel.TvgID != "" {
+			// Linear channels: stable identity via TvgID only
 			hashInput = channel.TvgID + channel.FileM3UID
 		} else {
-			// Fallback to URL-based matching for channels without TvgID
-			hashInput = channel.URL + channel.FileM3UID + channel.UUIDValue
+			// Non-linear or backup channels: include URL to distinguish duplicates
+			hashInput = channel.URL + channel.FileM3UID + channel.TvgID + channel.UUIDValue
 		}
 		hash := md5.Sum([]byte(hashInput))
 		channelHash := hex.EncodeToString(hash[:])
@@ -503,16 +503,26 @@ func createXEPGDatabase() (err error) {
 		}
 
 		// Try to find the channel based on matching all known values.  If that fails, then move to full channel scan
-		// Create consistent channel hash using TvgID as primary stable identifier
-		// Do NOT include Name or URL in hash since both can change (e.g., NFL game schedules, rotating tokens)
-		// TvgID + FileM3UID combination uniquely identifies a channel across updates
+		// Create consistent channel hash for matching
+		// Check if existing channel with this TvgID is marked as "Treat as Linear"
+		var treatAsLinear bool
+		for _, dxc := range Data.XEPG.Channels {
+			var existingChannel XEPGChannelStruct
+			if err := json.Unmarshal([]byte(mapToJSON(dxc)), &existingChannel); err == nil {
+				if existingChannel.TvgID == m3uChannel.TvgID && existingChannel.FileM3UID == m3uChannel.FileM3UID {
+					treatAsLinear = existingChannel.XTreatAsLinear
+					break
+				}
+			}
+		}
+
 		var hashInput string
-		if m3uChannel.TvgID != "" {
-			// Use TvgID + source as the stable identifier
+		if treatAsLinear && m3uChannel.TvgID != "" {
+			// Linear channels: stable identity via TvgID only (allows URL/name to change)
 			hashInput = m3uChannel.TvgID + m3uChannel.FileM3UID
 		} else {
-			// Fallback to URL-based matching for channels without TvgID
-			hashInput = m3uChannel.URL + m3uChannel.FileM3UID + m3uChannel.UUIDValue
+			// Non-linear or backup channels: include URL to distinguish duplicates
+			hashInput = m3uChannel.URL + m3uChannel.FileM3UID + m3uChannel.TvgID + m3uChannel.UUIDValue
 		}
 		hash := md5.Sum([]byte(hashInput))
 		m3uChannelHash := hex.EncodeToString(hash[:])
