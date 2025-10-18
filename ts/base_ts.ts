@@ -98,6 +98,16 @@ function getLocalData(dataType, id): object {
       data = SERVER["settings"]["files"][dataType][id]
       break
 
+    case "xtream":
+      data = SERVER["settings"]["files"]["m3u"][id]
+      if (data == undefined) {
+        data = new Object()
+      }
+      if (data["xtream.xmltv"] == undefined) {
+        data["xtream.xmltv"] = false
+      }
+      break
+
     case "hdhr":
       data = SERVER["settings"]["files"][dataType][id]
       break

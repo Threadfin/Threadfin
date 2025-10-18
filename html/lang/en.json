@@ -159,6 +159,33 @@
       "placeholder": "IP address and port (192.168.1.10:5004)",
       "description": ""
     },
+    "xtream": {
+      "title": "Xtream Codes API",
+      "server": {
+        "title": "Server URL",
+        "placeholder": "https://example.com:8080",
+        "description": "Base URL to your Xtream Codes panel (including protocol and port)."
+      },
+      "username": {
+        "title": "Username",
+        "placeholder": "Xtream username",
+        "description": "Account username used to access the Xtream Codes API."
+      },
+      "password": {
+        "title": "Password",
+        "placeholder": "Xtream password",
+        "description": "Account password used to access the Xtream Codes API."
+      },
+      "output": {
+        "title": "Output format",
+        "placeholder": "",
+        "description": "Choose the stream format returned by the Xtream Codes API."
+      },
+      "xmltv": {
+        "title": "Download XMLTV feed",
+        "description": "Fetch the provider XMLTV guide from xmltv.php alongside the playlist."
+      }
+    },
     "buffer": {
       "title": "Buffer",
       "placeholder": "",

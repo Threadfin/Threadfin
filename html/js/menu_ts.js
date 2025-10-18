@@ -121,7 +121,11 @@ class Content {
                     keys.forEach(key => {
                         var tr = document.createElement("TR");
                         tr.id = key;
-                        tr.setAttribute('onclick', 'javascript: openPopUp("' + fileType + '", this)');
+                        var playlistType = data[key]["type"];
+                        if (playlistType == undefined || playlistType == "") {
+                            playlistType = fileType;
+                        }
+                        tr.setAttribute('onclick', 'javascript: openPopUp("' + playlistType + '", this)');
                         var cell = new Cell();
                         cell.child = true;
                         cell.childType = "P";
@@ -1081,8 +1085,8 @@ function openPopUp(dataType, element) {
         case "playlist":
             content.createHeadline("{{.playlist.playlistType.title}}");
             // Type
-            var text = ["M3U", "HDHomeRun"];
-            var values = ["javascript: openPopUp('m3u')", "javascript: openPopUp('hdhr')"];
+            var text = ["M3U", "HDHomeRun", "{{.playlist.xtream.title}}"];
+            var values = ["javascript: openPopUp('m3u')", "javascript: openPopUp('hdhr')", "javascript: openPopUp('xtream')"];
             var select = content.createSelect(text, values, "", "type");
             select.setAttribute("id", "type");
             select.setAttribute("onchange", 'javascript: changeButtonAction(this, "next", "onclick")'); // changeButtonAction
@@ -1184,6 +1188,98 @@ function openPopUp(dataType, element) {
             // Speichern
             var input = content.createInput("button", "save", "{{.button.save}}");
             input.setAttribute('onclick', 'javascript: savePopupData("m3u", "' + id + '", false, 0)');
+            content.addInteraction(input);
+            break;
+        case "xtream":
+            content.createHeadline("{{.playlist.xtream.title}}");
+            // Name
+            var dbKey = "name";
+            var input = content.createInput("text", dbKey, data[dbKey]);
+            input.setAttribute("placeholder", "{{.playlist.name.placeholder}}");
+            content.appendRow("{{.playlist.name.title}}", input);
+            // Beschreibung
+            var dbKey = "description";
+            var input = content.createInput("text", dbKey, data[dbKey]);
+            input.setAttribute("placeholder", "{{.playlist.description.placeholder}}");
+            content.appendRow("{{.playlist.description.title}}", input);
+            // Server URL
+            var dbKey = "xtream.url";
+            var input = content.createInput("text", dbKey, data[dbKey]);
+            input.setAttribute("placeholder", "{{.playlist.xtream.server.placeholder}}");
+            content.appendRow("{{.playlist.xtream.server.title}}", input);
+            // Benutzername
+            var dbKey = "xtream.username";
+            var input = content.createInput("text", dbKey, data[dbKey]);
+            input.setAttribute("placeholder", "{{.playlist.xtream.username.placeholder}}");
+            content.appendRow("{{.playlist.xtream.username.title}}", input);
+            // Passwort
+            var dbKey = "xtream.password";
+            var input = content.createInput("password", dbKey, data[dbKey]);
+            input.setAttribute("placeholder", "{{.playlist.xtream.password.placeholder}}");
+            content.appendRow("{{.playlist.xtream.password.title}}", input);
+            // Output format
+            var text = ["MPEG-TS", "HLS", "TS"];
+            var values = ["mpegts", "hls", "ts"];
+            var selected = data["xtream.output"];
+            if (selected == undefined || selected == "") {
+                selected = "mpegts";
+            }
+            var select = content.createSelect(text, values, selected, "xtream.output");
+            content.appendRow("{{.playlist.xtream.output.title}}", select);
+            var xmltvCheckbox = content.createCheckbox("xtream.xmltv");
+            if (data["xtream.xmltv"] === true) {
+                xmltvCheckbox.checked = true;
+            }
+            content.appendRow("{{.playlist.xtream.xmltv.title}}", xmltvCheckbox);
+            content.description("{{.playlist.xtream.xmltv.description}}");
+            var textBuffer = ["-", "FFmpeg", "VLC"];
+            var valueBuffer = ["-", "ffmpeg", "vlc"];
+            var bufferSelected = SERVER["settings"]["buffer"];
+            if (data["buffer"] != undefined) {
+                bufferSelected = data["buffer"];
+            }
+            var bufferSelect = content.createSelect(textBuffer, valueBuffer, bufferSelected, "buffer");
+            bufferSelect.setAttribute("id", "buffer");
+            content.appendRow("{{.playlist.buffer.title}}", bufferSelect);
+            // Tuner
+            var tunerText = new Array();
+            var tunerValues = new Array();
+            for (var i = 1; i <= 100; i++) {
+                tunerText.push(i.toString());
+                tunerValues.push(i.toString());
+            }
+            var dbKey = "tuner";
+            var tunerSelect = content.createSelect(tunerText, tunerValues, data[dbKey], dbKey);
+            tunerSelect.setAttribute("onfocus", "javascript: return;");
+            content.appendRow("{{.playlist.tuner.title}}", tunerSelect);
+            content.description("{{.playlist.tuner.description}}");
+            // Interaktion
+            content.createInteraction();
+            // Löschen oder Zurück
+            if (data["id.provider"] != "-") {
+                var input = content.createInput("button", "delete", "{{.button.delete}}");
+                input.setAttribute('onclick', 'javascript: savePopupData("xtream", "' + id + '", true, 0)');
+                input.className = "delete";
+                content.addInteraction(input);
+            }
+            else {
+                var input = content.createInput("button", "back", "{{.button.back}}");
+                input.setAttribute("onclick", 'javascript: openPopUp("playlist")');
+                content.addInteraction(input);
+            }
+            // Abbrechen
+            var input = content.createInput("button", "cancel", "{{.button.cancel}}");
+            input.setAttribute("onclick", 'javascript: showElement("popup", false);');
+            content.addInteraction(input);
+            // Aktualisieren
+            if (data["id.provider"] != "-") {
+                var input = content.createInput("button", "update", "{{.button.update}}");
+                input.setAttribute('onclick', 'javascript: savePopupData("xtream", "' + id + '", false, 1)');
+                content.addInteraction(input);
+            }
+            // Speichern
+            var input = content.createInput("button", "save", "{{.button.save}}");
+            input.setAttribute('onclick', 'javascript: savePopupData("xtream", "' + id + '", false, 0)');
             content.addInteraction(input);
             break;
         case "hdhr":
@@ -2088,6 +2184,24 @@ function savePopupData(dataType, id, remove, option) {
             data["files"] = new Object;
             data["files"][dataType] = new Object;
             data["files"][dataType][id] = input;
+            break;
+        case "xtream":
+            confirmMsg = "Delete this playlist?";
+            input["type"] = "xtream";
+            switch (option) {
+                case 0:
+                    cmd = "saveFilesM3U";
+                    break;
+                case 1:
+                    cmd = "updateFileM3U";
+                    break;
+            }
+            if (input["xtream.output"] == undefined || input["xtream.output"] == "") {
+                input["xtream.output"] = "mpegts";
+            }
+            data["files"] = new Object;
+            data["files"]["m3u"] = new Object;
+            data["files"]["m3u"][id] = input;
             break;
         case "hdhr":
             confirmMsg = "Delete this HDHomeRun tuner?";

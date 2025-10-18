@@ -115,8 +115,8 @@ func makeInterfaceFromM3UOriginal(byteStream []byte) (allChannels []interface{},
 
 	if strings.Contains(content, "#EXTM3U") {
 		content = strings.Replace(content, ":-1", "", -1)
-		content = strings.Replace(content, "'", "\"", -1)
 		var channels = strings.Split(content, "#EXTINF")
+	fmt.Printf("MakeInterfaceFromM3U chunks:%d\n", len(channels))
 
 		channels = append(channels[:0], channels[1:]...)
 
@@ -144,3 +144,4 @@ func indexOfString(element string, data []string) int {
 
 	return -1
 }
+

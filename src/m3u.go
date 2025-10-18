@@ -2,6 +2,7 @@ package src
 
 import (
 	"bufio"
+	"crypto/md5"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -28,7 +29,16 @@ func parsePlaylist(filename, fileType string) (channels []interface{}, err error
 
 		switch fileType {
 		case "m3u":
-			channels, err = m3u.MakeInterfaceFromM3U(content)
+			providerType := strings.ToLower(getProviderParameter(id, fileType, "type"))
+			if providerType == "xtream" {
+				channels = makeInterfaceFromXTreamM3U(content)
+				showInfo(fmt.Sprintf("parsePlaylist %s parsed channels:%d (xtream)", playlistName, len(channels)))
+			} else {
+				channels, err = m3u.MakeInterfaceFromM3U(content)
+				if err == nil {
+					showInfo(fmt.Sprintf("parsePlaylist %s parsed channels:%d", playlistName, len(channels)))
+				}
+			}
 		case "hdhr":
 			channels, err = makeInteraceFromHDHR(content, playlistName, id)
 		}
@@ -329,7 +339,7 @@ func buildM3U(groups []string) (m3u string, err error) {
 			}
 		}
 
-        // Disabling so not to rewrite stream to https domain when disable stream from https set
+		// Disabling so not to rewrite stream to https domain when disable stream from https set
 		if Settings.ForceHttps && Settings.HttpsThreadfinDomain != "" && Settings.ExcludeStreamHttps == false {
 			u, err := url.Parse(channel.URL)
 			if err == nil {
@@ -344,7 +354,7 @@ func buildM3U(groups []string) (m3u string, err error) {
 					channel.URL = fmt.Sprintf("https://%s:%d%s", u.Host, Settings.HttpsPort, u.Path)
 				}
 			}
-	    }
+		}
 
 		logo := ""
 		if channel.TvgLogo != "" {
@@ -441,4 +451,86 @@ func parseFrameRate(parts []string) int {
 		return 0
 	}
 	return int(math.Round(float64(numerator) / float64(denom)))
+}
+
+func makeInterfaceFromXTreamM3U(content []byte) (channels []interface{}) {
+	lines := strings.Split(strings.ReplaceAll(string(content), "\r\n", "\n"), "\n")
+	var current map[string]string
+	attrRegex := regexp.MustCompile(`([A-Za-z0-9_-]+)="([^"]*)"`)
+	appendCurrent := func() {
+		if current == nil {
+			return
+		}
+		url := current["url"]
+		if url == "" {
+			current = nil
+			return
+		}
+		if name, ok := current["name"]; ok {
+			if _, ok := current["tvg-name"]; !ok || current["tvg-name"] == "" {
+				current["tvg-name"] = name
+			}
+		}
+		if _, ok := current["tvg-id"]; !ok || current["tvg-id"] == "" {
+			current["tvg-id"] = fmt.Sprintf("threadfin-%x", md5.Sum([]byte(url)))
+		}
+		if _, ok := current["_values"]; !ok || current["_values"] == "" {
+			current["_values"] = strings.TrimSpace(current["tvg-name"] + " " + current["group-title"])
+		}
+		current["_uuid.key"] = "tvg-name"
+		current["_uuid.value"] = current["tvg-name"]
+		channels = append(channels, current)
+		current = nil
+	}
+	for _, raw := range lines {
+		line := strings.TrimSpace(raw)
+		if len(line) == 0 {
+			continue
+		}
+		if strings.HasPrefix(line, "#EXTINF") {
+			current = make(map[string]string)
+			meta := strings.TrimPrefix(line, "#EXTINF")
+			if strings.HasPrefix(meta, ":") {
+				meta = strings.TrimSpace(meta[1:])
+			}
+			comma := strings.Index(meta, ",")
+			if comma >= 0 {
+				name := strings.TrimSpace(meta[comma+1:])
+				if name != "" {
+					current["name"] = name
+					current["tvg-name"] = name
+				}
+				meta = strings.TrimSpace(meta[:comma])
+			}
+			matches := attrRegex.FindAllStringSubmatch(meta, -1)
+			var values []string
+			for _, match := range matches {
+				if len(match) != 3 {
+					continue
+				}
+				key := strings.ToLower(match[1])
+				val := match[2]
+				current[key] = val
+				if key == "tvg-name" && val != "" {
+					current["name"] = val
+				}
+				values = append(values, val)
+			}
+			if len(values) > 0 {
+				current["_values"] = strings.Join(values, " ")
+			}
+			continue
+		}
+		if strings.HasPrefix(line, "#") {
+			continue
+		}
+		if current != nil {
+			current["url"] = line
+			appendCurrent()
+		}
+	}
+	if current != nil {
+		appendCurrent()
+	}
+	return
 }

@@ -1,15 +1,16 @@
 package src
 
 import (
-	"encoding/json"
-	"errors"
-	"fmt"
-	"os"
-	"path"
-	"sort"
-	"strconv"
-	"strings"
-	"time"
+    "encoding/json"
+    "errors"
+    "fmt"
+    "net/url"
+    "os"
+    "path"
+    "sort"
+    "strconv"
+    "strings"
+    "time"
 
 	"threadfin/src/internal/authentication"
 	"threadfin/src/internal/imgcache"
@@ -253,7 +254,100 @@ func updateServerSettings(request RequestStruct) (settings SettingsStruct, err e
 
 	}
 
-	return
+return
+}
+
+func normalizeM3UEntry(dataID string, entry map[string]interface{}) error {
+	entryType, _ := entry["type"].(string)
+	if len(entryType) == 0 {
+		entryType = "m3u"
+		entry["type"] = entryType
+	}
+
+	if entryType != "xtream" {
+		return nil
+	}
+
+	rawURL, _ := entry["xtream.url"].(string)
+	rawURL = strings.TrimSpace(rawURL)
+	if len(rawURL) == 0 {
+		return errors.New("Xtream Codes server URL is required")
+	}
+
+	if strings.HasPrefix(rawURL, "//") {
+		rawURL = "http:" + rawURL
+	}
+
+	if !strings.HasPrefix(strings.ToLower(rawURL), "http://") && !strings.HasPrefix(strings.ToLower(rawURL), "https://") {
+		rawURL = "http://" + rawURL
+	}
+
+	parsedURL, err := url.Parse(rawURL)
+	if err != nil || parsedURL == nil || parsedURL.Host == "" {
+		return fmt.Errorf("invalid Xtream Codes server URL: %s", rawURL)
+	}
+
+	cleanPath := strings.TrimRight(parsedURL.Path, "/")
+	lowerPath := strings.ToLower(cleanPath)
+	for _, suffix := range []string{"/player_api.php", "/get.php", "/xmltv.php", "/portal.php", "/panel_api.php"} {
+		if strings.HasSuffix(lowerPath, suffix) {
+			trimLength := len(suffix)
+			cleanPath = cleanPath[:len(cleanPath)-trimLength]
+			lowerPath = lowerPath[:len(lowerPath)-trimLength]
+			break
+		}
+	}
+	cleanPath = strings.TrimRight(cleanPath, "/")
+
+	baseURL := fmt.Sprintf("%s://%s", parsedURL.Scheme, parsedURL.Host)
+	if len(cleanPath) > 0 {
+		baseURL = baseURL + cleanPath
+	}
+	baseURL = strings.TrimRight(baseURL, "/")
+
+	entry["xtream.url"] = baseURL
+	entry["file.source"] = baseURL
+
+	username, _ := entry["xtream.username"].(string)
+	username = strings.TrimSpace(username)
+	if len(username) == 0 {
+		return errors.New("Xtream Codes username is required")
+	}
+	entry["xtream.username"] = username
+
+	password, _ := entry["xtream.password"].(string)
+	password = strings.TrimSpace(password)
+	if len(password) == 0 {
+		return errors.New("Xtream Codes password is required")
+	}
+	entry["xtream.password"] = password
+
+	if output, ok := entry["xtream.output"].(string); !ok || len(strings.TrimSpace(output)) == 0 {
+		entry["xtream.output"] = "mpegts"
+	} else {
+		entry["xtream.output"] = strings.TrimSpace(output)
+	}
+
+	if val, ok := entry["xtream.xmltv"]; ok {
+		switch v := val.(type) {
+		case bool:
+			entry["xtream.xmltv"] = v
+		case string:
+			lower := strings.ToLower(strings.TrimSpace(v))
+			entry["xtream.xmltv"] = lower == "1" || lower == "true" || lower == "yes" || lower == "on"
+		case float64:
+			entry["xtream.xmltv"] = v != 0
+		default:
+			entry["xtream.xmltv"] = false
+		}
+	} else {
+		entry["xtream.xmltv"] = false
+	}
+	if id, ok := entry["xtream.xmltv.id"].(string); ok {
+		entry["xtream.xmltv.id"] = strings.TrimSpace(id)
+	}
+
+	return nil
 }
 
 // Providerdaten speichern (WebUI)
@@ -287,23 +381,47 @@ func saveFiles(request RequestStruct, fileType string) (err error) {
 
 	for dataID, data := range newData {
 
+		entry, ok := data.(map[string]interface{})
+		if ok == false {
+			continue
+		}
+
+		var target map[string]interface{}
+		isNewEntry := false
+
 		if dataID == "-" {
 
 			// Neue Providerdatei
 			dataID = indicator + randomString(19)
-			data.(map[string]interface{})["new"] = true
-			filesMap[dataID] = data
+			entry["new"] = true
+			isNewEntry = true
+			target = entry
+			filesMap[dataID] = target
 
 		} else {
 
 			// Bereits vorhandene Providerdatei
-			for key, value := range data.(map[string]interface{}) {
-
-				var oldData = filesMap[dataID].(map[string]interface{})
-				oldData[key] = value
-
+			if existing, exists := filesMap[dataID].(map[string]interface{}); exists {
+				target = existing
+			} else {
+				target = make(map[string]interface{})
+				filesMap[dataID] = target
 			}
 
+			for key, value := range entry {
+				target[key] = value
+			}
+
+		}
+
+		if fileType == "m3u" {
+			err = normalizeM3UEntry(dataID, target)
+			if err != nil {
+				if isNewEntry {
+					delete(filesMap, dataID)
+				}
+				return
+			}
 		}
 
 		switch fileType {
