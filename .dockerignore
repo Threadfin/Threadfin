@@ -1,2 +1,13 @@
 Dockerfile
+Dockerfile.arm
 README.md
+README-DEV.md
+changelog-beta.md
+LICENSE
+.git
+.github
+.vscode
+.gitignore
+.dockerignore
+ts
+*.md

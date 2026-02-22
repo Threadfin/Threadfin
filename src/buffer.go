@@ -1253,7 +1253,10 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 
 		f, err = bufferVFS.OpenFile(tmpFile, os.O_APPEND|os.O_WRONLY, 0600)
 		if err != nil {
-			panic(err)
+			ShowError(err, 0)
+			killClientConnection(streamID, playlistID, false)
+			addErrorToStream(err)
+			return
 		}
 		defer f.Close()
 
@@ -1261,7 +1264,8 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 
 		reader := bufio.NewReader(stdOut)
 
-		t := make(chan int)
+		t := make(chan int, 1)
+		done := make(chan struct{})
 
 		go func() {
 
@@ -1271,10 +1275,9 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 				timeout++
 
 				select {
-				case <-t:
+				case <-done:
 					return
 				default:
-					// Check if the channel is closed before sending
 					select {
 					case t <- timeout:
 					default:
@@ -1334,7 +1337,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 			if fileSize >= bufferSize/2 {
 
 				if tmpSegment == 1 && !stream.Status {
-					close(t)
+					close(done)
 					close(streamStatus)
 					showInfo(fmt.Sprintf("Streaming Status:Buffering data from %s", bufferType))
 				}

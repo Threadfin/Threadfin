@@ -14,7 +14,7 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v4
         with:
-          ref: main
+          ref: ${{ github.ref }}
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -61,7 +61,7 @@ jobs:
         with:
           name: threadfin-binaries
           path: dist/
-          retention-days: 1
+          retention-days: 7
 
   docker:
     name: Build and Push Docker Images
@@ -71,7 +71,7 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v4
         with:
-          ref: main
+          ref: ${{ github.ref }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -122,8 +122,14 @@ jobs:
           name: threadfin-binaries
           path: dist
 
+      - name: Generate checksums
+        run: |
+          cd dist
+          sha256sum * > SHA256SUMS.txt
+
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
-          files: dist/*
+          files: |
+            dist/*
           generate_release_notes: true

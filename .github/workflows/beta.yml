@@ -6,21 +6,44 @@ on:
 permissions:
   contents: write
 jobs:
-  build:
-    name: Build
+  test:
+    name: Test
     runs-on: ubuntu-latest
     steps:
-      - name: Check out code into the Go module directory
-        uses: actions/checkout@v3
+      - name: Check out code
+        uses: actions/checkout@v4
         with:
           ref: beta
 
-      - name: Set up and Build
-        uses: actions/setup-go@v3
+      - name: Set up Go
+        uses: actions/setup-go@v5
         with:
-          go-version: 1.18
-        id: go
+          go-version: '1.23'
+          cache: true
+
+      - name: Run tests
+        run: go test ./...
+
+      - name: Run vet
+        run: go vet ./...
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          ref: beta
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+          cache: true
+
       - run: |
          go mod tidy && go mod vendor
          echo "Building Linux"
-         env GOOS=linux GOARCH=amd64 go build -o dist/Threadfin_linux_amd64
+         env GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o dist/Threadfin_linux_amd64

@@ -20,7 +20,7 @@ function login() {
     }
     if (data.hasOwnProperty("confirm")) {
         if (data["confirm"] != data["password"]) {
-            alert("sdafsd");
+            // Passwords do not match
             document.getElementById('password').style.borderColor = "red";
             document.getElementById('confirm').style.borderColor = "red";
             document.getElementById("err").innerHTML = "{{.account.failed}}";

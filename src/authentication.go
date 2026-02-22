@@ -28,20 +28,20 @@ func activatedSystemAuthentication() (err error) {
 
 func createFirstUserForAuthentication(username, password string) (token string, err error) {
 
-	var authenticationErr = func(err error) {
-		if err != nil {
-			return
-		}
+	err = authentication.CreateDefaultUser(username, password)
+	if err != nil {
+		return
 	}
 
-	err = authentication.CreateDefaultUser(username, password)
-	authenticationErr(err)
-
 	token, err = authentication.UserAuthentication(username, password)
-	authenticationErr(err)
+	if err != nil {
+		return
+	}
 
 	token, err = authentication.CheckTheValidityOfTheToken(token)
-	authenticationErr(err)
+	if err != nil {
+		return
+	}
 
 	var userData = make(map[string]interface{})
 	userData["username"] = username
@@ -53,10 +53,11 @@ func createFirstUserForAuthentication(username, password string) (token string, 
 	userData["defaultUser"] = true
 
 	userID, err := authentication.GetUserID(token)
-	authenticationErr(err)
+	if err != nil {
+		return
+	}
 
 	err = authentication.WriteUserData(userID, userData)
-	authenticationErr(err)
 
 	return
 }
@@ -82,8 +83,14 @@ func basicAuth(r *http.Request, level string) (username string, err error) {
 		return
 	}
 
-	payload, _ := base64.StdEncoding.DecodeString(auth[1])
+	payload, decodeErr := base64.StdEncoding.DecodeString(auth[1])
+	if decodeErr != nil {
+		return
+	}
 	pair := strings.SplitN(string(payload), ":", 2)
+	if len(pair) != 2 {
+		return
+	}
 
 	username = pair[0]
 	var password = pair[1]
@@ -134,17 +141,15 @@ func urlAuth(r *http.Request, requestType string) (err error) {
 
 func checkAuthorizationLevel(token, level string) (err error) {
 
-	var authenticationErr = func(err error) {
-		if err != nil {
-			return
-		}
+	userID, err := authentication.GetUserID(token)
+	if err != nil {
+		return
 	}
 
-	userID, err := authentication.GetUserID(token)
-	authenticationErr(err)
-
 	userData, err := authentication.ReadUserData(userID)
-	authenticationErr(err)
+	if err != nil {
+		return
+	}
 
 	if len(userData) > 0 {
 

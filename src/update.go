@@ -52,8 +52,13 @@ func BinaryUpdate() (err error) {
 			ShowError(err, 6003)
 			return nil
 		}
+		defer resp.Body.Close()
 
-		body, _ = io.ReadAll(resp.Body)
+		body, err = io.ReadAll(resp.Body)
+		if err != nil {
+			ShowError(err, 6003)
+			return nil
+		}
 
 		err = json.Unmarshal(body, &git)
 		if err != nil {

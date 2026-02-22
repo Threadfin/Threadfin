@@ -898,7 +898,7 @@ function createLayout() {
         else if (SERVER["clientInfo"]["activePlaylist"] / SERVER["clientInfo"]["totalPlaylist"] >= 0.8) {
             activeClass = "text-danger";
         }
-        document.getElementById("playlist-connection-information").innerHTML = "Playlist Connections: <span class='" + activeClass + "'>" + SERVER["clientInfo"]["activePlaylist"] + " / " + SERVER["clientInfo"]["totalPlaylist"] + "</span>";
+        document.getElementById("playlist-connection-information").innerHTML = "Playlist Connections: <span class='" + activeClass + "'>" + escapeHtml(SERVER["clientInfo"]["activePlaylist"]) + " / " + escapeHtml(SERVER["clientInfo"]["totalPlaylist"]) + "</span>";
     }
     if (document.getElementById("client-connection-information")) {
         let activeClass = "text-primary";
@@ -908,7 +908,7 @@ function createLayout() {
         else if (SERVER["clientInfo"]["activeClients"] / SERVER["clientInfo"]["totalClients"] >= 0.8) {
             activeClass = "text-danger";
         }
-        document.getElementById("client-connection-information").innerHTML = "Client Connections: <span class='" + activeClass + "'>" + SERVER["clientInfo"]["activeClients"] + " / " + SERVER["clientInfo"]["totalClients"] + "</span>";
+        document.getElementById("client-connection-information").innerHTML = "Client Connections: <span class='" + activeClass + "'>" + escapeHtml(SERVER["clientInfo"]["activeClients"]) + " / " + escapeHtml(SERVER["clientInfo"]["totalClients"]) + "</span>";
     }
     if (!document.getElementById("main-menu")) {
         return;

@@ -270,7 +270,6 @@ func saveMapToJSONFile(file string, tmpMap interface{}) error {
 		return err
 	}
 
-	os.Create(filename)
 	err = os.WriteFile(filename, []byte(jsonString), 0644)
 	if err != nil {
 		return err
@@ -281,15 +280,17 @@ func saveMapToJSONFile(file string, tmpMap interface{}) error {
 
 func loadJSONFileToMap(file string) (tmpMap map[string]interface{}, err error) {
 	f, err := os.Open(getPlatformFile(file))
+	if err != nil {
+		return
+	}
 	defer f.Close()
 
 	content, err := io.ReadAll(f)
-
-	if err == nil {
-		err = json.Unmarshal([]byte(content), &tmpMap)
+	if err != nil {
+		return
 	}
 
-	f.Close()
+	err = json.Unmarshal([]byte(content), &tmpMap)
 
 	return
 }
@@ -298,10 +299,12 @@ func loadJSONFileToMap(file string) (tmpMap map[string]interface{}, err error) {
 func readByteFromFile(file string) (content []byte, err error) {
 
 	f, err := os.Open(getPlatformFile(file))
+	if err != nil {
+		return
+	}
 	defer f.Close()
 
 	content, err = io.ReadAll(f)
-	f.Close()
 
 	return
 }

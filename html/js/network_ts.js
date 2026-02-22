@@ -1,3 +1,7 @@
+function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
 class Server {
     constructor(cmd) {
         this.cmd = cmd;
@@ -42,10 +46,17 @@ class Server {
             SERVER_CONNECTION = false;
             showElement("loading", false);
             console.log("RESPONSE:");
-            var response = JSON.parse(e.data);
+            var response;
+            try {
+                response = JSON.parse(e.data);
+            } catch (parseErr) {
+                console.error("Failed to parse server response:", parseErr);
+                SERVER_CONNECTION = false;
+                return;
+            }
             console.log(response);
             if (response.hasOwnProperty("token")) {
-                document.cookie = "Token=" + response["token"];
+                document.cookie = "Token=" + response["token"] + "; SameSite=Strict; path=/";
             }
             if (response["status"] == false) {
                 alert(response["err"]);
@@ -57,7 +68,7 @@ class Server {
             if (response.hasOwnProperty("probeInfo")) {
                 if (document.getElementById("probeDetails")) {
                     if (response["probeInfo"]["resolution"] !== undefined) {
-                        document.getElementById("probeDetails").innerHTML = "<p>Resolution: <span class='text-primary'>" + response["probeInfo"]["resolution"] + "</span></p><p>Frame Rate: <span class='text-primary'>" + response["probeInfo"]["frameRate"] + " FPS</span></p><p>Audio: <span class='text-primary'>" + response["probeInfo"]["audioChannel"] + "</span></p>";
+                        document.getElementById("probeDetails").innerHTML = "<p>Resolution: <span class='text-primary'>" + escapeHtml(response["probeInfo"]["resolution"]) + "</span></p><p>Frame Rate: <span class='text-primary'>" + escapeHtml(response["probeInfo"]["frameRate"]) + " FPS</span></p><p>Audio: <span class='text-primary'>" + escapeHtml(response["probeInfo"]["audioChannel"]) + "</span></p>";
                     }
                 }
             }
@@ -81,7 +92,7 @@ class Server {
                         else if (response["clientInfo"]["activePlaylist"] / response["clientInfo"]["totalPlaylist"] >= 0.8) {
                             activeClass = "text-danger";
                         }
-                        document.getElementById("playlist-connection-information").innerHTML = "Playlist Connections: <span class='" + activeClass + "'>" + response["clientInfo"]["activePlaylist"] + " / " + response["clientInfo"]["totalPlaylist"] + "</span>";
+                        document.getElementById("playlist-connection-information").innerHTML = "Playlist Connections: <span class='" + activeClass + "'>" + escapeHtml(response["clientInfo"]["activePlaylist"]) + " / " + escapeHtml(response["clientInfo"]["totalPlaylist"]) + "</span>";
                     }
                     if (document.getElementById("client-connection-information")) {
                         let activeClass = "text-primary";
@@ -91,7 +102,7 @@ class Server {
                         else if (response["clientInfo"]["activeClients"] / response["clientInfo"]["totalClients"] >= 0.8) {
                             activeClass = "text-danger";
                         }
-                        document.getElementById("client-connection-information").innerHTML = "Client Connections: <span class='" + activeClass + "'>" + response["clientInfo"]["activeClients"] + " / " + response["clientInfo"]["totalClients"] + "</span>";
+                        document.getElementById("client-connection-information").innerHTML = "Client Connections: <span class='" + activeClass + "'>" + escapeHtml(response["clientInfo"]["activeClients"]) + " / " + escapeHtml(response["clientInfo"]["totalClients"]) + "</span>";
                     }
                     return;
                     break;

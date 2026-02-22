@@ -78,7 +78,10 @@ RUN apt-get update && \
     gnupg \
     apt-transport-https && \
     mkdir -p $THREADFIN_BIN $THREADFIN_CONF $THREADFIN_TEMP $THREADFIN_HOME/cache && \
-    chmod a+rwX $THREADFIN_CONF $THREADFIN_TEMP && \
+    groupadd -g $THREADFIN_GID threadfin && \
+    useradd -u $THREADFIN_UID -g $THREADFIN_GID -d $THREADFIN_HOME -s /bin/false threadfin && \
+    chown -R $THREADFIN_UID:$THREADFIN_GID $THREADFIN_BIN $THREADFIN_CONF $THREADFIN_TEMP $THREADFIN_HOME && \
+    chmod 755 $THREADFIN_CONF $THREADFIN_TEMP && \
     sed -i 's/geteuid/getppid/' /usr/bin/vlc && \
     curl -fsSL https://repo.jellyfin.org/master/ubuntu/jellyfin_team.gpg.key \
         | gpg --dearmor -o /etc/apt/trusted.gpg.d/ubuntu-jellyfin.gpg && \
@@ -104,5 +107,10 @@ VOLUME $THREADFIN_CONF
 VOLUME $THREADFIN_TEMP
 
 EXPOSE $THREADFIN_PORT
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD curl -f http://localhost:${THREADFIN_PORT}/ || exit 1
+
+USER $THREADFIN_UID:$THREADFIN_GID
 
 ENTRYPOINT ["sh", "-c", "${THREADFIN_BIN}/threadfin -port=${THREADFIN_PORT} -bind=${THREADFIN_BIND_IP_ADDRESS} -config=${THREADFIN_CONF} -debug=${THREADFIN_DEBUG}"]

@@ -28,19 +28,19 @@ func StartWebserver() (err error) {
 	}
 	systemMutex.Unlock()
 
-	http.HandleFunc("/", Index)
-	http.HandleFunc("/stream/", Stream)
-	http.HandleFunc("/xmltv/", Threadfin)
-	http.HandleFunc("/m3u/", Threadfin)
-	http.HandleFunc("/data/", WS)
-	http.HandleFunc("/web/", Web)
-	http.HandleFunc("/download/", Download)
-	http.HandleFunc("/api/", API)
-	http.HandleFunc("/images/", Images)
-	http.HandleFunc("/data_images/", DataImages)
-	http.HandleFunc("/ppv/enable", enablePPV)
-	http.HandleFunc("/ppv/disable", disablePPV)
-	http.HandleFunc("/auto/", Auto)
+	http.HandleFunc("/", securityHeaders(Index))
+	http.HandleFunc("/stream/", securityHeaders(Stream))
+	http.HandleFunc("/xmltv/", securityHeaders(Threadfin))
+	http.HandleFunc("/m3u/", securityHeaders(Threadfin))
+	http.HandleFunc("/data/", securityHeaders(WS))
+	http.HandleFunc("/web/", securityHeaders(Web))
+	http.HandleFunc("/download/", securityHeaders(Download))
+	http.HandleFunc("/api/", securityHeaders(API))
+	http.HandleFunc("/images/", securityHeaders(Images))
+	http.HandleFunc("/data_images/", securityHeaders(DataImages))
+	http.HandleFunc("/ppv/enable", securityHeaders(enablePPV))
+	http.HandleFunc("/ppv/disable", securityHeaders(disablePPV))
+	http.HandleFunc("/auto/", securityHeaders(Auto))
 
 	systemMutex.Lock()
 	ips := len(System.IPAddressesV4) + len(System.IPAddressesV6) - 1
@@ -387,8 +387,15 @@ func WS(w http.ResponseWriter, r *http.Request) {
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
 		CheckOrigin: func(r *http.Request) bool {
-			// Implement any custom origin validation logic here, if needed.
-			return true
+			origin := r.Header.Get("Origin")
+			if origin == "" {
+				return true // Allow non-browser clients (e.g. media players)
+			}
+			u, err := url.Parse(origin)
+			if err != nil {
+				return false
+			}
+			return u.Host == r.Host
 		},
 	}
 
@@ -1161,7 +1168,9 @@ func enablePPV(w http.ResponseWriter, r *http.Request) {
 
 		response.Status = false
 		response.Error = err.Error()
+		w.Header().Set("Content-Type", "application/json")
 		w.Write([]byte(mapToJSON(response)))
+		return
 	}
 
 	for _, c := range xepg {
@@ -1196,7 +1205,9 @@ func disablePPV(w http.ResponseWriter, r *http.Request) {
 
 		response.Status = false
 		response.Error = err.Error()
+		w.Header().Set("Content-Type", "application/json")
 		w.Write([]byte(mapToJSON(response)))
+		return
 	}
 
 	for _, c := range xepg {
@@ -1214,12 +1225,24 @@ func disablePPV(w http.ResponseWriter, r *http.Request) {
 
 		response.Status = false
 		response.Error = err.Error()
+		w.Header().Set("Content-Type", "application/json")
 		w.Write([]byte(mapToJSON(response)))
+		return
 	}
 	buildXEPG(false)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
+}
+
+func securityHeaders(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		w.Header().Set("X-Frame-Options", "SAMEORIGIN")
+		w.Header().Set("X-XSS-Protection", "1; mode=block")
+		w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
+		next(w, r)
+	}
 }
 
 func httpStatusError(w http.ResponseWriter, r *http.Request, httpStatusCode int) {
