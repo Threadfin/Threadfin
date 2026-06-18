@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -126,19 +127,17 @@ func Stream(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// If an UDPxy host is set, and the stream URL is multicast (i.e. starts with 'udp://@'),
-	// then streamInfo.URL needs to be rewritten to point to UDPxy.
-	if Settings.UDPxy != "" && strings.HasPrefix(streamInfo.URL, "udp://@") {
-		streamInfo.URL = fmt.Sprintf("http://%s/udp/%s/", Settings.UDPxy, strings.TrimPrefix(streamInfo.URL, "udp://@"))
+	if Settings.UDPxy != "" {
+		streamInfo.URL = rewriteMulticastURLWithUDPxy(streamInfo.URL, Settings.UDPxy)
 	}
 
 	systemMutex.Lock()
 	forceHttps := Settings.ForceHttps
-    noStreamHttps := Settings.ExcludeStreamHttps
+	noStreamHttps := Settings.ExcludeStreamHttps
 	systemMutex.Unlock()
 
 	// Dont Change Source M3Us to use HTTPs when forceHttps set and Exclude Streams from https
-    if forceHttps && noStreamHttps == false {
+	if forceHttps && noStreamHttps == false {
 		u, err := url.Parse(streamInfo.URL)
 		if err == nil {
 			u.Scheme = "https"
@@ -220,6 +219,36 @@ func Stream(w http.ResponseWriter, r *http.Request) {
 		bufferingStream(streamInfo.PlaylistID, streamInfo.URL, streamInfo.BackupChannel1, streamInfo.BackupChannel2, streamInfo.BackupChannel3, streamInfo.Name, w, r)
 	}
 	return
+}
+
+func rewriteMulticastURLWithUDPxy(streamURL, udpxy string) string {
+	u, err := url.Parse(streamURL)
+	if err != nil {
+		return streamURL
+	}
+
+	scheme := strings.ToLower(u.Scheme)
+	if scheme != "udp" && scheme != "rtp" {
+		return streamURL
+	}
+
+	ip := net.ParseIP(u.Hostname())
+	if ip == nil || !ip.IsMulticast() {
+		return streamURL
+	}
+
+	target := u.Host
+	if target == "" {
+		return streamURL
+	}
+
+	udpxy = strings.TrimRight(udpxy, "/")
+	lowerUDPxy := strings.ToLower(udpxy)
+	if !strings.HasPrefix(lowerUDPxy, "http://") && !strings.HasPrefix(lowerUDPxy, "https://") {
+		udpxy = "http://" + udpxy
+	}
+
+	return fmt.Sprintf("%s/%s/%s/", udpxy, scheme, target)
 }
 
 // Auto : HDHR routing (wird derzeit nicht benutzt)
