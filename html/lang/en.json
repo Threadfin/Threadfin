@@ -451,8 +451,8 @@
     },
     "udpxy": {
       "title": "UDPxy address",
-      "description": "The address of your UDPxy server. If set, and the channel URLs in the m3u is multicast, Threadfin will rewrite it so that it is accessed via the UDPxy service.",
-      "placeholder": "host:port"
+      "description": "The address of your UDPxy server. If set, and the channel URLs in the m3u is multicast, Threadfin will rewrite it so that it is accessed via the UDPxy service. Use host:port to default to HTTP, or include http:// or https://.",
+      "placeholder": "host:port or https://host:port"
     },
     "ffmpegPath": {
       "title": "FFmpeg Binary Path",
