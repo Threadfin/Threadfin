@@ -65,6 +65,18 @@ func Init() (err error) {
 	System.Compatibility = "0.1.0"
 
 	// FFmpeg Default Einstellungen
+	// Optional: some unstable HTTP sources benefit from adding ffmpeg's HTTP
+	// reconnect options before "-i [URL]", e.g.:
+	//   -reconnect 1 -reconnect_streamed 1 -reconnect_on_network_error 1 -reconnect_on_http_error 4xx,5xx -reconnect_delay_max 2
+	// These make ffmpeg reconnect inside the same process/output timeline
+	// instead of exiting and letting the buffer layer restart the stream.
+	// This is NOT a safe default: some servers replay a few seconds of
+	// backlog on every new connection, and with in-process reconnect that
+	// backlog gets spliced into the continuous timeline, showing up as a
+	// visible loop/jump-back. Without the flags, a dropped connection is a
+	// clean (if slightly abrupt) restart instead. Add the flags manually
+	// in Settings > FFmpeg options only if your source is confirmed not to
+	// replay backlog on reconnect.
 	System.FFmpeg.DefaultOptions = "-hide_banner -loglevel error -analyzeduration 1000000 -probesize 1000000 -i [URL] -map 0:v -map 0:a:0 -c:v copy -c:a aac -b:a 192k -ac 2 -c:s copy -f mpegts -fflags +genpts -movflags +faststart -copyts pipe:1"
 	System.VLC.DefaultOptions = "-I dummy [URL] --sout #std{mux=ts,access=file,dst=-}"
 
