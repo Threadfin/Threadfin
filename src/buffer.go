@@ -1026,6 +1026,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 		var playlist = p.(Playlist)
 		var debug, path, options, bufferType string
 		var tmpSegment = 1
+		var startSegment = 1
 		var bufferSize = Settings.BufferSize * 1024
 		var stream = playlist.Streams[streamID]
 		var buf bytes.Buffer
@@ -1104,8 +1105,31 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 
 		}
 
-		if err := bufferVFS.RemoveAll(getPlatformPath(tmpFolder)); err != nil {
-			ShowError(err, 4005)
+		// FAILOVER FIX (2026-08-19): on a backup switch, KEEP the buffer
+		// folder and continue segment numbering after the highest existing
+		// file. Wiping the folder and restarting at 1.ts reissued filenames
+		// a connected client had already been served; getBufTmpFiles skips
+		// known names, so the client received nothing until the backup had
+		// re-streamed the client's entire watched history in real time -
+		// a blackout proportional to how long they had been watching
+		// (measured: 157s watched -> >240s black, while a fresh client on
+		// the same channel got its first byte in 5.7s).
+		var keepFolder = false
+		if useBackup {
+			if files, errDir := bufferVFS.ReadDir(getPlatformPath(tmpFolder)); errDir == nil {
+				keepFolder = true
+				for _, file := range files {
+					if id, errAtoi := strconv.Atoi(strings.TrimSuffix(file.Name(), ".ts")); errAtoi == nil && id >= tmpSegment {
+						tmpSegment = id + 1
+					}
+				}
+				startSegment = tmpSegment
+			}
+		}
+		if !keepFolder {
+			if err := bufferVFS.RemoveAll(getPlatformPath(tmpFolder)); err != nil {
+				ShowError(err, 4005)
+			}
 		}
 
 		err := checkVFSFolder(tmpFolder, bufferVFS)
@@ -1289,7 +1313,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 
 			select {
 			case timeout := <-t:
-				if timeout >= 20 && tmpSegment == 1 {
+				if timeout >= 20 && tmpSegment == startSegment {
 					cmd.Process.Kill()
 					err = errors.New("Timeout")
 					ShowError(err, 4006)
@@ -1333,7 +1357,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 
 			if fileSize >= bufferSize/2 {
 
-				if tmpSegment == 1 && !stream.Status {
+				if tmpSegment == startSegment && !stream.Status {
 					close(t)
 					close(streamStatus)
 					showInfo(fmt.Sprintf("Streaming Status:Buffering data from %s", bufferType))
