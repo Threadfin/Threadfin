@@ -22,6 +22,16 @@ import (
 	_ "time/tzdata"
 )
 
+// xepgMissingLimit is how many consecutive updates a channel must be absent from its
+// provider before cleanupXEPG removes it from the XEPG database.
+//
+// It exists because "absent from this one poll" and "gone for good" are not the same
+// thing. Providers under-report transiently: an HTTP 200 carrying a truncated list, a
+// refresh that races the provider's own scheduled rebuild, a proxy hiccup. Deleting on
+// the first miss turns any of those into permanent, silent loss of hand-made guide
+// mappings and channel numbers that the M3U cannot regenerate.
+const xepgMissingLimit = 3
+
 // Provider XMLTV Datei überprüfen
 func checkXMLCompatibility(id string, body []byte) (err error) {
 
@@ -1779,11 +1789,41 @@ func cleanupXEPG() {
 			m3uChannelHash := hex.EncodeToString(hash[:])
 
 			if indexOfString(m3uChannelHash, Data.Cache.Streams.Active) == -1 {
-				delete(Data.XEPG.Channels, id)
+
+				// Absent from this update. Do not delete on the first miss -- see
+				// xepgMissingLimit. Count it instead, and only remove the channel once it
+				// has been missing for that many updates in a row.
+				xepgChannel.MissingCount++
+
+				if xepgChannel.MissingCount >= xepgMissingLimit {
+
+					showInfo(fmt.Sprintf("XEPG:Removing channel '%s', absent from its provider for %d consecutive updates", xepgChannel.XName, xepgChannel.MissingCount))
+					delete(Data.XEPG.Channels, id)
+
+				} else {
+
+					showInfo(fmt.Sprintf("XEPG:Keeping channel '%s', absent from its provider (%d/%d) - not removing yet", xepgChannel.XName, xepgChannel.MissingCount, xepgMissingLimit))
+					Data.XEPG.Channels[id] = xepgChannel
+
+					if xepgChannel.XActive && !xepgChannel.XHideChannel {
+						Data.XEPG.XEPGCount++
+					}
+
+				}
+
 			} else {
+
+				// Present again. Clear any earlier miss, so that isolated blips spread
+				// over months cannot accumulate and eventually trip the limit.
+				if xepgChannel.MissingCount != 0 {
+					xepgChannel.MissingCount = 0
+					Data.XEPG.Channels[id] = xepgChannel
+				}
+
 				if xepgChannel.XActive && !xepgChannel.XHideChannel {
 					Data.XEPG.XEPGCount++
 				}
+
 			}
 
 			if indexOfString(xepgChannel.FileM3UID, sourceIDs) == -1 {

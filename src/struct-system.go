@@ -218,6 +218,13 @@ type XEPGChannelStruct struct {
 	BackupChannel2     *BackupStream `json:"backup_channel_2"`
 	BackupChannel3     *BackupStream `json:"backup_channel_3"`
 	ChannelUniqueID    string        `json:"channelUniqueID"`
+
+	// MissingCount counts how many consecutive updates this channel has been absent from
+	// its provider. cleanupXEPG removes the channel only once this reaches
+	// xepgMissingLimit, so that a provider which briefly under-reports cannot destroy a
+	// valid mapping on a single bad poll. Omitted when zero, so existing xepg.json files
+	// stay byte-identical until a channel actually goes missing.
+	MissingCount int `json:"x-missing-count,omitempty"`
 }
 
 // M3UChannelStructXEPG : M3U Struktur für XEPG
