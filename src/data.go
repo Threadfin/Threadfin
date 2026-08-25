@@ -753,8 +753,19 @@ func createFilterRules() (err error) {
 	Data.Filter = nil
 	var dataFilter Filter
 
-	for _, f := range Settings.Filter {
+	// Settings.Filter is a map, and Go randomises map iteration order. Ranging over it
+	// directly left Data.Filter in a different order on every rebuild, so which filter got
+	// to claim a given stream changed from one scan to the next. Sort by the filter ID the
+	// UI assigns so evaluation order is stable and matches the order the user sees.
+	var filterIDs = make([]int64, 0, len(Settings.Filter))
+	for id := range Settings.Filter {
+		filterIDs = append(filterIDs, id)
+	}
+	sort.Slice(filterIDs, func(i, j int) bool { return filterIDs[i] < filterIDs[j] })
 
+	for _, id := range filterIDs {
+
+		var f = Settings.Filter[id]
 		var filter FilterStruct
 
 		var exclude, include string
