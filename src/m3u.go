@@ -118,6 +118,11 @@ func filterThisStream(s interface{}) (status bool, liveEvent bool) {
 
 		case "custom-filter":
 			search = streamValues
+			// Note: a rule consisting only of {include} / !{exclude} groups is stripped to
+			// "" above, and strings.Contains(s, "") is always true - so such a filter matches
+			// every stream and lets its conditions decide. That is the intended behaviour,
+			// but it is only safe because a failed condition now falls through to the next
+			// filter instead of rejecting the stream outright.
 			if strings.Contains(search, filter.Rule) {
 				match = true
 			}
@@ -125,17 +130,21 @@ func filterThisStream(s interface{}) (status bool, liveEvent bool) {
 
 		if match == true {
 
+			// A failed condition means THIS filter does not want the stream - it does not
+			// mean no other filter may have it. Returning here ended the whole loop, so a
+			// stream was silently dropped whenever a filter it did not belong to happened
+			// to be evaluated before the one it did.
 			if len(exclude) > 0 {
 				var status = checkConditions(search, exclude, "exclude")
 				if status == false {
-					return false, liveEvent
+					continue
 				}
 			}
 
 			if len(include) > 0 {
 				var status = checkConditions(search, include, "include")
 				if status == false {
-					return false, liveEvent
+					continue
 				}
 			}
 
