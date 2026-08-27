@@ -334,9 +334,20 @@ func createXEPGMapping() {
 }
 
 // XEPG Datenbank erstellen / aktualisieren
+// remarshal converts src to dst via a compact JSON round-trip. Used in hot
+// loops where mapToJSON (json.MarshalIndent) wastes significant CPU on
+// indentation that is immediately discarded by the following Unmarshal.
+func remarshal(src interface{}, dst interface{}) error {
+	b, err := json.Marshal(src)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(b, dst)
+}
+
 func createXEPGDatabase() (err error) {
 
-	var allChannelNumbers = make([]float64, 0, System.UnfilteredChannelLimit)
+	var usedChannelNumbers = make(map[float64]bool, System.UnfilteredChannelLimit)
 	Data.Cache.Streams.Active = make([]string, 0, System.UnfilteredChannelLimit)
 	Data.XEPG.Channels = make(map[string]interface{}, System.UnfilteredChannelLimit)
 
@@ -366,7 +377,7 @@ func createXEPGDatabase() (err error) {
 	m3uChannels := make(map[string]M3UChannelStructXEPG)
 	for _, dsa := range Data.Streams.Active {
 		var m3uChannel M3UChannelStructXEPG
-		err = json.Unmarshal([]byte(mapToJSON(dsa)), &m3uChannel)
+		err = remarshal(dsa, &m3uChannel)
 		if err == nil {
 			// Use tvg-id as the key for matching channels
 			key := m3uChannel.TvgID
@@ -380,7 +391,7 @@ func createXEPGDatabase() (err error) {
 	// Update URLs in XEPG database
 	for id, dxc := range Data.XEPG.Channels {
 		var xepgChannel XEPGChannelStruct
-		err = json.Unmarshal([]byte(mapToJSON(dxc)), &xepgChannel)
+		err = remarshal(dxc, &xepgChannel)
 		if err == nil {
 			// Find matching M3U channel using tvg-id or tvg-name
 			key := xepgChannel.TvgID
@@ -404,45 +415,48 @@ func createXEPGDatabase() (err error) {
 		return err
 	}
 
+	// Monotonic counter for new XEPG IDs. The previous implementation rescanned
+	// Data.XEPG.Channels from 0 on every call -> O(n²) over a full rebuild.
+	var nextXEPGID int64 = 0
 	var createNewID = func() (xepg string) {
-
-		var firstID = 0 //len(Data.XEPG.Channels)
-
-	newXEPGID:
-
-		if _, ok := Data.XEPG.Channels["x-ID."+strconv.FormatInt(int64(firstID), 10)]; ok {
-			firstID++
-			goto newXEPGID
-		}
-
-		xepg = "x-ID." + strconv.FormatInt(int64(firstID), 10)
-		return
-	}
-
-	var getFreeChannelNumber = func(startingNumber float64) (xChannelID string) {
-
-		sort.Float64s(allChannelNumbers)
-
 		for {
-
-			if indexOfFloat64(startingNumber, allChannelNumbers) == -1 {
-				xChannelID = fmt.Sprintf("%g", startingNumber)
-				allChannelNumbers = append(allChannelNumbers, startingNumber)
+			xepg = "x-ID." + strconv.FormatInt(nextXEPGID, 10)
+			nextXEPGID++
+			if _, ok := Data.XEPG.Channels[xepg]; !ok {
 				return
 			}
-
-			startingNumber++
-
 		}
+	}
+
+	// Free channel-number lookup backed by a set. The previous implementation
+	// sorted a growing slice and did a linear search on every call, making a
+	// full rebuild O(n³).
+	var getFreeChannelNumber = func(startingNumber float64) (xChannelID string) {
+		for usedChannelNumbers[startingNumber] {
+			startingNumber++
+		}
+		usedChannelNumbers[startingNumber] = true
+		return fmt.Sprintf("%g", startingNumber)
 	}
 
 	showInfo("XEPG:" + "Update database")
+	var xepgTimer = time.Now()
+
+	// Filters parsed once here instead of re-parsing Settings.Filter per channel
+	// (and, previously, per channel twice).
+	var parsedFilters []FilterStruct
+	for _, filter := range Settings.Filter {
+		filterJSON, _ := json.Marshal(filter)
+		var f FilterStruct
+		json.Unmarshal(filterJSON, &f)
+		parsedFilters = append(parsedFilters, f)
+	}
 
 	// Kanal mit fehlenden Kanalnummern löschen.  Delete channel with missing channel numbers
 	for id, dxc := range Data.XEPG.Channels {
 
 		var xepgChannel XEPGChannelStruct
-		err = json.Unmarshal([]byte(mapToJSON(dxc)), &xepgChannel)
+		err = remarshal(dxc, &xepgChannel)
 		if err != nil {
 			return
 		}
@@ -452,7 +466,7 @@ func createXEPGDatabase() (err error) {
 		}
 
 		if xChannelID, err := strconv.ParseFloat(xepgChannel.XChannelID, 64); err == nil {
-			allChannelNumbers = append(allChannelNumbers, xChannelID)
+			usedChannelNumbers[xChannelID] = true
 		}
 
 	}
@@ -461,7 +475,7 @@ func createXEPGDatabase() (err error) {
 	var xepgChannelsValuesMap = make(map[string]XEPGChannelStruct, System.UnfilteredChannelLimit)
 	for _, v := range Data.XEPG.Channels {
 		var channel XEPGChannelStruct
-		err = json.Unmarshal([]byte(mapToJSON(v)), &channel)
+		err = remarshal(v, &channel)
 		if err != nil {
 			return
 		}
@@ -492,7 +506,7 @@ func createXEPGDatabase() (err error) {
 
 		var m3uChannel M3UChannelStructXEPG
 
-		err = json.Unmarshal([]byte(mapToJSON(dsa)), &m3uChannel)
+		err = remarshal(dsa, &m3uChannel)
 		if err != nil {
 			return
 		}
@@ -523,8 +537,9 @@ func createXEPGDatabase() (err error) {
 			if len(m3uChannel.UUIDValue) > 0 {
 				channelHasUUID = true
 			}
-		} else {
+		} else if len(m3uChannel.UUIDValue) > 0 {
 			// XEPG Datenbank durchlaufen um nach dem Kanal zu suchen.  Run through the XEPG database to search for the channel (full scan)
+			// Only reachable when the stream carries a UUID, since the match below requires one on both sides.
 			for _, dxc := range xepgChannelsValuesMap {
 				if m3uChannel.FileM3UID == dxc.FileM3UID && !isInInactiveList(dxc.URL) {
 
@@ -552,7 +567,7 @@ func createXEPGDatabase() (err error) {
 		case true:
 			// Bereits vorhandener Kanal
 			var xepgChannel XEPGChannelStruct
-			err = json.Unmarshal([]byte(mapToJSON(Data.XEPG.Channels[currentXEPGID])), &xepgChannel)
+			err = remarshal(Data.XEPG.Channels[currentXEPGID], &xepgChannel)
 			if err != nil {
 				return
 			}
@@ -622,15 +637,7 @@ func createXEPGDatabase() (err error) {
 			// Neuer Kanal
 			var firstFreeNumber float64 = Settings.MappingFirstChannel
 			// Check channel start number from Group Filter
-			filters := []FilterStruct{}
-			for _, filter := range Settings.Filter {
-				filter_json, _ := json.Marshal(filter)
-				f := FilterStruct{}
-				json.Unmarshal(filter_json, &f)
-				filters = append(filters, f)
-			}
-
-			for _, filter := range filters {
+			for _, filter := range parsedFilters {
 				if m3uChannel.GroupTitle == filter.Filter {
 					start_num, _ := strconv.ParseFloat(filter.StartingNumber, 64)
 					firstFreeNumber = start_num
@@ -665,14 +672,7 @@ func createXEPGDatabase() (err error) {
 					continue
 				}
 				if channel, ok := channelsMap[m3uChannel.TvgID]; ok {
-					filters := []FilterStruct{}
-					for _, filter := range Settings.Filter {
-						filter_json, _ := json.Marshal(filter)
-						f := FilterStruct{}
-						json.Unmarshal(filter_json, &f)
-						filters = append(filters, f)
-					}
-					for _, filter := range filters {
+					for _, filter := range parsedFilters {
 						if newChannel.GroupTitle == filter.Filter {
 							category := &Category{}
 							category.Value = filter.Category
@@ -711,13 +711,14 @@ func createXEPGDatabase() (err error) {
 
 			}
 
-			programData, _ := getProgramData(newChannel)
-
-			if newChannel.Live && len(programData.Program) <= 3 {
-				newChannel.XmltvFile = "Threadfin Dummy"
-				newChannel.XMapping = "PPV"
-				newChannel.XActive = true
-				showInfo(fmt.Sprintf("XEPG:New live channel created (active): %s (%s)", newChannel.Name, newChannel.XGroupTitle))
+			if newChannel.Live {
+				programData, _ := getProgramData(newChannel)
+				if len(programData.Program) <= 3 {
+					newChannel.XmltvFile = "Threadfin Dummy"
+					newChannel.XMapping = "PPV"
+					newChannel.XActive = true
+					showInfo(fmt.Sprintf("XEPG:New live channel created (active): %s (%s)", newChannel.Name, newChannel.XGroupTitle))
+				}
 			}
 
 			if len(m3uChannel.UUIDKey) > 0 {
@@ -739,6 +740,8 @@ func createXEPGDatabase() (err error) {
 
 		}
 	}
+
+	showInfo(fmt.Sprintf("XEPG:Update database - channel loop (%d streams) took %s", len(Data.Streams.Active), time.Since(xepgTimer).Round(time.Millisecond)))
 
 	showInfo("XEPG:" + "Save DB file")
 
@@ -1755,10 +1758,21 @@ func cleanupXEPG() {
 	showInfo("XEPG:" + fmt.Sprintf("Cleanup database"))
 	Data.XEPG.XEPGCount = 0
 
+	// Set-based membership tests. The previous code did a linear indexOfString
+	// over Data.Cache.Streams.Active for every channel -> O(n²).
+	var activeHashSet = make(map[string]bool, len(Data.Cache.Streams.Active))
+	for _, h := range Data.Cache.Streams.Active {
+		activeHashSet[h] = true
+	}
+	var sourceIDSet = make(map[string]bool, len(sourceIDs))
+	for _, s := range sourceIDs {
+		sourceIDSet[s] = true
+	}
+
 	for id, dxc := range Data.XEPG.Channels {
 
 		var xepgChannel XEPGChannelStruct
-		err := json.Unmarshal([]byte(mapToJSON(dxc)), &xepgChannel)
+		err := remarshal(dxc, &xepgChannel)
 		if err == nil {
 
 			if xepgChannel.TvgName == "" {
@@ -1778,7 +1792,7 @@ func cleanupXEPG() {
 			hash := md5.Sum([]byte(hashInput))
 			m3uChannelHash := hex.EncodeToString(hash[:])
 
-			if indexOfString(m3uChannelHash, Data.Cache.Streams.Active) == -1 {
+			if !activeHashSet[m3uChannelHash] {
 				delete(Data.XEPG.Channels, id)
 			} else {
 				if xepgChannel.XActive && !xepgChannel.XHideChannel {
@@ -1786,7 +1800,7 @@ func cleanupXEPG() {
 				}
 			}
 
-			if indexOfString(xepgChannel.FileM3UID, sourceIDs) == -1 {
+			if !sourceIDSet[xepgChannel.FileM3UID] {
 				delete(Data.XEPG.Channels, id)
 			}
 
@@ -1820,7 +1834,7 @@ func removeDuplicateChannels() {
 
 	for id, dxc := range Data.XEPG.Channels {
 		var xepgChannel XEPGChannelStruct
-		err := json.Unmarshal([]byte(mapToJSON(dxc)), &xepgChannel)
+		err := remarshal(dxc, &xepgChannel)
 		if err != nil {
 			continue
 		}
