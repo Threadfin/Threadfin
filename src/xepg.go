@@ -799,7 +799,7 @@ func mapping() (err error) {
 		// Automatische Mapping für neue Kanäle. Wird nur ausgeführt, wenn der Kanal deaktiviert ist und keine XMLTV Datei und kein XMLTV Kanal zugeordnet ist.
 		if !xepgChannel.XActive {
 			// Werte kann "-" sein, deswegen len < 1
-			if len(xepgChannel.XmltvFile) < 1 {
+			if len(xepgChannel.XmltvFile) < 1 || xepgChannel.XmltvFile == "-" {
 
 				var tvgID = xepgChannel.TvgID
 
@@ -838,6 +838,9 @@ func mapping() (err error) {
 						if channelID, ok := chmap["id"].(string); ok {
 							xepgChannel.XmltvFile = file
 							xepgChannel.XMapping = channelID
+							xepgChannel.XActive = true
+
+							showInfo(fmt.Sprintf("XEPG:Existing channel automatically activated after XMLTV mapping: %s (%s)", xepgChannel.XName, channelID))
 
 							// Falls in der XMLTV Datei ein Logo existiert, wird dieses verwendet. Falls nicht, dann das Logo aus der M3U Datei
 							/*if icon, ok := chmap["icon"].(string); ok {
