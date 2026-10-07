@@ -108,6 +108,10 @@ type DynamicStream struct {
 type ClientConnection struct {
 	Connection int
 	Error      error
+	// Generation identifies the thirdPartyBuffer run that owns this stream.
+	// A new run for the same URL gets a new generation, so an older run can
+	// tell that it has been replaced.
+	Generation uint64
 }
 
 // BandwidthCalculation : Bandbreitenberechnung für den Stream
