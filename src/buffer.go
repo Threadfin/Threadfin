@@ -372,6 +372,15 @@ func bufferingStream(playlistID string, streamingURL string, backupStream1 *Back
 
 		var clients ClientConnection
 		clients.Connection = 1
+
+		// The native (Threadfin) buffer was removed. Any playlist whose buffer mode is not
+		// ffmpeg/vlc would otherwise never start a downloader and silently hang the client
+		// until the 20 s timeout. Fail the session loudly instead.
+		if playlist.Buffer != "ffmpeg" && playlist.Buffer != "vlc" {
+			clients.Error = fmt.Errorf("no buffer implementation exists for buffer mode \"%s\" (playlist: \"%s\"). The native buffer has been removed - set the provider buffer to \"ffmpeg\" or \"vlc\", or to \"-\" to pass the stream URL directly to the client", playlist.Buffer, playlist.PlaylistName)
+			ShowError(clients.Error, 0)
+		}
+
 		BufferClients.Store(playlistID+stream.MD5, clients)
 
 	}
@@ -1080,6 +1089,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 			options = Settings.VLCOptions
 
 		default:
+			ShowError(fmt.Errorf("thirdPartyBuffer: unsupported buffer type \"%s\" (expected ffmpeg or vlc)", playlist.Buffer), 0)
 			return
 		}
 
