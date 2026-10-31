@@ -1253,7 +1253,13 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 
 		f, err = bufferVFS.OpenFile(tmpFile, os.O_APPEND|os.O_WRONLY, 0600)
 		if err != nil {
-			panic(err)
+			// A panic inside this stream goroutine kills the entire Threadfin process.
+			// Fail only this stream, the same way every other error path here does.
+			cmd.Process.Kill()
+			ShowError(err, 0)
+			killClientConnection(streamID, playlistID, false)
+			addErrorToStream(err)
+			return
 		}
 		defer f.Close()
 
