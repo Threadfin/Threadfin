@@ -211,6 +211,7 @@ type XEPGChannelStruct struct {
 	XName              string        `json:"x-name"`
 	XUpdateChannelIcon bool          `json:"x-update-channel-icon"`
 	XUpdateChannelName bool          `json:"x-update-channel-name"`
+	XKeepName          bool          `json:"x-keep-name"`
 	XDescription       string        `json:"x-description"`
 	Live               bool          `json:"live"`
 	IsBackupChannel    bool          `json:"is_backup_channel"`
@@ -330,6 +331,7 @@ type SettingsStruct struct {
 	Version                   string                `json:"version"`
 	XepgReplaceMissingImages  bool                  `json:"xepg.replace.missing.images"`
 	XepgReplaceChannelTitle   bool                  `json:"xepg.replace.channel.title"`
+	XepgStableChannelIdentity bool                  `json:"xepg.stable.channel.identity"`
 	ThreadfinAutoUpdate       bool                  `json:"ThreadfinAutoUpdate"`
 	StoreBufferInRAM          bool                  `json:"storeBufferInRAM"`
 	ForceHttps                bool                  `json:"forceHttps"`

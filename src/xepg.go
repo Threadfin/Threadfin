@@ -334,6 +334,20 @@ func createXEPGMapping() {
 }
 
 // XEPG Datenbank erstellen / aktualisieren
+// stableChannelIdentity builds a channel identity key that ignores the stream URL.
+// Used when xepg.stable.channel.identity is enabled: providers rotate stream URLs
+// freely, which otherwise makes every refresh look like a brand new channel and
+// spawns duplicate entries while the user's mapping (numbers, names, logos, EPG)
+// stays attached to the stale entry. Identity = tvg-id when present, otherwise the
+// original provider name, always scoped to the provider (M3U) file.
+func stableChannelIdentity(name, tvgID, fileID string) string {
+	id := strings.TrimSpace(tvgID)
+	if id == "" {
+		id = strings.TrimSpace(name)
+	}
+	return strings.ToUpper(id) + "|" + fileID
+}
+
 func createXEPGDatabase() (err error) {
 
 	var allChannelNumbers = make([]float64, 0, System.UnfilteredChannelLimit)
@@ -470,10 +484,12 @@ func createXEPGDatabase() (err error) {
 			channel.TvgName = channel.Name
 		}
 
-		// Create consistent channel hash using URL as primary identifier
-		// Use TvgID when available, since names can change but IDs should remain stable
+		// Create consistent channel hash. With stable identity enabled the stream URL
+		// is ignored so rotating provider URLs no longer spawn duplicate channels.
 		var hashInput string
-		if channel.TvgID != "" {
+		if Settings.XepgStableChannelIdentity {
+			hashInput = stableChannelIdentity(channel.Name, channel.TvgID, channel.FileM3UID)
+		} else if channel.TvgID != "" {
 			// Use TvgID when available for stable identification
 			hashInput = channel.URL + channel.TvgID + channel.FileM3UID
 		} else {
@@ -502,10 +518,11 @@ func createXEPGDatabase() (err error) {
 		}
 
 		// Try to find the channel based on matching all known values.  If that fails, then move to full channel scan
-		// Create consistent channel hash using URL as primary identifier
-		// Use TvgID when available, since names can change but IDs should remain stable
+		// Create consistent channel hash. Must use the same formula as the XEPG side above.
 		var hashInput string
-		if m3uChannel.TvgID != "" {
+		if Settings.XepgStableChannelIdentity {
+			hashInput = stableChannelIdentity(m3uChannel.Name, m3uChannel.TvgID, m3uChannel.FileM3UID)
+		} else if m3uChannel.TvgID != "" {
 			// Use TvgID when available for stable identification
 			hashInput = m3uChannel.URL + m3uChannel.TvgID + m3uChannel.FileM3UID
 		} else {
@@ -587,11 +604,11 @@ func createXEPGDatabase() (err error) {
 			// Update channel name - for Live Events, allow name updates even without UUID
 			if channelHasUUID {
 				programData, _ := getProgramData(xepgChannel)
-				if xepgChannel.XUpdateChannelName || strings.Contains(xepgChannel.TvgID, "threadfin-") || (m3uChannel.LiveEvent == "true" && len(programData.Program) <= 3) {
+				if (xepgChannel.XUpdateChannelName || strings.Contains(xepgChannel.TvgID, "threadfin-") || (m3uChannel.LiveEvent == "true" && len(programData.Program) <= 3)) && !xepgChannel.XKeepName {
 					xepgChannel.XName = m3uChannel.Name
 					xepgChannel.TvgName = m3uChannel.TvgName // Also update TvgName for Live Events
 				}
-			} else if m3uChannel.LiveEvent == "true" {
+			} else if m3uChannel.LiveEvent == "true" && !xepgChannel.XKeepName {
 				// For Live Events without UUID, still allow name updates since they change frequently
 				xepgChannel.XName = m3uChannel.Name
 				xepgChannel.TvgName = m3uChannel.TvgName
@@ -1225,7 +1242,7 @@ func createLiveProgram(xepgChannel XEPGChannelStruct, channelId string) []*Progr
 	// Datetime examples: '12/31-11:59 PM', '1.1 6:30 AM', '09/15-10:00PM', '7/4 12:00 PM', '3.21 3:45 AM', '6/30-8:00 AM', '4/15 3AM'
 	// Time examples: '11:59 PM', '6:30 AM', '11:59PM', '1PM'
 	re := regexp.MustCompile(`((\d{1,2}[./]\d{1,2})[-\s])*(\d{1,2}(:\d{2})*\s*(AM|PM)?(?:\s*(ET|CT|MT|PT|EST|CST|MST|PST))?)`)
-	matches := re.FindStringSubmatch(name)
+	matches := re.FindStringSubmatch(name + " " + xepgChannel.XPpvExtra)
 	layout := "2006.1.2 3:04 PM"
 	if len(matches) > 0 {
 		timePart := matches[len(matches)-2]
@@ -1313,6 +1330,11 @@ func createLiveProgram(xepgChannel XEPGChannelStruct, channelId string) []*Progr
 
 	// Handle non-ASCII characters in offline text
 	var offlineText = "CHANNEL OFFLINE"
+	// For PPV channels show what is scheduled on this feed instead of a bare
+	// offline notice, so the guide always tells the viewer who is playing.
+	if Settings.XepgReplaceChannelTitle && xepgChannel.XMapping == "PPV" && strings.TrimSpace(xepgChannel.XPpvExtra) != "" {
+		offlineText = fmt.Sprintf("%s %s", name, xepgChannel.XPpvExtra)
+	}
 	if !Settings.EnableNonAscii {
 		offlineText = strings.TrimSpace(strings.Map(func(r rune) rune {
 			if r > unicode.MaxASCII {
@@ -1765,14 +1787,13 @@ func cleanupXEPG() {
 				xepgChannel.TvgName = xepgChannel.Name
 			}
 
-			// Create consistent channel hash using URL as primary identifier
-			// Use TvgID when available, since names can change but IDs should remain stable
+			// Keep this formula in sync with createXEPGDatabase (stable identity toggle).
 			var hashInput string
-			if xepgChannel.TvgID != "" {
-				// Use TvgID when available for stable identification
+			if Settings.XepgStableChannelIdentity {
+				hashInput = stableChannelIdentity(xepgChannel.Name, xepgChannel.TvgID, xepgChannel.FileM3UID)
+			} else if xepgChannel.TvgID != "" {
 				hashInput = xepgChannel.URL + xepgChannel.TvgID + xepgChannel.FileM3UID
 			} else {
-				// Fall back to URL + FileM3UID only when TvgID is blank
 				hashInput = xepgChannel.URL + xepgChannel.FileM3UID
 			}
 			hash := md5.Sum([]byte(hashInput))
@@ -1829,14 +1850,13 @@ func removeDuplicateChannels() {
 			xepgChannel.TvgName = xepgChannel.Name
 		}
 
-		// Create consistent channel hash using URL as primary identifier
-		// Use TvgID when available, since names can change but IDs should remain stable
+		// Keep this formula in sync with createXEPGDatabase (stable identity toggle).
 		var hashInput string
-		if xepgChannel.TvgID != "" {
-			// Use TvgID when available for stable identification
+		if Settings.XepgStableChannelIdentity {
+			hashInput = stableChannelIdentity(xepgChannel.Name, xepgChannel.TvgID, xepgChannel.FileM3UID)
+		} else if xepgChannel.TvgID != "" {
 			hashInput = xepgChannel.URL + xepgChannel.TvgID + xepgChannel.FileM3UID
 		} else {
-			// Fall back to URL + FileM3UID only when TvgID is blank
 			hashInput = xepgChannel.URL + xepgChannel.FileM3UID
 		}
 		hash := md5.Sum([]byte(hashInput))

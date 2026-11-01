@@ -286,6 +286,20 @@ class SettingsCategory {
         setting.appendChild(tdRight)
         break
 
+      case "xepg.stable.channel.identity":
+        var tdLeft = document.createElement("TD")
+        tdLeft.innerHTML = "{{.settings.stableChannelIdentity.title}}" + ":"
+
+        var tdRight = document.createElement("TD")
+        var input = content.createCheckbox(settingsKey)
+        input.checked = data
+        input.setAttribute("onchange", "javascript: this.className = 'changed'")
+        tdRight.appendChild(input)
+
+        setting.appendChild(tdLeft)
+        setting.appendChild(tdRight)
+        break
+
       case "storeBufferInRAM":
         var tdLeft = document.createElement("TD")
         tdLeft.innerHTML = "{{.settings.storeBufferInRAM.title}}" + ":"
@@ -774,6 +788,10 @@ class SettingsCategory {
 
       case "xepg.replace.channel.title":
         text = "{{.settings.replaceChannelTitle.description}}"
+        break
+
+      case "xepg.stable.channel.identity":
+        text = "{{.settings.stableChannelIdentity.description}}"
         break
 
       case "udpxy":
