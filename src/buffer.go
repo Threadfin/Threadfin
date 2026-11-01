@@ -1030,6 +1030,28 @@ func switchBandwidth(stream *ThisStream) (err error) {
 // Buffer with FFMPEG
 func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNumber int) {
 
+	// A panic inside this goroutine (for example avfs memfs "slice bounds out of
+	// range" in MemFile.Write) kills the entire Threadfin process and with it every
+	// other active stream. Fail only this stream instead, the same way every other
+	// error path in this function does.
+	defer func() {
+		if r := recover(); r != nil {
+			err := fmt.Errorf("panic while buffering stream (%s): %v", playlistID, r)
+			ShowError(err, 0)
+			if p, ok := BufferInformation.Load(playlistID); ok {
+				pl := p.(Playlist)
+				if streamID >= 0 && streamID < len(pl.Streams) {
+					if c, ok2 := BufferClients.Load(playlistID + pl.Streams[streamID].MD5); ok2 {
+						clients := c.(ClientConnection)
+						clients.Error = err
+						BufferClients.Store(playlistID+pl.Streams[streamID].MD5, clients)
+					}
+				}
+			}
+			killClientConnection(streamID, playlistID, false)
+		}
+	}()
+
 	if p, ok := BufferInformation.Load(playlistID); ok {
 
 		var playlist = p.(Playlist)
