@@ -437,6 +437,9 @@
     "replaceChannelTitle": {
       "title": "Replace PPV channels title/desc",
       "description": "Use this if your provider maps the PPV event name to the channel name"
+    },"stableChannelIdentity": {
+      "title": "Keep channel mapping when stream URLs change",
+      "description": "Identifies channels by name/tvg-id instead of stream URL, so providers rotating stream URLs no longer reset your channel numbers, names, logos and EPG mapping or create duplicate channels."
     },
     "ThreadfinAutoUpdate": {
       "title": "Automatic update of Threadfin",
