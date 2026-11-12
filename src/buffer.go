@@ -19,6 +19,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -33,6 +34,14 @@ type BackupStream struct {
 func getActiveClientCount() (count int) {
 	count = 0
 	cleanUpStaleClients() // Ensure stale clients are removed first
+
+	// Ranging playlist.Clients while another goroutine writes it (killClientConnection)
+	// is a fatal "concurrent map iteration and map write". The Playlist struct copy keeps
+	// the same map, so every reader has to hold Lock. This runs on every dashboard
+	// refresh (setDefaultResponseData), so it is not a corner case.
+	// cleanUpStaleClients() takes the lock itself and must run before it is taken here.
+	Lock.Lock()
+	defer Lock.Unlock()
 
 	BufferInformation.Range(func(key, value interface{}) bool {
 		playlist, ok := value.(Playlist)
@@ -74,6 +83,10 @@ func getActivePlaylistCount() (count int) {
 }
 
 func cleanUpStaleClients() {
+	// Deletes from playlist.Clients, see getActiveClientCount for why the lock is needed.
+	Lock.Lock()
+	defer Lock.Unlock()
+
 	BufferInformation.Range(func(key, value interface{}) bool {
 		playlist, ok := value.(Playlist)
 		if !ok {
@@ -117,6 +130,9 @@ func getClientIP(r *http.Request) string {
 	return ip
 }
 
+// createStreamID : The caller must hold Lock. The map is shared with every other request
+// for the same playlist, and a concurrent read/write on a Go map is an unrecoverable
+// fatal error, not a panic.
 func createStreamID(stream map[int]ThisStream, ip, userAgent string) (streamID int) {
 	streamID = 0
 	uniqueIdentifier := fmt.Sprintf("%s-%s", ip, userAgent)
@@ -154,9 +170,16 @@ func bufferingStream(playlistID string, streamingURL string, backupStream1 *Back
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 
 	// Check whether the playlist is already in use
+	//
+	// The whole registration runs under Lock. Loading a playlist copies the Playlist
+	// struct, but Streams and Clients are maps and the copy still points at the original
+	// maps, so one request reading them while another registers a stream used to be a
+	// "concurrent map read and map write" fatal error - which no recover() can catch.
+	// unlockRegister is idempotent so every exit path, panics included, releases it.
 	Lock.Lock()
+	unlockRegister := sync.OnceFunc(Lock.Unlock)
+	defer unlockRegister()
 	if p, ok := BufferInformation.Load(playlistID); !ok {
-		Lock.Unlock() // Unlock early if not found
 		var playlistType string
 
 		// Playlist is not yet in use, create default values for the playlist
@@ -224,13 +247,10 @@ func bufferingStream(playlistID string, streamingURL string, backupStream1 *Back
 		playlist.Streams[streamID] = stream
 		playlist.Clients[streamID] = client
 
-		Lock.Lock()
 		BufferInformation.Store(playlistID, playlist)
-		Lock.Unlock()
 
 	} else {
 		playlist = p.(Playlist)
-		Lock.Unlock()
 
 		// Playlist is already used for streaming
 		// Check if the URL is already streaming from another client.
@@ -253,9 +273,7 @@ func bufferingStream(playlistID string, streamingURL string, backupStream1 *Back
 
 				playlist.Clients[streamID] = client
 
-				Lock.Lock()
 				BufferInformation.Store(playlistID, playlist)
-				Lock.Unlock()
 
 				debug = fmt.Sprintf("Restream Status:Playlist: %s - Channel: %s - Connections: %d", playlist.PlaylistName, stream.ChannelName, client.Connection)
 
@@ -282,6 +300,11 @@ func bufferingStream(playlistID string, streamingURL string, backupStream1 *Back
 
 			// Check if the playlist allows another stream (Tuner)
 			if len(playlist.Streams) >= playlist.Tuner {
+				// Registration is finished. Release Lock before the recursive call below,
+				// which would deadlock on the lock this goroutine already holds, and before
+				// the stream-limit page, which writes for 30 seconds.
+				unlockRegister()
+
 				// If there are backup URLs, use them
 				if backupStream1 != nil {
 					bufferingStream(backupStream1.PlaylistID, backupStream1.URL, nil, backupStream2, backupStream3, channelName, w, r)
@@ -331,9 +354,7 @@ func bufferingStream(playlistID string, streamingURL string, backupStream1 *Back
 			playlist.Streams[streamID] = stream
 			playlist.Clients[streamID] = client
 
-			Lock.Lock()
 			BufferInformation.Store(playlistID, playlist)
-			Lock.Unlock()
 
 		}
 
@@ -354,9 +375,7 @@ func bufferingStream(playlistID string, streamingURL string, backupStream1 *Back
 
 		playlist.Streams[streamID] = stream
 
-		Lock.Lock()
 		BufferInformation.Store(playlistID, playlist)
-		Lock.Unlock()
 
 		switch playlist.Buffer {
 
@@ -372,9 +391,20 @@ func bufferingStream(playlistID string, streamingURL string, backupStream1 *Back
 
 		var clients ClientConnection
 		clients.Connection = 1
+
+		// The native (Threadfin) buffer was removed. Any playlist whose buffer mode is not
+		// ffmpeg/vlc would otherwise never start a downloader and silently hang the client
+		// until the 20 s timeout. Fail the session loudly instead.
+		if playlist.Buffer != "ffmpeg" && playlist.Buffer != "vlc" {
+			clients.Error = fmt.Errorf("no buffer implementation exists for buffer mode \"%s\" (playlist: \"%s\"). The native buffer has been removed - set the provider buffer to \"ffmpeg\" or \"vlc\", or to \"-\" to pass the stream URL directly to the client", playlist.Buffer, playlist.PlaylistName)
+			ShowError(clients.Error, 0)
+		}
+
 		BufferClients.Store(playlistID+stream.MD5, clients)
 
 	}
+
+	unlockRegister() // Registration is done, streaming itself does not need the lock
 
 	w.WriteHeader(200)
 
@@ -384,7 +414,11 @@ func bufferingStream(playlistID string, streamingURL string, backupStream1 *Back
 
 			var playlist = p.(Playlist)
 
-			if stream, ok := playlist.Streams[streamID]; ok {
+			Lock.RLock()
+			stream, ok := playlist.Streams[streamID]
+			Lock.RUnlock()
+
+			if ok {
 
 				if !stream.Status {
 
@@ -396,7 +430,7 @@ func bufferingStream(playlistID string, streamingURL string, backupStream1 *Back
 
 						var clients = c.(ClientConnection)
 
-						if clients.Error != nil || (timeOut > 200 && (playlist.Streams[streamID].BackupChannel1 == nil && playlist.Streams[streamID].BackupChannel2 == nil && playlist.Streams[streamID].BackupChannel3 == nil)) {
+						if clients.Error != nil || (timeOut > 200 && (stream.BackupChannel1 == nil && stream.BackupChannel2 == nil && stream.BackupChannel3 == nil)) {
 							killClientConnection(streamID, stream.PlaylistID, false)
 							return
 						}
@@ -547,7 +581,12 @@ func bufferingStream(playlistID string, streamingURL string, backupStream1 *Back
 				// Stream not found
 				showDebug("Streaming Status:Stream not found. Killing Connection", 3)
 				killClientConnection(streamID, stream.PlaylistID, false)
-				showInfo(fmt.Sprintf("Streaming Status:Playlist: %s - Tuner: %d / %d", playlist.PlaylistName, len(playlist.Streams), playlist.Tuner))
+				// playlist is a copy from an earlier iteration; len() on its shared map is a map
+				// read, so it has to be taken under Lock like every other access.
+				Lock.RLock()
+				var tunerCount = len(playlist.Streams)
+				Lock.RUnlock()
+				showInfo(fmt.Sprintf("Streaming Status:Playlist: %s - Tuner: %d / %d", playlist.PlaylistName, tunerCount, playlist.Tuner))
 				return
 
 			}
@@ -1021,19 +1060,46 @@ func switchBandwidth(stream *ThisStream) (err error) {
 // Buffer with FFMPEG
 func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNumber int) {
 
+	// A panic inside this goroutine (for example avfs memfs "slice bounds out of
+	// range" in MemFile.Write) kills the entire Threadfin process and with it every
+	// other active stream. Fail only this stream instead, the same way every other
+	// error path in this function does.
+	defer func() {
+		if r := recover(); r != nil {
+			err := fmt.Errorf("panic while buffering stream (%s): %v", playlistID, r)
+			ShowError(err, 0)
+			if p, ok := BufferInformation.Load(playlistID); ok {
+				pl := p.(Playlist)
+				Lock.RLock()
+				plStream, ok2 := pl.Streams[streamID]
+				Lock.RUnlock()
+				if ok2 {
+					if c, ok3 := BufferClients.Load(playlistID + plStream.MD5); ok3 {
+						clients := c.(ClientConnection)
+						clients.Error = err
+						BufferClients.Store(playlistID+plStream.MD5, clients)
+					}
+				}
+			}
+			killClientConnection(streamID, playlistID, false)
+		}
+	}()
+
 	if p, ok := BufferInformation.Load(playlistID); ok {
 
 		var playlist = p.(Playlist)
 		var debug, path, options, bufferType string
 		var tmpSegment = 1
 		var bufferSize = Settings.BufferSize * 1024
+		Lock.RLock()
 		var stream = playlist.Streams[streamID]
+		Lock.RUnlock()
 		var buf bytes.Buffer
 		var fileSize = 0
 		var streamStatus = make(chan bool)
 
-		var tmpFolder = playlist.Streams[streamID].Folder
-		var url = playlist.Streams[streamID].URL
+		var tmpFolder = stream.Folder
+		var url = stream.URL
 		if useBackup {
 			if backupNumber >= 1 && backupNumber <= 3 {
 				switch backupNumber {
@@ -1080,6 +1146,7 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 			options = Settings.VLCOptions
 
 		default:
+			ShowError(fmt.Errorf("thirdPartyBuffer: unsupported buffer type \"%s\" (expected ffmpeg or vlc)", playlist.Buffer), 0)
 			return
 		}
 
@@ -1092,7 +1159,9 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 				return
 			}
 
+			Lock.RLock()
 			var stream = playlist.Streams[streamID]
+			Lock.RUnlock()
 
 			if c, ok := BufferClients.Load(playlistID + stream.MD5); ok {
 
@@ -1253,7 +1322,13 @@ func thirdPartyBuffer(streamID int, playlistID string, useBackup bool, backupNum
 
 		f, err = bufferVFS.OpenFile(tmpFile, os.O_APPEND|os.O_WRONLY, 0600)
 		if err != nil {
-			panic(err)
+			// A panic inside this stream goroutine kills the entire Threadfin process.
+			// Fail only this stream, the same way every other error path here does.
+			cmd.Process.Kill()
+			ShowError(err, 0)
+			killClientConnection(streamID, playlistID, false)
+			addErrorToStream(err)
+			return
 		}
 		defer f.Close()
 
