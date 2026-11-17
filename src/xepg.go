@@ -352,6 +352,12 @@ func createXEPGDatabase() (err error) {
 		return err
 	}
 
+	// xepg.json may contain `null`, which unmarshals without error into a nil map.
+	// Writing to a nil map panics, so make sure it is always initialised.
+	if Data.XEPG.Channels == nil {
+		Data.XEPG.Channels = make(map[string]interface{}, System.UnfilteredChannelLimit)
+	}
+
 	settings, err := loadJSONFileToMap(System.File.Settings)
 	if err != nil || len(settings) == 0 {
 		return
