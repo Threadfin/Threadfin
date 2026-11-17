@@ -115,7 +115,7 @@ func parseMetaDataOptimized(channel string) map[string]string {
 		}
 	}
 
-	if len(lines) < 2 {
+	if len(lines) < 1 {
 		return nil // Invalid channel format
 	}
 
